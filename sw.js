@@ -1,5 +1,5 @@
-/* Cockpit service worker — offline-capable shell + network-first for /api */
-const VERSION = 'cockpit-v1.0.0';
+/* Cockpit service worker — v3.0.0 */
+const VERSION = 'cockpit-v3.0.0';
 const SHELL = [
   '/',
   '/index.html',
@@ -28,18 +28,13 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const { request } = e;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
 
-  // Network-first for API routes (when wired up later)
-  if (url.pathname.startsWith('/api/')) {
+  // Network-first for Supabase API calls
+  if (url.hostname.includes('supabase.co') || url.pathname.startsWith('/api/')) {
     e.respondWith(
       fetch(request)
-        .then(r => {
-          const copy = r.clone();
-          caches.open(VERSION).then(c => c.put(request, copy));
-          return r;
-        })
+        .then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(request, copy)); return r; })
         .catch(() => caches.match(request))
     );
     return;
