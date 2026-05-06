@@ -588,6 +588,151 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .proj-legend{display:flex;gap:12px}
 .proj-legend-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text-3);font-family:var(--mono)}
 .proj-legend-line{width:16px;height:2px;border-radius:1px}
+
+/* ── MODAL SYSTEM ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,6,14,0.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;z-index:10000;animation:mFade 0.18s ease}
+.modal-box{background:#111827;border:1px solid rgba(56,189,248,0.18);border-radius:16px;padding:28px 30px;width:440px;max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;animation:mSlide 0.22s cubic-bezier(0.16,1,0.3,1)}
+.modal-title{font-size:16px;font-weight:700;color:#f1f5f9;margin-bottom:22px;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px}
+.modal-title .mi{font-size:18px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:9.5px;font-weight:700;color:#64748b;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px;display:block;font-family:var(--mono)}
+.modal-input{width:100%;background:#0f1626;border:1px solid rgba(255,255,255,0.08);border-radius:9px;color:#f1f5f9;font-family:var(--sans);font-size:14px;padding:10px 13px;outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+.modal-input:focus{border-color:#38bdf860}
+select.modal-input{cursor:pointer}
+textarea.modal-input{resize:vertical;min-height:80px;line-height:1.5}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;margin-top:22px}
+.modal-btn{flex:1;height:42px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--sans);letter-spacing:-0.005em}
+.modal-btn.primary{background:#38bdf8;color:#060912}
+.modal-btn.primary:hover{background:#7dd3fc}
+.modal-btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.1);color:#94a3b8}
+.modal-btn.secondary:hover{border-color:rgba(255,255,255,0.2);color:#f1f5f9}
+.modal-btn.danger{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);color:#f87171;flex:0.7}
+.modal-btn.danger:hover{background:rgba(248,113,113,0.2)}
+@keyframes mFade{from{opacity:0}to{opacity:1}}
+@keyframes mSlide{from{opacity:0;transform:translateY(18px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── AUTH / LOCK SCREEN ── */
+#lock-screen{position:fixed;inset:0;background:#060912;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:99999;gap:16px}
+.lock-logo{font-size:48px;margin-bottom:4px}
+.lock-title{font-size:24px;font-weight:800;color:#f1f5f9;letter-spacing:-0.03em}
+.lock-sub{font-size:12px;color:#64748b;font-family:var(--mono);letter-spacing:0.1em;margin-bottom:8px}
+.lock-input{background:#111827;border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;color:#f1f5f9;font-size:18px;padding:14px 20px;outline:none;width:260px;text-align:center;letter-spacing:0.1em;transition:border-color 0.2s}
+.lock-input:focus{border-color:#38bdf860}
+.lock-btn{background:#38bdf8;color:#060912;border:none;border-radius:10px;font-size:14px;font-weight:700;padding:12px 40px;cursor:pointer;width:260px;transition:opacity 0.15s}
+.lock-btn:hover{opacity:0.88}
+.lock-bio{background:transparent;border:1px solid rgba(255,255,255,0.12);color:#94a3b8;border-radius:10px;font-size:12px;padding:10px 20px;cursor:pointer;font-family:var(--mono);width:260px;display:none;transition:border-color 0.2s}
+.lock-bio:hover{border-color:var(--cyan)}
+.lock-error{color:#f87171;font-size:11px;font-family:var(--mono);min-height:16px;text-align:center}
+.lock-timer{font-size:10px;color:#334155;font-family:var(--mono);position:absolute;bottom:24px}
+
+/* ── MOBILE BOTTOM TABS ── */
+.mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(6,9,18,0.97);border-top:1px solid rgba(255,255,255,0.08);padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:200;grid-template-columns:repeat(4,1fr)}
+.mob-tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;border:none;background:transparent;color:var(--text-3);transition:color 0.15s;width:100%;position:relative}
+.mob-tab.active{color:var(--cyan)}
+.mob-tab .mti{font-size:21px;line-height:1}
+.mob-tab .mtl{font-size:9px;font-family:var(--mono);letter-spacing:0.06em;text-transform:uppercase}
+.mob-badge{position:absolute;top:4px;right:calc(50% - 14px);width:7px;height:7px;border-radius:50%;background:var(--bad);border:1.5px solid #060912}
+
+/* ── NOTIFICATION BADGES ── */
+.nav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:var(--bad);color:#fff;font-size:9px;font-weight:700;font-family:var(--mono);padding:0 4px;margin-left:auto;flex-shrink:0}
+.nav-badge.warn{background:var(--warn);color:#060912}
+.nav-badge.info{background:var(--cyan);color:#060912}
+
+/* ── CLIENT MANAGER ── */
+.client-table{width:100%;border-collapse:collapse;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.client-table th{padding:8px 16px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono);text-align:left;background:var(--bg-deeper);border-bottom:1px solid var(--line)}
+.client-table td{padding:12px 16px;font-size:12px;border-bottom:1px dashed var(--line);color:var(--text-1);vertical-align:middle}
+.client-table tr:last-child td{border-bottom:none}
+.client-table tr{cursor:pointer;transition:background 0.12s}
+.client-table tr:hover td{background:rgba(255,255,255,0.02)}
+.client-name{font-weight:600;font-size:13px}
+.client-type{font-size:9px;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-weight:600;letter-spacing:0.06em}
+.client-type.retainer{background:var(--tech-bg);color:var(--tech);border:1px solid rgba(165,180,252,0.2)}
+.client-type.project{background:var(--cap-bg);color:var(--cap);border:1px solid rgba(110,231,183,0.2)}
+.client-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono)}
+.client-mrr-total{font-size:13px;font-weight:700;color:var(--good);font-family:var(--mono)}
+.hours-bar{height:4px;background:var(--bg-deeper);border-radius:2px;width:60px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px}
+.hours-fill{height:100%;border-radius:2px;background:var(--cyan)}
+
+/* ── PIPELINE ── */
+.pipeline-board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.pipeline-col{background:var(--bg-deeper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.pipeline-col-head{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.pipeline-col-title{font-size:10px;font-weight:700;color:var(--text-2);letter-spacing:0.1em;text-transform:uppercase;font-family:var(--mono)}
+.pipeline-col-count{font-size:10px;font-family:var(--mono);color:var(--text-3)}
+.pipeline-card{margin:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color 0.15s}
+.pipeline-card:hover{border-color:var(--line-2)}
+.pipeline-card-name{font-size:12px;font-weight:600;color:var(--text-1);margin-bottom:4px}
+.pipeline-card-val{font-size:11px;font-family:var(--mono);color:var(--cyan)}
+.pipeline-card-src{font-size:10px;color:var(--text-3);margin-top:3px}
+.pipeline-col.won .pipeline-col-head{background:rgba(74,222,128,0.06)}
+.pipeline-col.won .pipeline-col-title{color:var(--good)}
+.pipeline-col.lost .pipeline-col-head{background:rgba(248,113,113,0.05)}
+.pipeline-col.lost .pipeline-col-title{color:var(--bad)}
+
+/* ── TRADE JOURNAL ── */
+.trade-log{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.trade-log-head{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.trade-log-title{font-size:10px;font-weight:700;color:var(--text-1);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)}
+.trade-table{width:100%;border-collapse:collapse}
+.trade-table th{padding:6px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono);text-align:left;background:var(--bg-deeper)}
+.trade-table td{padding:9px 14px;font-size:11px;font-family:var(--mono);border-bottom:1px dashed var(--line);color:var(--text-1);cursor:pointer}
+.trade-table tr:last-child td{border-bottom:none}
+.trade-table tr:hover td{background:rgba(255,255,255,0.02)}
+.trade-pnl.pos{color:var(--good)}
+.trade-pnl.neg{color:var(--bad)}
+.trade-dir-long{color:var(--good);font-weight:600}
+.trade-dir-short{color:var(--bad);font-weight:600}
+.trade-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+
+/* ── RELOCATION COUNTDOWN ── */
+.relocation-eta{background:linear-gradient(135deg,rgba(56,189,248,0.06),rgba(56,189,248,0.02));border:1px solid var(--cyan-mid);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.eta-headline{font-size:clamp(22px,2.5vw,36px);font-weight:800;color:var(--cyan);letter-spacing:-0.03em;line-height:1;margin-bottom:4px}
+.eta-sub{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+.eta-bars{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.eta-bar-item{display:flex;flex-direction:column;gap:5px}
+.eta-bar-label{font-size:9px;font-weight:600;color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono);display:flex;justify-content:space-between}
+.eta-bar-track{height:6px;background:var(--bg-deeper);border-radius:3px;overflow:hidden}
+.eta-bar-fill{height:100%;border-radius:3px;transition:width 0.5s}
+
+/* ── WEEKLY REVIEW OVERLAY ── */
+.review-overlay{position:fixed;inset:0;background:rgba(4,6,14,0.95);backdrop-filter:blur(12px);display:none;flex-direction:column;z-index:9000;overflow-y:auto}
+.review-inner{max-width:760px;margin:0 auto;padding:40px 24px 60px;width:100%}
+.review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.review-title{font-size:22px;font-weight:800;color:var(--text-1);letter-spacing:-0.025em}
+.review-week{font-size:12px;color:var(--text-3);font-family:var(--mono);margin-top:3px}
+.review-close{background:transparent;border:1px solid var(--line);color:var(--text-2);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:12px;font-family:var(--sans);transition:all 0.15s}
+.review-close:hover{border-color:var(--line-2);color:var(--text-1)}
+.review-section{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px}
+.review-section-title{font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
+.review-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px;color:var(--text-1)}
+.review-item:last-child{border-bottom:none}
+.review-textarea{width:100%;background:var(--bg-deeper);border:1px solid var(--line);border-radius:9px;color:var(--text-1);font-family:var(--sans);font-size:14px;padding:14px 16px;outline:none;resize:vertical;min-height:140px;line-height:1.7;transition:border-color 0.15s}
+.review-textarea:focus{border-color:var(--cyan-mid)}
+.review-save{width:100%;height:44px;background:var(--cyan);color:#060912;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);letter-spacing:-0.005em;margin-top:14px;transition:opacity 0.15s}
+.review-save:hover{opacity:0.88}
+
+/* ── MOBILE OVERRIDES ── */
+@media(max-width:768px){
+  .mobile-tabs{display:grid}
+  .app{grid-template-columns:1fr !important;grid-template-areas:"topbar" "main" !important;padding-bottom:72px}
+  .side,.rail{display:none !important}
+  .topbar{padding:10px 16px}
+  .main{padding:14px 14px 24px}
+  .money-grid{grid-template-columns:1fr}
+  .health-grid{grid-template-columns:1fr}
+  .pipeline-board{grid-template-columns:repeat(2,1fr)}
+  .trade-stats-row{grid-template-columns:repeat(2,1fr)}
+  .fin-hero{grid-template-columns:1fr}
+  .charts-row{grid-template-columns:1fr}
+  .acct-row{grid-template-columns:1fr 1fr 1fr auto}
+  .acct-row .acct-cell:nth-child(4),.acct-row .acct-cell:nth-child(5){display:none}
+}
+
+/* ── REVIEW BUTTON ── */
+.review-btn{height:30px;padding:0 12px;background:transparent;border:1px solid var(--line);color:var(--text-2);border-radius:7px;font-size:11px;cursor:pointer;font-family:var(--mono);letter-spacing:0.06em;display:flex;align-items:center;gap:5px;transition:all 0.15s}
+.review-btn:hover{border-color:var(--cyan);color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -678,6 +823,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
   <div class="topbar-spacer"></div>
   <div class="pill"><span class="live-dot"></span><span id="clock-date">Wed · 06 May</span></div>
   <div class="pill" id="clock-time">00:00</div>
+  <button class="review-btn" onclick="openWeeklyReview()">⊙ Review</button>
 </header>
 
 <main class="main" id="main"></main>
@@ -707,14 +853,464 @@ function navMonth(dir) {
 }
 window.navMonth = navMonth;
 
-// ── Storage ────────────────────────────────────────
+
+// ── Modal System ────────────────────────────────────
+let _modalResolve = null;
+function openModal(cfg) {
+  return new Promise(res => {
+    _modalResolve = res;
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'app-modal';
+    const icon = cfg.icon ? `<span class="mi">${cfg.icon}</span>` : '';
+    const fields = (cfg.fields||[]).map(f => {
+      let inp;
+      if (f.type==='select') {
+        inp = `<select class="modal-input" id="mf-${f.id}">${(f.options||[]).map(o=>{const v=typeof o==='string'?o:(o.value||o);const l=typeof o==='string'?o:(o.label||o);return `<option value="${v}" ${String(f.value||'')=== v?'selected':''}>${l}</option>`;}).join('')}</select>`;
+      } else if (f.type==='textarea') {
+        inp = `<textarea class="modal-input" id="mf-${f.id}" rows="${f.rows||3}" placeholder="${f.placeholder||''}">${f.value||''}</textarea>`;
+      } else {
+        inp = `<input class="modal-input" id="mf-${f.id}" type="${f.type||'text'}" value="${String(f.value??'').replace(/"/g,'&quot;')}" placeholder="${f.placeholder||''}" ${f.step?`step="${f.step}"`:''}  ${f.min!==undefined?`min="${f.min}"`:''}  ${f.max!==undefined?`max="${f.max}"`:''}>`;
+      }
+      return `<div class="modal-field ${f.half?'':''}"><label class="modal-label" for="mf-${f.id}">${f.label}</label>${inp}</div>`;
+    });
+    // Group into rows of 2 if .half set
+    const pairedFields = fields.join('');
+    const delBtn = cfg.deleteLabel ? `<button class="modal-btn danger" onclick="_ma('delete')">${cfg.deleteLabel}</button>` : '';
+    ov.innerHTML = `<div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">${icon}${cfg.title||'Edit'}</div>
+      ${pairedFields}
+      <div class="modal-actions">${delBtn}<button class="modal-btn secondary" onclick="_ma('cancel')">Cancel</button><button class="modal-btn primary" onclick="_ma('save')">${cfg.saveLabel||'Save'}</button></div>
+    </div>`;
+    ov.addEventListener('click', () => _ma('cancel'));
+    document.body.appendChild(ov);
+    setTimeout(() => ov.querySelector('.modal-input')?.focus(), 50);
+  });
+}
+window._ma = function(action) {
+  const ov = document.getElementById('app-modal');
+  if (!ov) return;
+  let result = { action };
+  if (action === 'save') {
+    result.values = {};
+    ov.querySelectorAll('[id^="mf-"]').forEach(el => {
+      const key = el.id.slice(3);
+      result.values[key] = el.type==='number' ? (+el.value) : (el.type==='checkbox' ? el.checked : el.value);
+    });
+  }
+  ov.remove();
+  if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
+};
+
+// ── Auth System ──────────────────────────────────────
+const AUTH = {
+  isLocked: false,
+  _timer: null,
+  TIMEOUT: 2 * 60 * 1000,
+
+  async init() {
+    const h = safe.get('cockpit.auth.hash');
+    if (!h) { await this.setup(); }
+    else { this.lock(); }
+    this._bindActivity();
+  },
+
+  async setup() {
+    const r = await openModal({ title:'Set Password', icon:'🔐', saveLabel:'Create',
+      fields:[
+        {id:'p1', label:'Password', type:'password', placeholder:'Min 6 characters'},
+        {id:'p2', label:'Confirm Password', type:'password', placeholder:'Repeat password'}
+      ]
+    });
+    if (r.action!=='save') { this.setup(); return; }
+    if (r.values.p1.length < 6) { alert('Password must be at least 6 characters'); this.setup(); return; }
+    if (r.values.p1 !== r.values.p2) { alert('Passwords do not match'); this.setup(); return; }
+    const h = await this._hash(r.values.p1);
+    safe.set('cockpit.auth.hash', h);
+    this.unlock();
+  },
+
+  async _hash(pwd) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('cockpit-rthq-'+pwd));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  },
+
+  lock() {
+    this.isLocked = true;
+    clearTimeout(this._timer);
+    const el = document.getElementById('lock-screen');
+    if (el) el.style.display = 'flex';
+    document.getElementById('lock-input')?.focus();
+    this._checkBio();
+  },
+
+  unlock() {
+    this.isLocked = false;
+    clearTimeout(this._timer);
+    const el = document.getElementById('lock-screen');
+    if (el) el.style.display = 'none';
+    document.getElementById('lock-error').textContent = '';
+    document.getElementById('lock-input').value = '';
+    this.resetTimer();
+  },
+
+  resetTimer() {
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.lock(), this.TIMEOUT);
+  },
+
+  _bindActivity() {
+    ['click','touchstart','keydown','scroll'].forEach(e =>
+      document.addEventListener(e, () => { if (!this.isLocked) this.resetTimer(); }, {passive:true})
+    );
+  },
+
+  async tryUnlock() {
+    const inp = document.getElementById('lock-input');
+    const errEl = document.getElementById('lock-error');
+    if (!inp?.value) return;
+    const h = await this._hash(inp.value);
+    if (h === safe.get('cockpit.auth.hash')) { this.unlock(); }
+    else { errEl.textContent = 'Wrong password'; inp.value = ''; inp.focus(); }
+  },
+
+  _checkBio() {
+    const btn = document.getElementById('lock-bio-btn');
+    if (!btn) return;
+    if (!window.PublicKeyCredential) return;
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok => {
+      btn.style.display = ok ? 'block' : 'none';
+    });
+  },
+
+  async tryBiometric() {
+    const stored = safe.get('cockpit.auth.credId');
+    if (!stored) { await this._registerBio(); return; }
+    try {
+      const credId = Uint8Array.from(atob(stored), c=>c.charCodeAt(0));
+      const a = await navigator.credentials.get({ publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{type:'public-key', id:credId}],
+        userVerification: 'required', timeout: 60000
+      }});
+      if (a) this.unlock();
+    } catch(e) { console.log('Bio auth failed:', e); }
+  },
+
+  async _registerBio() {
+    try {
+      const c = await navigator.credentials.create({ publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: {name:'Cockpit RTHQ', id: location.hostname},
+        user: {id: crypto.getRandomValues(new Uint8Array(16)), name:'cockpit', displayName:'Richard'},
+        pubKeyCredParams: [{type:'public-key', alg:-7}],
+        authenticatorSelection: {authenticatorAttachment:'platform', userVerification:'required'},
+        timeout: 60000
+      }});
+      if (c) {
+        safe.set('cockpit.auth.credId', btoa(String.fromCharCode(...new Uint8Array(c.rawId))));
+        this.unlock();
+      }
+    } catch(e) { console.log('Bio register failed:', e); }
+  },
+
+  changePassword: async function() {
+    const r = await openModal({ title:'Change Password', icon:'🔑', saveLabel:'Update',
+      fields:[
+        {id:'old', label:'Current Password', type:'password'},
+        {id:'new1', label:'New Password', type:'password'},
+        {id:'new2', label:'Confirm New', type:'password'}
+      ]
+    });
+    if (r.action!=='save') return;
+    const oldH = await this._hash(r.values.old);
+    if (oldH !== safe.get('cockpit.auth.hash')) { alert('Wrong current password'); return; }
+    if (r.values.new1 !== r.values.new2) { alert('Passwords do not match'); return; }
+    const newH = await this._hash(r.values.new1);
+    safe.set('cockpit.auth.hash', newH);
+    safe.del('cockpit.auth.credId');
+    alert('Password updated. Biometric registration cleared.');
+  }
+};
+window.AUTH = AUTH;
+
+
+// ── Supabase client ────────────────────────────────
+const SUPA_URL = 'https://nqhsdwocwooumghdqflf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaHNkd29jd29vdW1naGRxZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODc2MjEsImV4cCI6MjA5MzY2MzYyMX0.Bkg25Y7goI9OzVAkL1IjTeAWLRX2kCciqFDZf6x53iQ';
+const SUPA_HDR = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+async function sbGet(table, params='') {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}${params}`, { headers: { ...SUPA_HDR, 'Prefer': 'return=representation' } });
+    if (!r.ok) return [];
+    return await r.json();
+  } catch { return []; }
+}
+async function sbUpsert(table, data) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { ...SUPA_HDR, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(data)
+    });
+  } catch {}
+}
+async function sbDelete(table, filter) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, { method: 'DELETE', headers: SUPA_HDR });
+  } catch {}
+}
+async function sbConfig(key) {
+  const rows = await sbGet('cockpit_config', `?key=eq.${key}&select=value`);
+  return rows[0]?.value ?? null;
+}
+async function sbSetConfig(key, value) {
+  await sbUpsert('cockpit_config', { key, value: String(value) });
+}
+
+// ── Local cache (localStorage as fallback + instant-render cache) ──
 const safe = {
   get(k)  { try { return localStorage.getItem(k); } catch { return null; } },
   set(k,v){ try { localStorage.setItem(k,v); } catch {} },
   del(k)  { try { localStorage.removeItem(k); } catch {} }
 };
-function getEdited(key, fallback) { const v = safe.get('cockpit.val.'+key); return v !== null ? v : fallback; }
-function setEdited(key, v)        { safe.set('cockpit.val.'+key, v); }
+
+// Write-through: saves to localStorage immediately + syncs to Supabase async
+function setEdited(key, v) {
+  safe.set('cockpit.val.'+key, v);
+  // Parse the key to determine which table to write to
+  syncKeyToSupabase(key, v);
+}
+function getEdited(key, fallback) {
+  const v = safe.get('cockpit.val.'+key);
+  return v !== null ? v : fallback;
+}
+
+function syncKeyToSupabase(key, val) {
+  // Monthly fields: "autoscale.2026.4.income" etc
+  const monthMatch = key.match(/^([^.]+)\.(\d{4})\.(\d+)\.(income|expense|expected|delayed|ytd_income|ytd_expense)$/);
+  if (monthMatch) {
+    const [,page_key,year,month,field] = monthMatch;
+    const row = { page_key, year:+year, month:+month };
+    row[field] = +val;
+    sbUpsert('cockpit_monthly', row);
+    return;
+  }
+  // Source fields: "autoscale.2026.4.src.Retainers"
+  const srcMatch = key.match(/^([^.]+)\.(\d{4})\.(\d+)\.src\.(.+)$/);
+  if (srcMatch) {
+    const [,page_key,year,month,source_label] = srcMatch;
+    sbUpsert('cockpit_sources', { page_key, year:+year, month:+month, source_label, amount:+val });
+    return;
+  }
+  // Skill: "skill.Spanish.pct"
+  const skillMatch = key.match(/^skill\.(.+)\.pct$/);
+  if (skillMatch) {
+    sbUpsert('cockpit_skills', { skill_name: skillMatch[1], pct: +val });
+    return;
+  }
+  // Finance accounts: "fin.acct.acct-1.balance"
+  const acctMatch = key.match(/^fin\.acct\.([^.]+)\.(balance|savings|creditLine|cardLimit)$/);
+  if (acctMatch) {
+    const fieldMap = { balance:'balance', savings:'savings', creditLine:'credit_line', cardLimit:'card_limit' };
+    // We store by id — need to find the row. Use partial update approach
+    fetch(`${SUPA_URL}/rest/v1/cockpit_bank_accounts?id=eq.${acctMatch[1]}`, {
+      method: 'PATCH', headers: SUPA_HDR,
+      body: JSON.stringify({ [fieldMap[acctMatch[2]]]: +val })
+    }).catch(()=>{});
+    return;
+  }
+  // Finance debt: "fin.debt.d-1.balance"
+  const debtMatch = key.match(/^fin\.debt\.([^.]+)\.(balance)$/);
+  if (debtMatch) {
+    fetch(`${SUPA_URL}/rest/v1/cockpit_debt?id=eq.${debtMatch[1]}`, {
+      method: 'PATCH', headers: SUPA_HDR,
+      body: JSON.stringify({ balance: +val })
+    }).catch(()=>{});
+    return;
+  }
+  // Bike build pct
+  if (key === 'bike.pct') {
+    fetch(`${SUPA_URL}/rest/v1/cockpit_bike_build?limit=1`, {
+      method: 'PATCH', headers: SUPA_HDR, body: JSON.stringify({ pct: +val })
+    }).catch(()=>{});
+    return;
+  }
+  // Finance config keys
+  if (['fin.manualAssets','fin.currentSavings'].includes(key)) {
+    sbSetConfig(key, val);
+    return;
+  }
+  // Recurring amounts
+  const riMatch = key.match(/^fin\.(ri|re)\.([^.]+)\.amount$/);
+  if (riMatch) {
+    fetch(`${SUPA_URL}/rest/v1/cockpit_recurring?id=eq.${riMatch[2]}`, {
+      method: 'PATCH', headers: SUPA_HDR, body: JSON.stringify({ amount: +val })
+    }).catch(()=>{});
+    return;
+  }
+}
+
+// ── Supabase data loaders (called on page load + page switch) ────
+const DB = {}; // in-memory cache of loaded data
+
+async function loadAllData() {
+  showLoadingOverlay(true);
+  try {
+    const [monthly, sources, trades, skills, checklists, notes, bike, healthLogs,
+           accounts, debt, recurring, holdings, investments, properties, config,
+           clients, pipeline, tradeEntries, weeklyReviews] = await Promise.all([
+      sbGet('cockpit_monthly'),
+      sbGet('cockpit_sources'),
+      sbGet('cockpit_trade_days'),
+      sbGet('cockpit_skills'),
+      sbGet('cockpit_checklists'),
+      sbGet('cockpit_notes'),
+      sbGet('cockpit_bike_build'),
+      sbGet('cockpit_health_logs','?order=log_date.desc&limit=30'),
+      sbGet('cockpit_bank_accounts','?order=sort_order'),
+      sbGet('cockpit_debt'),
+      sbGet('cockpit_recurring','?order=sort_order'),
+      sbGet('cockpit_holdings','?order=asset_type,sort_order'),
+      sbGet('cockpit_investments','?order=created_at'),
+      sbGet('cockpit_properties','?order=created_at'),
+      sbGet('cockpit_config'),
+      sbGet('cockpit_clients','?order=created_at'),
+      sbGet('cockpit_pipeline','?order=created_at'),
+      sbGet('cockpit_trades','?order=trade_date.desc&limit=100'),
+      sbGet('cockpit_weekly_reviews','?order=week_start.desc&limit=12')
+    ]);
+
+    // Hydrate localStorage cache from DB so renders use fresh data
+    monthly.forEach(r => {
+      const prefix = `cockpit.val.${r.page_key}.${r.year}.${r.month}`;
+      ['income','expense','expected','delayed','ytd_income','ytd_expense'].forEach(f => {
+        if (r[f] != null) safe.set(prefix+'.'+f, r[f]);
+      });
+    });
+    sources.forEach(r => {
+      safe.set(`cockpit.val.${r.page_key}.${r.year}.${r.month}.src.${r.source_label}`, r.amount);
+    });
+    skills.forEach(r => {
+      safe.set(`cockpit.val.skill.${r.skill_name}.pct`, r.pct);
+      // Update PAGES data
+      const s = PAGES['skills']?.data?.skills?.find(x => x.name === r.skill_name);
+      if (s) s.pct = r.pct;
+    });
+    checklists.forEach(r => {
+      const existing = loadChecklist(r.list_key, []);
+      const idx = existing.findIndex(x => x.id === r.item_id);
+      const item = { id: r.item_id, text: r.text, done: r.done };
+      if (idx >= 0) existing[idx] = item; else existing.push(item);
+      existing.sort((a,b) => {
+        const ai = checklists.findIndex(x => x.item_id===a.id);
+        const bi = checklists.findIndex(x => x.item_id===b.id);
+        return ai-bi;
+      });
+      saveChecklist(r.list_key, existing);
+    });
+    notes.forEach(r => safe.set('cockpit.note.'+r.note_key, r.content));
+    if (bike[0]) {
+      const b = bike[0];
+      if (b.start_date)  safe.set('bike.start', b.start_date);
+      if (b.target_date) safe.set('bike.target', b.target_date);
+      if (b.pct != null) safe.set('bike.pct', b.pct);
+      if (b.notes)       safe.set('bike.notes', b.notes);
+    }
+    trades.forEach(r => {
+      const d = new Date(r.trade_date);
+      safe.set(`cockpit.trade.${d.getFullYear()}.${d.getMonth()}.${d.getDate()}`, r.pnl);
+    });
+    healthLogs.forEach(r => {
+      const d = new Date(r.log_date);
+      const dk = `${d.getFullYear()}.${d.getMonth()}.${d.getDate()}`;
+      safe.set('cockpit.health.sleep.'+dk, r.sleep_hours);
+      // Latest entry populates the form defaults
+      if (healthLogs[0] === r) {
+        safe.set('cockpit.health.sleep.hours', r.sleep_hours);
+        safe.set('cockpit.health.sleep.quality', r.sleep_quality);
+        safe.set('cockpit.health.sleep.deep', r.deep_pct);
+        safe.set('cockpit.health.sleep.rem', r.rem_pct);
+        safe.set('cockpit.health.cal', r.calories);
+        safe.set('cockpit.health.protein', r.protein);
+        safe.set('cockpit.health.carbs', r.carbs);
+        safe.set('cockpit.health.fat', r.fat);
+      }
+    });
+
+    // Hydrate Finance PAGES data from DB
+    if (accounts.length) {
+      PAGES['finance'].data.accounts = accounts.map(a => ({
+        id: a.id, bank: a.bank_name, balance: a.balance, savings: a.savings,
+        creditLine: a.credit_line, cardLimit: a.card_limit
+      }));
+    }
+    if (debt.length) {
+      PAGES['finance'].data.debt = debt.map(d => ({
+        id: d.id, name: d.name, balance: d.balance, originalBalance: d.original_balance,
+        monthly: d.monthly_payment, ratePercent: d.rate_percent,
+        monthsRemaining: d.months_remaining, property: d.property_link || ''
+      }));
+    }
+    const ri = recurring.filter(r => r.type === 'income').map(r => ({
+      id: r.id, name: r.name, amount: r.amount, frequency: r.frequency, active: r.active
+    }));
+    const re = recurring.filter(r => r.type === 'expense').map(r => ({
+      id: r.id, name: r.name, amount: r.amount, frequency: r.frequency, active: r.active, fromDebt: r.from_debt
+    }));
+    if (ri.length) PAGES['finance'].data.recurringIncome = ri;
+    if (re.length) PAGES['finance'].data.recurringExpenses = re;
+    if (holdings.length) {
+      PAGES['holdings'].data.crypto = holdings.filter(h=>h.asset_type==='crypto').map(h=>({symbol:h.symbol,name:h.name,amount:h.amount,price:h.price_usd,change:h.change_pct,currency:h.currency,id:h.id}));
+      PAGES['holdings'].data.stocks = holdings.filter(h=>h.asset_type==='stock').map(h=>({symbol:h.symbol,name:h.name,shares:h.amount,price:h.price_usd,change:h.change_pct,currency:h.currency,id:h.id}));
+      PAGES['holdings'].data.cash   = holdings.filter(h=>h.asset_type==='cash').map(h=>({currency:h.symbol,amount:h.amount,id:h.id}));
+    }
+    if (investments.length) {
+      PAGES['angel'].data.investments = investments.map(i => ({
+        id:i.id, name:i.name, stage:i.stage, invested:i.invested, current:i.current_value, stake:i.stake_pct, notes:i.notes||''
+      }));
+    }
+    if (properties.length) {
+      PAGES['real-estate'].data.properties = properties.map(p => ({
+        id:p.id, name:p.name, status:p.status, purchase:p.purchase_price, value:p.current_value,
+        monthlyRev:p.monthly_revenue, monthlyExp:p.monthly_expenses, bought:p.bought_date||''
+      }));
+    }
+    config.forEach(r => {
+      if (r.key === 'usd_to_ils')     PAGES['holdings'].data.usdToIls = parseFloat(r.value);
+      if (r.key === 'target_savings') PAGES['finance'].data.targetSavings = +r.value;
+      if (r.key === 'current_savings') PAGES['finance'].data.currentSavings = +r.value;
+    });
+
+    // Hydrate new v3 data
+    _clients = clients;
+    _pipeline = pipeline;
+    _trades = tradeEntries;
+    _weeklyReviews = weeklyReviews;
+
+    DB.loaded = true;
+  } catch(e) {
+    console.error('Supabase load error:', e);
+  }
+  showLoadingOverlay(false);
+  // Update badges after data loads
+  setTimeout(updateBadges, 100);
+}
+
+function showLoadingOverlay(show) {
+  let el = document.getElementById('load-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'load-overlay';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(6,9,18,0.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px';
+    el.innerHTML = '<div style="width:32px;height:32px;border:2px solid rgba(56,189,248,0.2);border-top-color:#38bdf8;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#64748b;letter-spacing:0.12em">LOADING DATA</div>';
+    document.body.appendChild(el);
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+  }
+  el.style.display = show ? 'flex' : 'none';
+}
 
 function mKey(page, y, m, field) { return `${page}.${y}.${m}.${field}`; }
 function getMField(page, y, m, field, def) {
@@ -739,7 +1335,7 @@ const PAGES = {
   'autoscale': {
     title:'AutoScale', arm:'tech', armLabel:'Tech & SaaS',
     sub:'Marketing automation agency',
-    sections:['attention','charts','money','sources','projects'],
+    sections:['attention','charts','money','sources','clients','pipeline','projects'],
     data:{
       attention:[
         {kind:'warn', num:2,       label:'Invoices',    detail:'Awaiting approval'},
@@ -831,7 +1427,7 @@ const PAGES = {
   'trading': {
     title:'Trading', arm:'cap', armLabel:'Capital',
     sub:'Funded accounts · IBKR · Apex',
-    sections:['attention','trading-cal','money'],
+    sections:['attention','trading-cal','trading-journal','money'],
     data:{
       attention:[
         {kind:'good', num:'+3,500', cur:'₪', label:'This Month', detail:'Net P&L'},
@@ -1270,6 +1866,11 @@ function renderProjects(projects, pageKey) {
 }
 
 // ── Trading Calendar ────────────────────────────────
+function renderTradingSection(pageKey, y, m) {
+  const pm = getPM(pageKey);
+  const nav = `<div class="month-nav"><button class="mnav-btn" onclick="navMonth(-1)">‹</button><span class="mnav-label">${MNAMES[m]} ${y}</span><button class="mnav-btn" onclick="navMonth(1)">›</button></div>`;
+  return nav + renderTradingCalendar(pageKey, y, m);
+}
 function renderTradingCalendar(pageKey, y, m) {
   const DAYS = ['Mo','Tu','We','Th','Fr','Sa','Su'];
   const firstDay = new Date(y, m, 1).getDay();
@@ -1333,13 +1934,29 @@ function renderTradingCalendar(pageKey, y, m) {
   return html;
 }
 
-window.editTrade = function(y, m, d) {
+window.editTrade = async function(y, m, d) {
   const key = `cockpit.trade.${y}.${m}.${d}`;
   const cur = safe.get(key) || '';
-  const val = prompt(`P&L for ${d}/${m+1}/${y} (₪)\nEmpty = no trade:`, cur);
-  if (val === null) return;
-  if (val.trim() === '') safe.del(key);
-  else { const n = parseFloat(val.replace(/[₪, ]/g,'')); if (!isNaN(n)) safe.set(key, n); }
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const r = await openModal({ title:`${d} ${MONTHS[m]} ${y} — Trade`, icon:'📊',
+    fields:[
+      {id:'pnl',   label:'P&L (₪) — use negative for loss', type:'number', placeholder:'0', value:cur, step:'0.01'},
+      {id:'notes', label:'Notes (optional)', placeholder:'NQ long, FOMC day…', value:''}
+    ],
+    deleteLabel: cur ? 'No trade (clear)' : null
+  });
+  if (r.action==='cancel') return;
+  const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  if (r.action==='delete') {
+    safe.del(key);
+    sbDelete('cockpit_trade_days', `trade_date=eq.${date}`);
+  } else {
+    const n = parseFloat(r.values.pnl);
+    if (!isNaN(n)) {
+      safe.set(key, n);
+      sbUpsert('cockpit_trade_days', { trade_date:date, pnl:n, notes:r.values.notes||'' });
+    }
+  }
   renderPage(safe.get('cockpit.page') || 'trading');
 };
 
@@ -1399,15 +2016,47 @@ function renderHoldings(data, pageKey) {
   return html;
 }
 
-window.addHolding = function(type) {
-  const labels = {crypto:'Symbol, Amount, Price(USD)', stock:'Ticker, Shares, Price(USD)', cash:'Currency (ILS/USD/EUR), Amount'};
-  const val = prompt(`Add ${type}\n${labels[type]}\nExample: ${type==='cash'?'USD, 1000':'BTC, 0.1, 95000'}`);
-  if (!val) return;
-  const parts = val.split(',').map(x => x.trim());
-  const page = PAGES.holdings;
-  if (type === 'crypto') { const [sym,amt,price] = parts; if (sym&&amt&&price) { page.data.crypto.push({symbol:sym.toUpperCase(),name:sym,amount:+amt,price:+price,change:0,currency:'USD'}); }}
-  else if (type === 'stock') { const [sym,sh,price] = parts; if (sym&&sh&&price) { page.data.stocks.push({symbol:sym.toUpperCase(),name:sym,shares:+sh,price:+price,change:0,currency:'USD'}); }}
-  else if (type === 'cash') { const [cur,amt] = parts; if (cur&&amt) { page.data.cash.push({currency:cur.toUpperCase(),amount:+amt}); }}
+window.addHolding = async function(type, existingId) {
+  const isCrypto = type==='crypto', isStock = type==='stock', isCash = type==='cash';
+  const existing = existingId ? [...PAGES.holdings.data.crypto,...PAGES.holdings.data.stocks,...PAGES.holdings.data.cash].find(x=>(x.id||x.symbol)===existingId) : null;
+  const iconMap = {crypto:'₿', stock:'📈', cash:'💵'};
+  const fieldDefs = isCash ?
+    [{id:'currency',label:'Currency',type:'select',options:['ILS','USD','EUR','GBP','THB','AUD'],value:existing?.currency||'USD'},
+     {id:'amount',label:'Amount',type:'number',placeholder:'1000',value:existing?.amount||''}] :
+    [{id:'symbol',label:'Symbol',placeholder:isCrypto?'BTC':'AAPL',value:existing?.symbol||''},
+     {id:'name',label:'Name',placeholder:isCrypto?'Bitcoin':'Apple Inc.',value:existing?.name||''},
+     {id:'amount',label:isCrypto?'Quantity':'Shares',type:'number',placeholder:'0.1',value:existing?.amount||existing?.shares||''},
+     {id:'price_usd',label:'Price (USD)',type:'number',placeholder:'95000',value:existing?.price||''},
+     {id:'change_pct',label:'24h Change (%)',type:'number',placeholder:'0',value:existing?.change||'',step:'0.01'}];
+  const r = await openModal({title:`${existingId?'Edit':'Add'} ${type}`, icon:iconMap[type], saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId?'Delete':null,
+    fields: fieldDefs
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && existingId) {
+    PAGES.holdings.data.crypto = PAGES.holdings.data.crypto.filter(x=>x.id!==existingId);
+    PAGES.holdings.data.stocks = PAGES.holdings.data.stocks.filter(x=>x.id!==existingId);
+    PAGES.holdings.data.cash   = PAGES.holdings.data.cash.filter(x=>x.id!==existingId);
+    sbDelete('cockpit_holdings', `id=eq.${existingId}`);
+    return renderPage('holdings');
+  }
+  const v = r.values;
+  let row = null;
+  if (isCrypto) {
+    const obj = {id:existingId,symbol:(v.symbol||'').toUpperCase(),name:v.name||v.symbol,amount:+v.amount,price:+v.price_usd,change:+v.change_pct,currency:'USD'};
+    existingId ? (PAGES.holdings.data.crypto = PAGES.holdings.data.crypto.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.crypto.push(obj);
+    row = {asset_type:'crypto',symbol:obj.symbol,name:obj.name,amount:obj.amount,price_usd:obj.price,change_pct:obj.change,currency:'USD',sort_order:99};
+  } else if (isStock) {
+    const obj = {id:existingId,symbol:(v.symbol||'').toUpperCase(),name:v.name||v.symbol,shares:+v.amount,price:+v.price_usd,change:+v.change_pct,currency:'USD'};
+    existingId ? (PAGES.holdings.data.stocks = PAGES.holdings.data.stocks.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.stocks.push(obj);
+    row = {asset_type:'stock',symbol:obj.symbol,name:obj.name,amount:obj.shares,price_usd:obj.price,change_pct:obj.change,currency:'USD',sort_order:99};
+  } else {
+    const obj = {id:existingId,currency:v.currency,amount:+v.amount};
+    existingId ? (PAGES.holdings.data.cash = PAGES.holdings.data.cash.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.cash.push(obj);
+    row = {asset_type:'cash',symbol:v.currency,name:v.currency+' Cash',amount:+v.amount,price_usd:1,change_pct:0,currency:v.currency,sort_order:99};
+  }
+  if (existingId && row) { fetch(`${SUPA_URL}/rest/v1/cockpit_holdings?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{}); }
+  else if (row) sbUpsert('cockpit_holdings', row);
   renderPage('holdings');
 };
 
@@ -1447,16 +2096,37 @@ function renderAngel(data, pageKey) {
   return html;
 }
 
-window.addInvestment = function() {
-  const name = prompt('Company name:');
-  if (!name) return;
-  const stage = prompt('Stage (Seed / Pre-seed / Series A):') || 'Seed';
-  const invested = +(prompt('Amount invested (₪):') || 0);
-  const current  = +(prompt('Current value (₪):') || invested);
-  const stake    = +(prompt('Your stake (%):') || 0);
-  const notes    = prompt('Notes (optional):') || '';
-  PAGES['angel'].data.investments.push({ id:'inv-'+Date.now(), name, stage, invested, current, stake, notes });
-  renderPage('angel');
+window.addInvestment = async function(existingId) {
+  const ex = existingId ? PAGES['angel'].data.investments.find(x=>x.id===existingId) : null;
+  const r = await openModal({title:existingId?'Edit Investment':'Add Investment', icon:'💼', saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId?'Delete':null,
+    fields:[
+      {id:'name',  label:'Company Name',   placeholder:'Startup Co.',value:ex?.name||''},
+      {id:'stage', label:'Stage',          type:'select', options:['Pre-seed','Seed','Series A','Series B','Growth'], value:ex?.stage||'Seed'},
+      {id:'invested', label:'Amount Invested (₪)', type:'number', placeholder:'10000', value:ex?.invested||''},
+      {id:'current',  label:'Current Value (₪)',   type:'number', placeholder:'10000', value:ex?.current||''},
+      {id:'stake',    label:'Your Stake (%)',       type:'number', placeholder:'2.5',  value:ex?.stake||'', step:'0.1'},
+      {id:'notes',    label:'Notes',               type:'textarea',placeholder:'Sector, year, co-investors…', value:ex?.notes||'', rows:2}
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && existingId) {
+    PAGES['angel'].data.investments = PAGES['angel'].data.investments.filter(x=>x.id!==existingId);
+    sbDelete('cockpit_investments', `id=eq.${existingId}`);
+    return renderPage('angel');
+  }
+  const v = r.values;
+  const row = {name:v.name,stage:v.stage,invested:+v.invested,current_value:+v.current,stake_pct:+v.stake,notes:v.notes};
+  if (existingId) {
+    PAGES['angel'].data.investments = PAGES['angel'].data.investments.map(x=>x.id===existingId?{...x,...{name:v.name,stage:v.stage,invested:+v.invested,current:+v.current,stake:+v.stake,notes:v.notes}}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_investments?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+    renderPage('angel');
+  } else {
+    sbUpsert('cockpit_investments', row).then(()=>sbGet('cockpit_investments','?order=created_at').then(rows=>{
+      PAGES['angel'].data.investments = rows.map(i=>({id:i.id,name:i.name,stage:i.stage,invested:i.invested,current:i.current_value,stake:i.stake_pct,notes:i.notes||''}));
+      renderPage('angel');
+    }));
+  }
 };
 
 // ── Real Estate ─────────────────────────────────────
@@ -1504,16 +2174,38 @@ function renderRealEstate(data, pageKey) {
   return html;
 }
 
-window.addProperty = function() {
-  const name = prompt('Property name/address:');
-  if (!name) return;
-  const purchase = +(prompt('Purchase price (₪):') || 0);
-  const value    = +(prompt('Current market value (₪):') || purchase);
-  const rev      = +(prompt('Monthly rental income (₪):') || 0);
-  const exp      = +(prompt('Monthly expenses (₪):') || 0);
-  const bought   = prompt('Purchase date (YYYY-MM):') || '';
-  PAGES['real-estate'].data.properties.push({ id:'p-'+Date.now(), name, status:'active', purchase, value, monthlyRev:rev, monthlyExp:exp, bought });
-  renderPage('real-estate');
+window.addProperty = async function(existingId) {
+  const ex = existingId ? PAGES['real-estate'].data.properties.find(x=>x.id===existingId) : null;
+  const r = await openModal({title:existingId?'Edit Property':'Add Property', icon:'🏠', saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId?'Delete':null,
+    fields:[
+      {id:'name',     label:'Property Name',         placeholder:'Apartment — Tel Aviv', value:ex?.name||''},
+      {id:'status',   label:'Status', type:'select',  options:['active','sold'],          value:ex?.status||'active'},
+      {id:'purchase', label:'Purchase Price (₪)',      type:'number', placeholder:'1200000', value:ex?.purchase||''},
+      {id:'value',    label:'Current Value (₪)',        type:'number', placeholder:'1380000', value:ex?.value||''},
+      {id:'rev',      label:'Monthly Revenue (₪)',      type:'number', placeholder:'4500',    value:ex?.monthlyRev||''},
+      {id:'exp',      label:'Monthly Expenses (₪)',     type:'number', placeholder:'900',     value:ex?.monthlyExp||''},
+      {id:'bought',   label:'Purchase Date (YYYY-MM)',  placeholder:'2022-03',              value:ex?.bought||''}
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && existingId) {
+    PAGES['real-estate'].data.properties = PAGES['real-estate'].data.properties.filter(x=>x.id!==existingId);
+    sbDelete('cockpit_properties', `id=eq.${existingId}`);
+    return renderPage('real-estate');
+  }
+  const v = r.values;
+  const row = {name:v.name,status:v.status,purchase_price:+v.purchase,current_value:+v.value,monthly_revenue:+v.rev,monthly_expenses:+v.exp,bought_date:v.bought};
+  if (existingId) {
+    PAGES['real-estate'].data.properties = PAGES['real-estate'].data.properties.map(x=>x.id===existingId?{...x,name:v.name,status:v.status,purchase:+v.purchase,value:+v.value,monthlyRev:+v.rev,monthlyExp:+v.exp,bought:v.bought}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_properties?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+    renderPage('real-estate');
+  } else {
+    sbUpsert('cockpit_properties', row).then(()=>sbGet('cockpit_properties','?order=created_at').then(rows=>{
+      PAGES['real-estate'].data.properties = rows.map(p=>({id:p.id,name:p.name,status:p.status,purchase:p.purchase_price,value:p.current_value,monthlyRev:p.monthly_revenue,monthlyExp:p.monthly_expenses,bought:p.bought_date||''}));
+      renderPage('real-estate');
+    }));
+  }
 };
 
 // ── Empty state ─────────────────────────────────────
@@ -1568,57 +2260,109 @@ function renderSignalBar(pageKey, y, m, data) {
 // ── Life Overview ───────────────────────────────────
 function renderLifeOverview() {
   const skills = PAGES['skills'].data.skills;
-  const totalPct = Math.round(skills.reduce((s,x) => s + x.pct, 0) / skills.length);
+  const totalPct = Math.round(skills.reduce((s,x)=>s+x.pct,0)/skills.length);
 
-  let html = `<div class="section-h"><span><span class="num">01</span>Skills</span><div class="line"></div><span class="meta">OVERALL ${totalPct}%</span></div>
-    <div class="skill-list" style="margin-bottom:20px">`;
+  // Health snapshot (most recent)
+  const today = new Date();
+  const dk = `${today.getFullYear()}.${today.getMonth()}.${today.getDate()}`;
+  const sleepH = parseFloat(safe.get('cockpit.health.sleep.hours')||0);
+  const sleepQ = parseInt(safe.get('cockpit.health.sleep.quality')||0);
+  const cal    = parseInt(safe.get('cockpit.health.cal')||0);
+  const calT   = parseInt(safe.get('cockpit.health.calTarget')||2200);
+  const calPct = calT > 0 ? Math.round((cal/calT)*100) : 0;
+  const sleepCls = sleepQ>=70?'good':sleepQ>=50?'warn':sleepQ>0?'bad':'muted';
+  const calCls   = calPct>=80&&calPct<=110?'good':calPct>0?'warn':'muted';
+
+  // Finance snapshot for life goals
+  const now = new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const bizIncome = getMField('autoscale',y,m,'income',PAGES['autoscale']?.data?.money?.month?.income||0);
+  const currentSav = +getEdited('fin.currentSavings',8000);
+  const target = PAGES['finance']?.data?.targetSavings||30000;
+  const savPct = Math.min(Math.round((currentSav/target)*100),100);
+  const savCls = savPct>=80?'good':savPct>=50?'warn':'bad';
+  const mrrTarget = 6000;
+  const mrrCls = bizIncome>=mrrTarget?'good':bizIncome>3000?'warn':'bad';
+
+  let html = renderRelocationETA() + `
+  <div class="section-h"><span><span class="num">01</span>Goals</span><div class="line"></div><span class="meta">RELOCATION TARGETS</span></div>
+  <div class="attention" style="margin-bottom:20px">
+    <div class="att ${savCls}">
+      <div class="att-num">${fmtK(currentSav)}<span class="cur">₪</span></div>
+      <div class="att-label">Savings</div>
+      <div class="att-detail">${savPct}% of 30k target</div>
+    </div>
+    <div class="att ${mrrCls}">
+      <div class="att-num">${fmtK(bizIncome)}<span class="cur">₪</span></div>
+      <div class="att-label">This Month</div>
+      <div class="att-detail">Target: 6k₪ MRR</div>
+    </div>
+    <div class="att ${sleepCls}" onclick="navigate('health')" style="cursor:pointer">
+      <div class="att-num">${sleepQ||'—'}</div>
+      <div class="att-label">Sleep Score</div>
+      <div class="att-detail">${sleepH||'—'}h last night</div>
+    </div>
+    <div class="att ${calCls}" onclick="navigate('health')" style="cursor:pointer">
+      <div class="att-num">${cal||'—'}</div>
+      <div class="att-label">Calories</div>
+      <div class="att-detail">${calPct}% of target</div>
+    </div>
+  </div>
+
+  <div class="section-h"><span><span class="num">02</span>Skills</span><div class="line"></div><span class="meta">OVERALL ${totalPct}%</span></div>
+  <div class="skill-list" style="margin-bottom:20px">`;
   skills.forEach(s => {
-    html += `<div class="skill-row" onclick="${s.page?`navigate('${s.page}')`:''}" style="${s.page?'cursor:pointer':''}">
+    const v = parseInt(safe.get(`cockpit.val.skill.${s.name}.pct`)||s.pct);
+    html += `<div class="skill-row" onclick="navigate('skills')" style="cursor:pointer">
       <div class="skill-icon">${s.icon}</div>
       <div class="skill-info">
         <div class="skill-name">${s.name}</div>
-        <div class="skill-track"><div class="skill-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
+        <div class="skill-track"><div class="skill-fill" style="width:${v}%;background:${s.color}"></div></div>
         <div class="skill-sub">${s.status}</div>
       </div>
-      <div class="skill-pct">${s.pct}<span>%</span></div>
+      <div class="skill-pct">${v}<span>%</span></div>
     </div>`;
   });
   html += `</div>`;
 
-  // Relocation quick status
+  // Relocation
   const dests = PAGES['relocation'].data.destinations;
-  html += `<div class="section-h"><span><span class="num">02</span>Relocation</span><div class="line"></div></div>
-    <div class="attention" style="margin-bottom:20px">`;
+  html += `<div class="section-h"><span><span class="num">03</span>Relocation</span><div class="line"></div></div>
+  <div class="attention" style="margin-bottom:20px">`;
   dests.forEach(d => {
-    const cls = d.status === 'primary' ? 'cyan' : d.status === 'planned' ? 'warn' : '';
-    const cl = loadChecklist(d.checkKey, d.defaultChecklist);
-    const done = cl.filter(x => x.done).length;
-    html += `<div class="att ${cls}" onclick="navigate('relocation')" style="cursor:pointer">
-      <div style="font-size:20px;margin-bottom:6px">${d.icon}</div>
+    const cl2 = loadChecklist(d.checkKey, d.defaultChecklist);
+    const done = cl2.filter(x=>x.done).length;
+    const pct2 = cl2.length>0 ? Math.round((done/cl2.length)*100) : 0;
+    const cls2 = d.status==='primary'?'cyan':d.status==='planned'?'warn':'';
+    html += `<div class="att ${cls2}" onclick="navigate('relocation')" style="cursor:pointer">
+      <div style="font-size:22px;margin-bottom:4px">${d.icon}</div>
+      <div class="att-num" style="font-size:22px">${pct2}<span style="font-size:0.55em">%</span></div>
       <div class="att-label">${d.name}</div>
-      <div class="att-detail">${done}/${cl.length} checklist · ${d.status}</div>
+      <div class="att-detail">${done}/${cl2.length} tasks</div>
     </div>`;
   });
   html += `</div>`;
 
   // Bike build
-  const bStart = safe.get('bike.start') || '';
-  const bTarget = safe.get('bike.target') || '';
-  const bPct = parseInt(safe.get('bike.pct') || '0');
-  html += `<div class="section-h"><span><span class="num">03</span>Bike Build</span><div class="line"></div></div>
-    <div class="att cyan" onclick="navigate('bike-build')" style="cursor:pointer;max-width:280px">
-      <div style="font-size:20px;margin-bottom:6px">🏍</div>
-      <div class="att-num">${bPct}<span class="cur">%</span></div>
-      <div class="att-label">Build Progress</div>
-      <div class="att-detail">${bStart||'Start date not set'}</div>
-    </div>`;
+  const bPct = parseInt(safe.get('bike.pct')||0);
+  const bStart = safe.get('bike.start')||'';
+  html += `<div class="section-h"><span><span class="num">04</span>Projects</span><div class="line"></div></div>
+  <div class="panel" onclick="navigate('bike-build')" style="cursor:pointer">
+    <div class="panel-head">
+      <div class="panel-title">🏍 Bike Build</div>
+      <div class="panel-meta">${bStart?'Started '+bStart:'No start date'}</div>
+    </div>
+    <div class="panel-body" style="padding-top:10px;padding-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--text-3)">Progress</span>
+        <span style="font-size:13px;font-weight:700;color:var(--cyan)">${bPct}%</span>
+      </div>
+      <div class="build-bar" style="height:8px"><div class="build-fill" style="width:${bPct}%"></div></div>
+    </div>
+  </div>`;
 
   return html;
 }
-window.navigate = function(page) {
-  const item = document.querySelector(`.nav-item[data-page="${page}"]`);
-  if (item) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); item.classList.add('active'); renderPage(page); }
-};
+
 
 // ── Skills Hub ──────────────────────────────────────
 function renderSkillsHub(data) {
@@ -1669,20 +2413,26 @@ window.toggleCL = function(key, idx, page) {
   const list = loadChecklist(key, []);
   if (list[idx]) list[idx].done = !list[idx].done;
   saveChecklist(key, list);
+  const item = list[idx];
+  if (item) sbUpsert('cockpit_checklists', { list_key: key, item_id: item.id, text: item.text, done: item.done, sort_order: idx });
   renderPage(page);
 };
 window.deleteCL = function(key, idx, page) {
   const list = loadChecklist(key, []);
+  const item = list[idx];
   list.splice(idx, 1);
   saveChecklist(key, list);
+  if (item) sbDelete('cockpit_checklists', `list_key=eq.${key}&item_id=eq.${item.id}`);
   renderPage(page);
 };
 window.addCL = function(key, page) {
   const inp = document.getElementById('cl-inp-'+key);
   if (!inp || !inp.value.trim()) return;
   const list = loadChecklist(key, []);
-  list.push({id:'cl-'+Date.now(), text:inp.value.trim(), done:false});
+  const item = {id:'cl-'+Date.now(), text:inp.value.trim(), done:false};
+  list.push(item);
   saveChecklist(key, list);
+  sbUpsert('cockpit_checklists', { list_key: key, item_id: item.id, text: item.text, done: false, sort_order: list.length-1 });
   renderPage(page);
 };
 
@@ -1708,16 +2458,30 @@ function renderRelocation(data) {
   });
   return html + `</div>`;
 }
-window.saveNote = function(key, val) { safe.set('cockpit.note.'+key, val); };
+window.saveNote = function(key, val) {
+  safe.set('cockpit.note.'+key, val);
+  sbUpsert('cockpit_notes', { note_key: key, content: val });
+};
 
 window.saveHealthDay = function() {
   const today = new Date();
   const dk = `${today.getFullYear()}.${today.getMonth()}.${today.getDate()}`;
-  const hours = safe.get('cockpit.health.sleep.hours') || '0';
+  const hours = parseFloat(safe.get('cockpit.health.sleep.hours') || 0);
   safe.set('cockpit.health.sleep.'+dk, hours);
-  // Show brief confirmation
+  const log_date = today.toISOString().split('T')[0];
+  sbUpsert('cockpit_health_logs', {
+    log_date,
+    sleep_hours: hours,
+    sleep_quality: +safe.get('cockpit.health.sleep.quality') || 0,
+    deep_pct:     +safe.get('cockpit.health.sleep.deep')    || 0,
+    rem_pct:      +safe.get('cockpit.health.sleep.rem')     || 0,
+    calories:     +safe.get('cockpit.health.cal')           || 0,
+    protein:      +safe.get('cockpit.health.protein')       || 0,
+    carbs:        +safe.get('cockpit.health.carbs')         || 0,
+    fat:          +safe.get('cockpit.health.fat')           || 0
+  });
   const btn = document.querySelector('[onclick="saveHealthDay()"]');
-  if (btn) { const orig = btn.textContent; btn.textContent = '✓ Saved'; setTimeout(() => { btn.textContent = orig; }, 1500); }
+  if (btn) { const orig = btn.textContent; btn.textContent = '✓ Saved to Supabase'; setTimeout(() => { btn.textContent = orig; }, 1800); }
 };
 
 // ── Bike Build ──────────────────────────────────────
@@ -1917,129 +2681,122 @@ function macroRing(label, cur, target, color, unit) {
 
 // ── Finance Hub ─────────────────────────────────────
 function renderFinanceHub(data) {
-  const rate = data.usdToIls || 3.7;
-
-  // Aggregate accounts
-  const accounts = (data.accounts || []).map(a => {
-    const b = +getEdited(`fin.acct.${a.id}.balance`, a.balance);
-    const s = +getEdited(`fin.acct.${a.id}.savings`, a.savings);
-    const cl = +getEdited(`fin.acct.${a.id}.creditLine`, a.creditLine);
-    const card = +getEdited(`fin.acct.${a.id}.cardLimit`, a.cardLimit);
-    return { ...a, balance:b, savings:s, creditLine:cl, cardLimit:card };
-  });
-  const cashArr = data.cash || [];
-
-  const totalBalance  = accounts.reduce((s,a) => s+a.balance, 0);
-  const totalSavings  = accounts.reduce((s,a) => s+a.savings, 0);
-  const totalCreditLines = accounts.reduce((s,a) => s+a.creditLine, 0);
-  const totalCardLimits  = accounts.reduce((s,a) => s+a.cardLimit, 0);
-  const totalCash = cashArr.reduce((s,c) => s + (c.currency==='ILS'?c.amount : c.amount*rate), 0);
-
-  const spendingPower = totalBalance + totalCreditLines + totalCardLimits;
-  const cashAvailable = totalBalance + totalCash;
-
-  // Debt
-  const debts = (data.debt || []);
-  const totalDebt = debts.reduce((s,d) => s + +getEdited(`fin.debt.${d.id}.balance`, d.balance), 0);
-
-  // From holdings/real estate (manual approximation)
-  const holdingsApprox = 0; // user enters in holdings page
-  const reApprox = 0; // user enters in real estate
-
-  // Net worth = cash + savings + (enter assets manually) - debt
-  const manualAssets = +getEdited('fin.manualAssets', 0);
-  const netWorth = totalBalance + totalSavings + totalCash + manualAssets - totalDebt;
-
-  // Recurring
-  const recurInc = (data.recurringIncome || []).map(r => ({ ...r, amount: +getEdited(`fin.ri.${r.id}.amount`, r.amount) }));
-  const recurExp = (data.recurringExpenses || []).map(r => ({ ...r, amount: +getEdited(`fin.re.${r.id}.amount`, r.amount) }));
-  const totalRI = recurInc.filter(r => r.active).reduce((s,r) => s+r.amount, 0);
-  const totalRE = recurExp.filter(r => r.active).reduce((s,r) => s+r.amount, 0);
-  const monthlyNet = totalRI - totalRE;
-
-  // Projection
-  const currentSav = +getEdited('fin.currentSavings', data.currentSavings || 0);
+  const F = computeFinancials();
   const target = data.targetSavings || 30000;
-  const projData = [];
-  const now2 = new Date();
-  let bal = currentSav;
-  for (let i = 0; i < 13; i++) {
-    const d = new Date(now2.getFullYear(), now2.getMonth() + i, 1);
-    projData.push({ month: d.getMonth(), balance: Math.round(bal) });
-    bal += monthlyNet;
-  }
+  const currentSav = +getEdited('fin.currentSavings', data.currentSavings||0);
+
+  const netCls = F.monthlyNet>0?'good':F.monthlyNet>-500?'warn':'bad';
+  const runway = F.totalRE>0 ? Math.round(F.cashAvail/F.totalRE) : 99;
+  const runwayCls = runway>=6?'good':runway>=3?'warn':'bad';
+  const moToTarget = F.monthlyNet>0 ? Math.max(0,Math.ceil((target-currentSav)/F.monthlyNet)) : 999;
+  const targetCls = moToTarget<=12?'good':moToTarget<=24?'warn':'bad';
 
   let html = `
   <div class="fin-hero">
     <div class="fin-kpi primary">
-      <div class="fin-kpi-num">${fmt(Math.round(netWorth))}₪</div>
+      <div class="fin-kpi-num">${fmtK(F.netWorth)}₪</div>
       <div class="fin-kpi-label">Net Worth</div>
-      <div class="fin-kpi-sub">Cash + Savings + Assets − Debt</div>
+      <div class="fin-kpi-sub">All assets − debt</div>
     </div>
     <div class="fin-kpi">
-      <div class="fin-kpi-num good">${fmt(Math.round(cashAvailable))}₪</div>
+      <div class="fin-kpi-num good">${fmtK(F.cashAvail)}₪</div>
       <div class="fin-kpi-label">Cash Available</div>
-      <div class="fin-kpi-sub">Balances + physical cash</div>
+      <div class="fin-kpi-sub">Accounts + physical cash</div>
     </div>
     <div class="fin-kpi">
-      <div class="fin-kpi-num">${fmt(Math.round(spendingPower))}₪</div>
+      <div class="fin-kpi-num">${fmtK(F.spendPower)}₪</div>
       <div class="fin-kpi-label">Spending Power</div>
       <div class="fin-kpi-sub">Cash + credit lines + cards</div>
     </div>
+  </div>
+
+  <div class="signal-bar">
+    <div class="signal ${netCls}"><div class="sig-dot"></div>${F.monthlyNet>=0?'+':''}${fmtK(F.monthlyNet)}₪/mo net</div>
+    <span class="signal-sep">·</span>
+    <div class="signal ${runwayCls}"><div class="sig-dot"></div>${runway<99?runway+'mo runway':'Runway OK'}</div>
+    <span class="signal-sep">·</span>
+    <div class="signal ${targetCls}"><div class="sig-dot"></div>${moToTarget<999?moToTarget+'mo to 30k':'Add income data'}</div>
   </div>`;
 
-  // Finance signal bar
-  const runway = totalRE > 0 ? Math.round((totalBalance + totalSavings) / totalRE) : 99;
-  const runwayCls = runway >= 6 ? 'good' : runway >= 3 ? 'warn' : 'bad';
-  const netCls2 = monthlyNet > 0 ? 'good' : monthlyNet > -500 ? 'warn' : 'bad';
-  const moToTarget = monthlyNet > 0 ? Math.max(0, Math.ceil((target - currentSav) / monthlyNet)) : 999;
-  const targetCls = moToTarget <= 12 ? 'good' : moToTarget <= 24 ? 'warn' : 'bad';
-  html += `<div class="signal-bar">
-    <div class="signal ${netCls2}"><div class="sig-dot"></div>${monthlyNet >= 0 ? '+' : ''}${fmtK(monthlyNet)}₪/mo net</div>
-    <span class="signal-sep">·</span>
-    <div class="signal ${runwayCls}"><div class="sig-dot"></div>${runway < 99 ? runway+'mo runway' : 'Runway OK'}</div>
-    <span class="signal-sep">·</span>
-    <div class="signal ${targetCls}"><div class="sig-dot"></div>${moToTarget < 999 ? moToTarget+'mo to 30k target' : 'Add income to project'}</div>
+  // INCOME BREAKDOWN (all sources this month)
+  html += `<div class="section-h"><span><span class="num">01</span>Monthly Income</span><div class="line"></div><span class="meta">TOTAL ${fmtK(F.totalMonthlyIn)}₪</span></div>
+  <div class="sources" style="margin-bottom:14px">
+    ${F.bizBreakdown.map(b => `<div class="src tech" onclick="navigate('${b.key}')" style="cursor:pointer">
+      <div class="src-label">${b.label}</div>
+      <div class="src-num">${fmtK(b.income)}<span class="cur">₪</span></div>
+      <div class="src-meta">exp: ${fmtK(b.expense)}₪</div>
+    </div>`).join('')}
+    <div class="src cap">
+      <div class="src-label">Trading</div>
+      <div class="src-num" style="color:${F.tradePnl>=0?'var(--good)':'var(--bad)'}">${F.tradePnl>=0?'+':''}${fmtK(F.tradePnl)}<span class="cur">₪</span></div>
+      <div class="src-meta">this month</div>
+    </div>
+    <div class="src cap">
+      <div class="src-label">RE Cash Flow</div>
+      <div class="src-num" style="color:var(--good)">${fmtK(F.reCashflow)}<span class="cur">₪</span></div>
+      <div class="src-meta">${(data.properties||PAGES['real-estate']?.data?.properties||[]).length} props</div>
+    </div>
   </div>`;
 
-  // Additional assets note
-  html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--line);border-radius:9px;font-size:12px;color:var(--text-2)">
-    <span style="color:var(--text-3);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.12em">Assets (crypto/stocks/RE · manual):</span>
-    <span class="editable" data-edit-key="fin.manualAssets" data-edit-num="${manualAssets}" style="font-size:14px;font-weight:700;color:var(--cyan)">${fmt(manualAssets)}</span><span style="color:var(--text-3);font-size:11px">₪</span>
+  // ASSETS BREAKDOWN
+  html += `<div class="section-h"><span><span class="num">02</span>Assets</span><div class="line"></div><span class="meta">${fmtK(F.totalAssets)}₪ TOTAL</span></div>
+  <div class="attention" style="margin-bottom:14px">
+    <div class="att cyan" onclick="navigate('finance')" style="cursor:pointer">
+      <div class="att-num">${fmtK(F.bankBalance+F.bankSavings)}<span class="cur">₪</span></div>
+      <div class="att-label">Banking</div>
+      <div class="att-detail">${F.accounts.length} accounts</div>
+    </div>
+    <div class="att warn" onclick="navigate('holdings')" style="cursor:pointer">
+      <div class="att-num">${fmtK(F.cryptoVal+F.stockVal)}<span class="cur">₪</span></div>
+      <div class="att-label">Investments</div>
+      <div class="att-detail">Crypto + stocks</div>
+    </div>
+    <div class="att good" onclick="navigate('real-estate')" style="cursor:pointer">
+      <div class="att-num">${fmtK(F.reValue)}<span class="cur">₪</span></div>
+      <div class="att-label">Real Estate</div>
+      <div class="att-detail">${(PAGES['real-estate']?.data?.properties||[]).length} properties</div>
+    </div>
+    <div class="att tech" onclick="navigate('angel')" style="cursor:pointer">
+      <div class="att-num">${fmtK(F.angelPaper)}<span class="cur">₪</span></div>
+      <div class="att-label">Angel</div>
+      <div class="att-detail">Paper value</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--line);border-radius:9px;font-size:12px">
+    <span style="color:var(--text-3);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.12em">Other assets (manual):</span>
+    <span class="editable" data-edit-key="fin.manualAssets" data-edit-num="${+getEdited('fin.manualAssets',0)}" style="font-size:14px;font-weight:700;color:var(--cyan)">${fmt(+getEdited('fin.manualAssets',0))}</span><span style="color:var(--text-3);font-size:11px">₪</span>
   </div>`;
 
   // ACCOUNTS
-  html += `<div class="section-h"><span><span class="num">01</span>Accounts</span><div class="line"></div><span class="meta">BALANCE ${fmt(totalBalance)}₪ · SAVINGS ${fmt(totalSavings)}₪</span></div>
+  html += `<div class="section-h"><span><span class="num">03</span>Accounts</span><div class="line"></div><span class="meta">BALANCE ${fmtK(F.bankBalance)}₪ · SAVINGS ${fmtK(F.bankSavings)}₪</span></div>
     <div class="accounts-grid">`;
-  accounts.forEach(a => {
-    html += `<div class="acct-row">
+  F.accounts.forEach(a => {
+    html += `<div class="acct-row" onclick="addAccount('${a.id}')" style="cursor:pointer">
       <div class="acct-cell"><div class="acct-cell-label">Bank</div><div class="acct-cell-val">${a.bank}</div></div>
-      <div class="acct-cell"><div class="acct-cell-label">Balance</div><div class="acct-cell-val">${renderEditable(`fin.acct.${a.id}.balance`, a.balance, {cur:'₪'})}</div></div>
-      <div class="acct-cell"><div class="acct-cell-label">Savings</div><div class="acct-cell-val good">${renderEditable(`fin.acct.${a.id}.savings`, a.savings, {cur:'₪'})}</div></div>
-      <div class="acct-cell"><div class="acct-cell-label">Credit Line</div><div class="acct-cell-val cyan">${renderEditable(`fin.acct.${a.id}.creditLine`, a.creditLine, {cur:'₪'})}</div></div>
-      <div class="acct-cell"><div class="acct-cell-label">Card Limit</div><div class="acct-cell-val">${renderEditable(`fin.acct.${a.id}.cardLimit`, a.cardLimit, {cur:'₪'})}</div></div>
-      <div class="acct-cell"><button class="acct-del-btn" onclick="delAccount('${a.id}')">×</button></div>
+      <div class="acct-cell"><div class="acct-cell-label">Balance</div><div class="acct-cell-val">${renderEditable(`fin.acct.${a.id}.balance`,a.balance,{cur:'₪'})}</div></div>
+      <div class="acct-cell"><div class="acct-cell-label">Savings</div><div class="acct-cell-val good">${renderEditable(`fin.acct.${a.id}.savings`,a.savings,{cur:'₪'})}</div></div>
+      <div class="acct-cell"><div class="acct-cell-label">Credit</div><div class="acct-cell-val cyan">${renderEditable(`fin.acct.${a.id}.creditLine`,a.creditLine,{cur:'₪'})}</div></div>
+      <div class="acct-cell"><div class="acct-cell-label">Card</div><div class="acct-cell-val">${renderEditable(`fin.acct.${a.id}.cardLimit`,a.cardLimit,{cur:'₪'})}</div></div>
     </div>`;
   });
-  html += `<button class="acct-add-btn" onclick="addAccount()">+ Add bank account</button></div>`;
+  html += `<button class="acct-add-btn" onclick="event.stopPropagation();addAccount()">+ Add bank account</button></div>`;
 
   // DEBT
-  html += `<div class="section-h"><span><span class="num">02</span>Debt</span><div class="line"></div><span class="meta">TOTAL ${fmt(totalDebt)}₪</span></div>
-    <div class="debt-list">`;
-  debts.forEach(d => {
-    const balance = +getEdited(`fin.debt.${d.id}.balance`, d.balance);
-    const paidPct = d.originalBalance > 0 ? Math.round(((d.originalBalance - balance) / d.originalBalance) * 100) : 0;
-    const yrsLeft = Math.round(d.monthsRemaining / 12 * 10) / 10;
-    html += `<div class="debt-row">
+  html += `<div class="section-h"><span><span class="num">04</span>Debt</span><div class="line"></div><span class="meta">TOTAL ${fmtK(F.totalDebt)}₪</span></div><div class="debt-list">`;
+  F.debts.forEach(d => {
+    const balance = +getEdited(`fin.debt.${d.id}.balance`,d.balance);
+    const paidPct = d.originalBalance>0 ? Math.round(((d.originalBalance-balance)/d.originalBalance)*100) : 0;
+    const yrsLeft = Math.round(d.monthsRemaining/12*10)/10;
+    html += `<div class="debt-row" onclick="addDebt('${d.id}')" style="cursor:pointer">
       <div class="debt-top">
         <div class="debt-name">${d.name}</div>
-        ${d.property ? `<div class="debt-tag">${d.property}</div>` : ''}
+        ${d.property?`<div class="debt-tag">${d.property}</div>`:''}
       </div>
       <div class="debt-nums">
-        <div class="debt-num-item"><div class="debt-num-label">Remaining</div><div class="debt-num-val bad">${renderEditable(`fin.debt.${d.id}.balance`, d.balance, {cur:'₪'})}</div></div>
+        <div class="debt-num-item"><div class="debt-num-label">Remaining</div><div class="debt-num-val bad">${renderEditable(`fin.debt.${d.id}.balance`,d.balance,{cur:'₪'})}</div></div>
         <div class="debt-num-item"><div class="debt-num-label">Monthly</div><div class="debt-num-val">${fmt(d.monthly)}₪</div></div>
         <div class="debt-num-item"><div class="debt-num-label">Rate</div><div class="debt-num-val">${d.ratePercent}%</div></div>
-        <div class="debt-num-item"><div class="debt-num-label">Remaining</div><div class="debt-num-val">${yrsLeft}yr</div></div>
+        <div class="debt-num-item"><div class="debt-num-label">Left</div><div class="debt-num-val">${yrsLeft}yr</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="debt-timeline" style="flex:1"><div class="debt-paid" style="width:${paidPct}%"></div></div>
@@ -2050,132 +2807,494 @@ function renderFinanceHub(data) {
   html += `<button class="acct-add-btn" onclick="addDebt()">+ Add debt / loan</button></div>`;
 
   // RECURRING
-  html += `<div class="section-h"><span><span class="num">03</span>Recurring</span><div class="line"></div><span class="meta">NET ${monthlyNet>=0?'+':''}${fmt(monthlyNet)}₪/MO</span></div>
-    <div class="recur-grid">
-      <div class="recur-block">
-        <div class="recur-head"><div class="recur-title">Income</div><div class="recur-total income-t">+${fmt(totalRI)}₪/mo</div></div>`;
-  recurInc.forEach(r => {
-    html += `<div class="recur-item">
-      <span class="recur-item-name">${r.name}</span>
-      <span class="recur-item-freq">${r.frequency}</span>
-      <span class="recur-item-amt">${renderEditable(`fin.ri.${r.id}.amount`, r.amount, {cur:'₪'})}</span>
-      <button class="recur-del" onclick="delRecur('income','${r.id}')">×</button>
+  html += `<div class="section-h"><span><span class="num">05</span>Recurring</span><div class="line"></div><span class="meta">NET ${F.monthlyNet>=0?'+':''}${fmtK(F.monthlyNet)}₪/MO</span></div>
+  <div class="recur-grid">
+    <div class="recur-block">
+      <div class="recur-head"><div class="recur-title">Income</div><div class="recur-total income-t">+${fmtK(F.totalRI)}₪/mo</div></div>`;
+  F.ri.forEach(r => {
+    html += `<div class="recur-item" onclick="addRecur('income','${r.id}')" style="cursor:pointer">
+      <span class="recur-item-name">${r.name}</span><span class="recur-item-freq">${r.frequency}</span>
+      <span class="recur-item-amt">${renderEditable(`fin.ri.${r.id}.amount`,r.amount,{cur:'₪'})}</span>
     </div>`;
   });
   html += `<button class="recur-add" onclick="addRecur('income')">+ Add recurring income</button></div>
-      <div class="recur-block">
-        <div class="recur-head"><div class="recur-title">Expenses</div><div class="recur-total expense-t">−${fmt(totalRE)}₪/mo</div></div>`;
-  recurExp.forEach(r => {
-    html += `<div class="recur-item">
-      <span class="recur-item-name">${r.name}${r.fromDebt?' 🔗':''}</span>
-      <span class="recur-item-freq">${r.frequency}</span>
-      <span class="recur-item-amt">${renderEditable(`fin.re.${r.id}.amount`, r.amount, {cur:'₪'})}</span>
-      <button class="recur-del" onclick="delRecur('expense','${r.id}')">×</button>
+    <div class="recur-block">
+      <div class="recur-head"><div class="recur-title">Expenses</div><div class="recur-total expense-t">−${fmtK(F.totalRE)}₪/mo</div></div>`;
+  F.re.forEach(r => {
+    html += `<div class="recur-item" onclick="addRecur('expense','${r.id}')" style="cursor:pointer">
+      <span class="recur-item-name">${r.name}${r.fromDebt?' 🔗':''}</span><span class="recur-item-freq">${r.frequency}</span>
+      <span class="recur-item-amt">${renderEditable(`fin.re.${r.id}.amount`,r.amount,{cur:'₪'})}</span>
     </div>`;
   });
   html += `<button class="recur-add" onclick="addRecur('expense')">+ Add recurring expense</button></div>
-    </div>`;
+  </div>`;
 
   // PROJECTION CHART
-  const maxProjVal = Math.max(...projData.map(p => p.balance), target, 1);
-  const minProjVal = Math.min(...projData.map(p => p.balance), 0);
-  const projRange = maxProjVal - minProjVal || 1;
-  const W2 = 520, H2 = 110, pL = 55, pR = 10, pT = 14, pB = 22;
-  const cW = W2 - pL - pR, cH = H2 - pT - pB;
-  const toX2 = i => pL + (i / (projData.length-1)) * cW;
-  const toY2 = v => pT + cH - ((v - minProjVal) / projRange) * cH;
-  const pts2 = projData.map((d,i) => `${toX2(i).toFixed(1)},${toY2(d.balance).toFixed(1)}`).join(' ');
-  const targetY2 = toY2(target);
-  const areaBottom = pT + cH;
-
-  let projSvg = `<svg viewBox="0 0 ${W2} ${H2}" width="100%" style="display:block">`;
-  [0,0.25,0.5,0.75,1].forEach(t => {
-    const y = pT + t*cH;
-    const v = Math.round(maxProjVal - t*projRange);
-    projSvg += `<line x1="${pL}" y1="${y.toFixed(1)}" x2="${W2-pR}" y2="${y.toFixed(1)}" stroke="#0f1626" stroke-width="1"/>`;
-    projSvg += `<text x="${pL-3}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="8" font-family="JetBrains Mono,monospace">${fmtK(v)}₪</text>`;
-  });
-  if (target > minProjVal && target < maxProjVal) {
-    projSvg += `<line x1="${pL}" y1="${targetY2.toFixed(1)}" x2="${W2-pR}" y2="${targetY2.toFixed(1)}" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5 3"/>`;
-    projSvg += `<text x="${W2-pR+2}" y="${(targetY2+3.5).toFixed(1)}" fill="#fbbf24" font-size="7.5" font-family="JetBrains Mono,monospace">30k</text>`;
+  const projData = [];
+  const now2 = new Date();
+  let bal = currentSav;
+  for (let i = 0; i < 13; i++) {
+    const d = new Date(now2.getFullYear(), now2.getMonth()+i, 1);
+    projData.push({ month: d.getMonth(), balance: Math.round(bal) });
+    bal += F.monthlyNet;
   }
-  projSvg += `<polygon points="${pL},${areaBottom} ${pts2} ${(W2-pR).toFixed(1)},${areaBottom}" fill="rgba(56,189,248,0.06)" stroke="none"/>`;
-  projSvg += `<polyline points="${pts2}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
-  projData.forEach((d,i) => {
-    if (i % 4 === 0 || i === projData.length-1) {
-      projSvg += `<circle cx="${toX2(i).toFixed(1)}" cy="${toY2(d.balance).toFixed(1)}" r="3" fill="#38bdf8"/>`;
-      projSvg += `<text x="${toX2(i).toFixed(1)}" y="${H2-4}" text-anchor="middle" fill="#64748b" font-size="8" font-family="JetBrains Mono,monospace">${MSHORT[d.month]}</text>`;
-    }
-  });
-  projSvg += `</svg>`;
+  const maxPV = Math.max(...projData.map(p=>p.balance), target, 1);
+  const minPV = Math.min(...projData.map(p=>p.balance), 0);
+  const rangeV = maxPV - minPV || 1;
+  const W2=540,H2=110,pL=55,pR=12,pT=14,pB=22;
+  const cW=W2-pL-pR,cH=H2-pT-pB;
+  const toX2=i=>pL+(i/(projData.length-1))*cW;
+  const toY2=v=>pT+cH-((v-minPV)/rangeV)*cH;
+  const pts2=projData.map((d,i)=>`${toX2(i).toFixed(1)},${toY2(d.balance).toFixed(1)}`).join(' ');
+  const tY2=toY2(target);
+  let pSvg=`<svg viewBox="0 0 ${W2} ${H2}" width="100%" style="display:block">`;
+  [0,.25,.5,.75,1].forEach(t=>{const y2=pT+t*cH;const v=Math.round(maxPV-t*rangeV);pSvg+=`<line x1="${pL}" y1="${y2.toFixed(1)}" x2="${W2-pR}" y2="${y2.toFixed(1)}" stroke="#0f1626" stroke-width="1"/>`;pSvg+=`<text x="${pL-3}" y="${(y2+3.5).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="8" font-family="JetBrains Mono,monospace">${fmtK(v)}₪</text>`;});
+  if(target>minPV&&target<maxPV){pSvg+=`<line x1="${pL}" y1="${tY2.toFixed(1)}" x2="${W2-pR}" y2="${tY2.toFixed(1)}" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5 3"/>`;pSvg+=`<text x="${W2-pR+3}" y="${(tY2+3.5).toFixed(1)}" fill="#fbbf24" font-size="7.5" font-family="JetBrains Mono,monospace">30k</text>`;}
+  pSvg+=`<polygon points="${pL},${pT+cH} ${pts2} ${(W2-pR).toFixed(1)},${pT+cH}" fill="rgba(56,189,248,0.07)" stroke="none"/>`;
+  pSvg+=`<polyline points="${pts2}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  projData.forEach((d,i)=>{if(i%4===0||i===projData.length-1){pSvg+=`<circle cx="${toX2(i).toFixed(1)}" cy="${toY2(d.balance).toFixed(1)}" r="3" fill="#38bdf8"/>`;pSvg+=`<text x="${toX2(i).toFixed(1)}" y="${H2-4}" text-anchor="middle" fill="#64748b" font-size="8" font-family="JetBrains Mono,monospace">${MSHORT[d.month]}</text>`;}});
+  pSvg+=`</svg>`;
 
-  html += `<div class="section-h"><span><span class="num">04</span>12-Month Projection</span><div class="line"></div><span class="meta">NET ${monthlyNet>=0?'+':''}${fmtK(monthlyNet)}₪/MO</span></div>
-    <div class="proj-chart-wrap">
-      <div class="proj-chart-head">
-        <div class="proj-chart-title">Savings Trajectory</div>
-        <div class="proj-legend">
-          <div class="proj-legend-item"><div class="proj-legend-line" style="background:#38bdf8"></div>Balance</div>
-          <div class="proj-legend-item"><div class="proj-legend-line" style="background:transparent;border-top:2px dashed #fbbf24"></div>30k target</div>
-        </div>
+  html += `<div class="section-h"><span><span class="num">06</span>12-Month Projection</span><div class="line"></div><span class="meta">NET ${F.monthlyNet>=0?'+':''}${fmtK(F.monthlyNet)}₪/MO</span></div>
+  <div class="proj-chart-wrap">
+    <div class="proj-chart-head">
+      <div class="proj-chart-title">Savings Trajectory</div>
+      <div class="proj-legend">
+        <div class="proj-legend-item"><div class="proj-legend-line" style="background:#38bdf8"></div>Balance</div>
+        <div class="proj-legend-item"><div class="proj-legend-line" style="border-top:2px dashed #fbbf24"></div>30k target</div>
       </div>
-      ${projSvg}
-      <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
-        <span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">Current savings basis:</span>
-        <span class="editable" data-edit-key="fin.currentSavings" data-edit-num="${currentSav}" style="font-size:12px;font-weight:600;color:var(--cyan)">${fmt(currentSav)}</span>
-        <span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">₪ · Hit target in ~${monthlyNet > 0 ? Math.max(0,Math.ceil((target-currentSav)/monthlyNet)) : '∞'} months</span>
-      </div>
-    </div>`;
+    </div>
+    ${pSvg}
+    <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">Savings base:</span>
+      <span class="editable" data-edit-key="fin.currentSavings" data-edit-num="${currentSav}" style="font-size:12px;font-weight:600;color:var(--cyan)">${fmt(currentSav)}</span>
+      <span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">₪ · Hit target in ~${F.monthlyNet>0?Math.max(0,Math.ceil((target-currentSav)/F.monthlyNet)):'∞'} months</span>
+      <button onclick="AUTH.changePassword()" style="margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--text-3);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:var(--mono)">🔑 Change password</button>
+    </div>
+  </div>`;
 
   return html;
 }
 
-// Finance action handlers
-window.addAccount = function() {
-  const name = prompt('Bank name:');
-  if (!name) return;
-  const balance = +(prompt('Current balance (₪):') || 0);
-  const savings = +(prompt('Savings balance (₪):') || 0);
-  const cl = +(prompt('Credit line (₪):') || 0);
-  const card = +(prompt('Card limit (₪):') || 0);
-  const id = 'acct-'+Date.now();
-  PAGES['finance'].data.accounts.push({id, bank:name, balance, savings, creditLine:cl, cardLimit:card});
+
+// Finance action handlers — modal-based, write-through to Supabase
+window.addAccount = async function(existingId) {
+  const ex = existingId ? PAGES['finance'].data.accounts.find(a=>a.id===existingId) : null;
+  const r = await openModal({title:existingId?'Edit Account':'Add Bank Account', icon:'🏦', saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId?'Delete account':null,
+    fields:[
+      {id:'bank',     label:'Bank Name',       placeholder:'Bank Hapoalim', value:ex?.bank||''},
+      {id:'balance',  label:'Balance (₪)',      type:'number', placeholder:'0', value:ex?.balance||''},
+      {id:'savings',  label:'Savings (₪)',      type:'number', placeholder:'0', value:ex?.savings||''},
+      {id:'cl',       label:'Credit Line (₪)',  type:'number', placeholder:'0', value:ex?.creditLine||''},
+      {id:'card',     label:'Card Limit (₪)',   type:'number', placeholder:'0', value:ex?.cardLimit||''},
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && existingId) {
+    sbDelete('cockpit_bank_accounts', `id=eq.${existingId}`);
+    PAGES['finance'].data.accounts = PAGES['finance'].data.accounts.filter(a=>a.id!==existingId);
+    return renderPage('finance');
+  }
+  const v = r.values;
+  const row = {bank_name:v.bank,balance:+v.balance,savings:+v.savings,credit_line:+v.cl,card_limit:+v.card,sort_order:PAGES['finance'].data.accounts.length+1};
+  if (existingId) {
+    PAGES['finance'].data.accounts = PAGES['finance'].data.accounts.map(a=>a.id===existingId?{...a,bank:v.bank,balance:+v.balance,savings:+v.savings,creditLine:+v.cl,cardLimit:+v.card}:a);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_bank_accounts?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+    renderPage('finance');
+  } else {
+    sbUpsert('cockpit_bank_accounts', row).then(()=>sbGet('cockpit_bank_accounts','?order=sort_order').then(rows=>{
+      PAGES['finance'].data.accounts = rows.map(a=>({id:a.id,bank:a.bank_name,balance:a.balance,savings:a.savings,creditLine:a.credit_line,cardLimit:a.card_limit}));
+      renderPage('finance');
+    }));
+  }
+};
+window.delAccount = function(id) { window.addAccount(id); };
+
+window.addDebt = async function(existingId) {
+  const ex = existingId ? PAGES['finance'].data.debt.find(d=>d.id===existingId) : null;
+  const r = await openModal({title:existingId?'Edit Debt':'Add Debt / Loan', icon:'📋', saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId?'Delete debt':null,
+    fields:[
+      {id:'name',     label:'Name',                   placeholder:'Mortgage — Tel Aviv',  value:ex?.name||''},
+      {id:'balance',  label:'Remaining Balance (₪)',   type:'number', placeholder:'800000', value:ex?.balance||''},
+      {id:'monthly',  label:'Monthly Payment (₪)',     type:'number', placeholder:'3500',  value:ex?.monthly||''},
+      {id:'months',   label:'Months Remaining',        type:'number', placeholder:'264',   value:ex?.monthsRemaining||''},
+      {id:'rate',     label:'Interest Rate (%)',        type:'number', placeholder:'3.5',  value:ex?.ratePercent||'', step:'0.01'},
+      {id:'prop',     label:'Linked Property',          placeholder:'Apartment TLV',       value:ex?.property||''},
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && existingId) {
+    sbDelete('cockpit_debt', `id=eq.${existingId}`);
+    PAGES['finance'].data.debt = PAGES['finance'].data.debt.filter(d=>d.id!==existingId);
+    return renderPage('finance');
+  }
+  const v = r.values;
+  const row = {name:v.name,balance:+v.balance,original_balance:ex?.originalBalance||+v.balance,monthly_payment:+v.monthly,rate_percent:+v.rate,months_remaining:+v.months,property_link:v.prop};
+  if (existingId) {
+    PAGES['finance'].data.debt = PAGES['finance'].data.debt.map(d=>d.id===existingId?{...d,name:v.name,balance:+v.balance,monthly:+v.monthly,ratePercent:+v.rate,monthsRemaining:+v.months,property:v.prop}:d);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_debt?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+  } else {
+    if (+v.monthly>0) sbUpsert('cockpit_recurring',{type:'expense',name:v.name,amount:+v.monthly,frequency:'monthly',active:true,from_debt:true});
+    sbUpsert('cockpit_debt', row).then(()=>sbGet('cockpit_debt').then(rows=>{
+      PAGES['finance'].data.debt = rows.map(d=>({id:d.id,name:d.name,balance:d.balance,originalBalance:d.original_balance,monthly:d.monthly_payment,ratePercent:d.rate_percent,monthsRemaining:d.months_remaining,property:d.property_link||''}));
+    }));
+  }
   renderPage('finance');
 };
-window.delAccount = function(id) {
-  PAGES['finance'].data.accounts = PAGES['finance'].data.accounts.filter(a => a.id !== id);
-  renderPage('finance');
-};
-window.addDebt = function() {
-  const name = prompt('Debt name (e.g. Mortgage, Car loan):');
-  if (!name) return;
-  const balance    = +(prompt('Current balance (₪):') || 0);
-  const monthly    = +(prompt('Monthly payment (₪):') || 0);
-  const months     = +(prompt('Months remaining:') || 0);
-  const rate       = +(prompt('Interest rate (%):') || 0);
-  const property   = prompt('Linked property (optional):') || '';
-  const id = 'd-'+Date.now();
-  PAGES['finance'].data.debt.push({id, name, balance, originalBalance:balance, monthly, monthsRemaining:months, ratePercent:rate, property});
-  if (monthly > 0) PAGES['finance'].data.recurringExpenses.push({id:'re-'+id, name, amount:monthly, frequency:'monthly', active:true, fromDebt:true});
-  renderPage('finance');
-};
-window.addRecur = function(type) {
-  const name = prompt(`${type==='income'?'Income':'Expense'} name:`);
-  if (!name) return;
-  const amount = +(prompt('Amount (₪):') || 0);
-  const frequency = prompt('Frequency (monthly/quarterly/annual):') || 'monthly';
-  const id = (type==='income'?'ri-':'re-')+Date.now();
-  if (type==='income') PAGES['finance'].data.recurringIncome.push({id, name, amount, frequency, active:true});
-  else PAGES['finance'].data.recurringExpenses.push({id, name, amount, frequency, active:true, fromDebt:false});
-  renderPage('finance');
+
+window.addRecur = async function(type, existingId) {
+  const ex = existingId ? [...PAGES['finance'].data.recurringIncome,...PAGES['finance'].data.recurringExpenses].find(r=>r.id===existingId) : null;
+  const r = await openModal({title:existingId?'Edit Recurring':'Add Recurring '+type, icon:type==='income'?'💰':'💸', saveLabel:existingId?'Update':'Add',
+    deleteLabel:existingId&&!ex?.fromDebt?'Delete':null,
+    fields:[
+      {id:'name',   label:'Name',       placeholder:type==='income'?'Client Retainer':'Subscription', value:ex?.name||''},
+      {id:'amount', label:'Amount (₪)', type:'number', placeholder:'0', value:ex?.amount||''},
+      {id:'freq',   label:'Frequency',  type:'select',  options:['monthly','quarterly','annual'], value:ex?.frequency||'monthly'},
+    ]
+  });
+  if (r.action==='cancel') return;
+  const v = r.values;
+  if (r.action==='delete' && existingId) { window.delRecur(type, existingId); return; }
+  const row = {type,name:v.name,amount:+v.amount,frequency:v.freq,active:true,from_debt:ex?.fromDebt||false,sort_order:99};
+  if (existingId) {
+    if (type==='income') PAGES['finance'].data.recurringIncome = PAGES['finance'].data.recurringIncome.map(x=>x.id===existingId?{...x,name:v.name,amount:+v.amount,frequency:v.freq}:x);
+    else PAGES['finance'].data.recurringExpenses = PAGES['finance'].data.recurringExpenses.map(x=>x.id===existingId?{...x,name:v.name,amount:+v.amount,frequency:v.freq}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_recurring?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+    renderPage('finance');
+  } else {
+    sbUpsert('cockpit_recurring', row).then(()=>sbGet('cockpit_recurring','?order=sort_order').then(rows=>{
+      PAGES['finance'].data.recurringIncome   = rows.filter(x=>x.type==='income').map(x=>({id:x.id,name:x.name,amount:x.amount,frequency:x.frequency,active:x.active}));
+      PAGES['finance'].data.recurringExpenses = rows.filter(x=>x.type==='expense').map(x=>({id:x.id,name:x.name,amount:x.amount,frequency:x.frequency,active:x.active,fromDebt:x.from_debt}));
+      renderPage('finance');
+    }));
+  }
 };
 window.delRecur = function(type, id) {
-  if (type==='income') PAGES['finance'].data.recurringIncome = PAGES['finance'].data.recurringIncome.filter(r => r.id !== id);
-  else PAGES['finance'].data.recurringExpenses = PAGES['finance'].data.recurringExpenses.filter(r => r.id !== id);
+  sbDelete('cockpit_recurring', `id=eq.${id}`);
+  if (type==='income') PAGES['finance'].data.recurringIncome = PAGES['finance'].data.recurringIncome.filter(r=>r.id!==id);
+  else PAGES['finance'].data.recurringExpenses = PAGES['finance'].data.recurringExpenses.filter(r=>r.id!==id);
   renderPage('finance');
 };
 const mainEl  = document.getElementById('main');
 const railEl  = document.getElementById('rail');
 const crumbEl = document.getElementById('crumbs');
+
+// ══════════════════════════════════════════════════
+// V3 FEATURES
+// ══════════════════════════════════════════════════
+
+// ── Notification Badges ──────────────────────────
+function computeBadges() {
+  const now = new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const badges = {};
+  const delayed = getMField('autoscale',y,m,'delayed',0);
+  if (delayed > 0 && now.getDate() > 7) badges['autoscale'] = {count:1, type:'bad', tip:`${fmtK(delayed)}₪ delayed`};
+  let tradePnl=0;
+  for(let d=1;d<=31;d++){const v=safe.get(`cockpit.trade.${y}.${m}.${d}`);if(v)tradePnl+=parseFloat(v)||0;}
+  if (tradePnl < -500) badges['trading'] = {count:1, type:'warn', tip:`${fmtK(tradePnl)}₪ P&L`};
+  const skillsPage = PAGES['skills']?.data?.skills||[];
+  const stalledSkills = skillsPage.filter(s=>s.pct===0).length;
+  if (stalledSkills > 0) badges['skills'] = {count:stalledSkills, type:'info', tip:`${stalledSkills} skills at 0%`};
+  return badges;
+}
+function updateBadges() {
+  const badges = computeBadges();
+  document.querySelectorAll('.nav-item').forEach(el => {
+    const page = el.dataset.page;
+    el.querySelector('.nav-badge')?.remove();
+    if (badges[page]) {
+      const b = document.createElement('span');
+      b.className = `nav-badge ${badges[page].type}`;
+      b.textContent = badges[page].count;
+      b.title = badges[page].tip;
+      el.appendChild(b);
+    }
+  });
+}
+
+// ── Relocation ETA ───────────────────────────────
+function computeRelocationETA() {
+  const now = new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const currentSav = +getEdited('fin.currentSavings', 8000);
+  const target = 30000; const mrrTarget = 6000;
+  const F = computeFinancials();
+  const bizIncome = getMField('autoscale', y, m, 'income', 7500);
+  let prevY=y, prevM=m-1; if(prevM<0){prevM=11;prevY--;}
+  const prevIncome = getMField('autoscale', prevY, prevM, 'income', 0);
+  const mrrGrowth = bizIncome - prevIncome;
+  const moToSav = F.monthlyNet>0 ? Math.max(0,Math.ceil((target-currentSav)/F.monthlyNet)) : 999;
+  const moToMrr = bizIncome>=mrrTarget ? 0 : (mrrGrowth>0 ? Math.ceil((mrrTarget-bizIncome)/mrrGrowth) : 999);
+  const moToGo  = Math.max(moToSav, moToMrr);
+  const constraint = moToSav >= moToMrr ? 'savings' : 'MRR';
+  const savPct = Math.min(Math.round((currentSav/target)*100),100);
+  const mrrPct = Math.min(Math.round((bizIncome/mrrTarget)*100),100);
+  return { moToGo, moToSav, moToMrr, constraint, savPct, mrrPct, currentSav, target, bizIncome, mrrTarget };
+}
+function renderRelocationETA() {
+  const E = computeRelocationETA();
+  const etaLabel = E.moToGo>=999?'∞':E.moToGo<=0?'🚀 Ready!':E.moToGo+' months';
+  const etaColor = E.moToGo<=6?'var(--good)':E.moToGo<=18?'var(--warn)':'var(--bad)';
+  const constraintNote = E.moToGo<=0?'Both targets hit!': `${E.constraint}: ${E.constraint==='savings'?fmtK(E.currentSav)+'/30k₪':fmtK(E.bizIncome)+'/6k₪'}`;
+  return `<div class="relocation-eta">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div><div class="eta-headline" style="color:${etaColor}">${etaLabel}</div><div class="eta-sub">to Thailand at current pace · ${constraintNote}</div></div>
+      <div class="signal ${E.moToGo<=12?'good':E.moToGo<=24?'warn':'bad'}"><div class="sig-dot"></div>${E.moToGo<=0?'Ready to go!':'On track'}</div>
+    </div>
+    <div class="eta-bars">
+      <div class="eta-bar-item"><div class="eta-bar-label"><span>Savings</span><span style="color:var(--text-1)">${fmtK(E.currentSav)} / 30k₪</span></div><div class="eta-bar-track"><div class="eta-bar-fill" style="width:${E.savPct}%;background:${E.savPct>=100?'var(--good)':'var(--cyan)'}"></div></div></div>
+      <div class="eta-bar-item"><div class="eta-bar-label"><span>MRR</span><span style="color:var(--text-1)">${fmtK(E.bizIncome)} / 6k₪</span></div><div class="eta-bar-track"><div class="eta-bar-fill" style="width:${E.mrrPct}%;background:${E.mrrPct>=100?'var(--good)':'var(--tech)'}"></div></div></div>
+    </div>
+  </div>`;
+}
+
+// ── Client Manager ───────────────────────────────
+let _clients = [];
+function renderClientManager(pageKey) {
+  const clients = _clients;
+  const activeMRR = clients.filter(c=>c.status==='active').reduce((s,c)=>s+c.mrr,0);
+  const statusColor = {active:'var(--good)',delayed:'var(--warn)',churned:'var(--bad)',prospect:'var(--text-3)'};
+  let html = `<div class="section-h"><span><span class="num">04</span>Clients</span><div class="line"></div><span class="meta">MRR <span style="color:var(--good);font-family:var(--mono);font-weight:700">${fmtK(activeMRR)}₪</span></span></div>
+    <div class="panel" style="margin-bottom:12px"><div class="panel-head"><div class="panel-title">Client List</div><button class="ap-add" onclick="editClient(null,'${pageKey}')">+ Add</button></div>
+    <table class="client-table"><tr><th>Client</th><th>Type</th><th>Status</th><th>MRR</th><th>Next Invoice</th><th>Hours</th></tr>`;
+  if (!clients.length) html += `<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:20px;font-size:12px">No clients — click + Add</td></tr>`;
+  clients.forEach(c => {
+    const hp = c.hours_bank>0?Math.min(Math.round((c.hours_used/c.hours_bank)*100),100):0;
+    html += `<tr onclick="editClient('${c.id}','${pageKey}')">
+      <td><div class="client-name">${c.name}</div>${c.notes?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">${c.notes.slice(0,55)}${c.notes.length>55?'…':''}</div>`:''}</td>
+      <td><span class="client-type ${c.contract_type}">${c.contract_type}</span></td>
+      <td><span class="client-status" style="color:${statusColor[c.status]}">● ${c.status}</span></td>
+      <td style="font-family:var(--mono);color:${c.status==='active'?'var(--good)':'var(--text-2)'}">${c.mrr>0?fmtK(c.mrr)+'₪':'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${c.next_invoice_date||'—'}</td>
+      <td>${c.hours_bank>0?`<span style="font-family:var(--mono);font-size:10px">${c.hours_used||0}/${c.hours_bank}h</span><div class="hours-bar"><div class="hours-fill" style="width:${hp}%"></div></div>`:'—'}</td>
+    </tr>`;
+  });
+  html += `</table></div>`;
+  return html;
+}
+window.editClient = async function(id, pageKey) {
+  const c = id ? _clients.find(x=>x.id===id) : null;
+  const r = await openModal({title:id?'Edit Client':'Add Client', icon:'👤', saveLabel:id?'Update':'Add', deleteLabel:id?'Remove client':null,
+    fields:[
+      {id:'name',      label:'Client Name',        placeholder:'Oren Ohayon Harel', value:c?.name||''},
+      {id:'contract',  label:'Type', type:'select', options:['retainer','project','one-off'], value:c?.contract_type||'retainer'},
+      {id:'status',    label:'Status', type:'select',options:['active','delayed','churned','prospect'], value:c?.status||'active'},
+      {id:'mrr',       label:'Monthly Amount (₪)',  type:'number', placeholder:'0', value:c?.mrr||''},
+      {id:'invoice',   label:'Next Invoice Date',   type:'date',   value:c?.next_invoice_date||''},
+      {id:'hours_bank',label:'Hours Bank',          type:'number', placeholder:'0', value:c?.hours_bank||''},
+      {id:'hours_used',label:'Hours Used',          type:'number', placeholder:'0', value:c?.hours_used||''},
+      {id:'notes',     label:'Notes',               type:'textarea',value:c?.notes||'',rows:2},
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && id) { _clients=_clients.filter(x=>x.id!==id); sbDelete('cockpit_clients',`id=eq.${id}`); return renderPage(safe.get('cockpit.page')||'autoscale'); }
+  const v = r.values;
+  const row={name:v.name,mrr:+v.mrr,contract_type:v.contract,status:v.status,next_invoice_date:v.invoice||null,hours_bank:+v.hours_bank||0,hours_used:+v.hours_used||0,notes:v.notes,page_key:pageKey||'autoscale'};
+  if (id) { _clients=_clients.map(x=>x.id===id?{...x,...row,id}:x); fetch(`${SUPA_URL}/rest/v1/cockpit_clients?id=eq.${id}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{}); }
+  else { _clients.push({...row,id:'tmp-'+Date.now()}); sbUpsert('cockpit_clients',row).then(()=>sbGet('cockpit_clients','?order=created_at').then(rows=>{_clients=rows;})); }
+  renderPage(safe.get('cockpit.page')||'autoscale');
+};
+
+// ── Pipeline ─────────────────────────────────────
+let _pipeline = [];
+const STAGE_COLORS = {cold:'var(--text-3)',warm:'var(--warn)',proposal:'var(--cyan)',won:'var(--good)',lost:'var(--bad)'};
+const STAGES = ['cold','warm','proposal','won','lost'];
+
+function renderPipeline(pageKey) {
+  const leads = _pipeline;
+  const wonVal = leads.filter(l=>l.stage==='won').reduce((s,l)=>s+l.expected_value,0);
+  const pipeVal = leads.filter(l=>l.stage!=='won'&&l.stage!=='lost').reduce((s,l)=>s+l.expected_value,0);
+  const wonN = leads.filter(l=>l.stage==='won').length;
+  const closedN = leads.filter(l=>l.stage==='won'||l.stage==='lost').length;
+  const conv = closedN>0?Math.round((wonN/closedN)*100):0;
+  let html = `<div class="section-h"><span><span class="num">05</span>Pipeline</span><div class="line"></div><span class="meta">OPEN ${fmtK(pipeVal)}₪ · WON ${fmtK(wonVal)}₪ · CONV ${conv}%</span></div>
+    <div class="pipeline-board">`;
+  STAGES.forEach(stage => {
+    const sl = leads.filter(l=>l.stage===stage);
+    const sv = sl.reduce((s,l)=>s+l.expected_value,0);
+    html += `<div class="pipeline-col ${stage}"><div class="pipeline-col-head"><div class="pipeline-col-title" style="color:${STAGE_COLORS[stage]}">${stage}</div><div class="pipeline-col-count">${sl.length}${sv>0?' · '+fmtK(sv)+'₪':''}</div></div>`;
+    sl.forEach(l => { html += `<div class="pipeline-card" onclick="editLead('${l.id}','${pageKey}')"><div class="pipeline-card-name">${l.name}</div>${l.expected_value>0?`<div class="pipeline-card-val">${fmtK(l.expected_value)}₪</div>`:''}<div class="pipeline-card-src">${l.source||''}</div></div>`; });
+    html += `</div>`;
+  });
+  html += `</div><button class="acct-add-btn" onclick="editLead(null,'${pageKey}')">+ Add lead</button>`;
+  return html;
+}
+window.editLead = async function(id, pageKey) {
+  const l = id ? _pipeline.find(x=>x.id===id) : null;
+  const r = await openModal({title:id?'Edit Lead':'Add Lead', icon:'◆', saveLabel:id?'Update':'Add', deleteLabel:id?'Remove':null,
+    fields:[
+      {id:'name',  label:'Name',                  placeholder:'Eli — funnel project', value:l?.name||''},
+      {id:'source',label:'Source',                placeholder:'referral / cold',        value:l?.source||''},
+      {id:'value', label:'Expected Value (₪)',    type:'number', placeholder:'12000',  value:l?.expected_value||''},
+      {id:'stage', label:'Stage', type:'select',  options:STAGES, value:l?.stage||'cold'},
+      {id:'contact',label:'Contact',              placeholder:'Name / phone',           value:l?.contact||''},
+      {id:'notes', label:'Notes', type:'textarea',value:l?.notes||'',rows:2},
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && id) { _pipeline=_pipeline.filter(x=>x.id!==id); sbDelete('cockpit_pipeline',`id=eq.${id}`); return renderPage(safe.get('cockpit.page')||'autoscale'); }
+  const v=r.values;
+  const row={name:v.name,source:v.source,expected_value:+v.value,stage:v.stage,contact:v.contact,notes:v.notes,page_key:pageKey||'autoscale'};
+  if (id) { _pipeline=_pipeline.map(x=>x.id===id?{...x,...row,id}:x); fetch(`${SUPA_URL}/rest/v1/cockpit_pipeline?id=eq.${id}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{}); }
+  else { _pipeline.push({...row,id:'tmp-'+Date.now()}); sbUpsert('cockpit_pipeline',row).then(()=>sbGet('cockpit_pipeline','?order=created_at').then(rows=>{_pipeline=rows;})); }
+  renderPage(safe.get('cockpit.page')||'autoscale');
+};
+
+// ── Trading Journal ──────────────────────────────
+let _trades = [];
+function renderTradingJournal(pageKey, y, m) {
+  const monthStr=`${y}-${String(m+1).padStart(2,'0')}`;
+  const mt=_trades.filter(t=>t.trade_date?.startsWith(monthStr)).sort((a,b)=>a.trade_date.localeCompare(b.trade_date));
+  const wins=mt.filter(t=>t.pnl>0), losses=mt.filter(t=>t.pnl<0);
+  const wr=mt.length>0?Math.round((wins.length/mt.length)*100):0;
+  const avgW=wins.length>0?Math.round(wins.reduce((s,t)=>s+t.pnl,0)/wins.length):0;
+  const avgL=losses.length>0?Math.round(losses.reduce((s,t)=>s+t.pnl,0)/losses.length):0;
+  const avgR=mt.length>0?(mt.reduce((s,t)=>s+(t.risk_amount?t.pnl/t.risk_amount:0),0)/mt.length).toFixed(2):'—';
+  const INSTR_COLORS={NQ:'var(--cyan)',ES:'var(--tech)',MNQ:'var(--cap)',MES:'var(--good)',YM:'var(--warn)',OTHER:'var(--text-2)'};
+  let html=`<div class="section-h"><span><span class="num">02</span>Trade Journal</span><div class="line"></div><span class="meta">${mt.length} TRADES · ${wr}% WIN</span></div>
+  <div class="trade-stats-row" style="margin-bottom:12px">
+    <div class="ts-card"><div class="ts-num">${mt.length}</div><div class="ts-label">Trades</div></div>
+    <div class="ts-card"><div class="ts-num ${wr>=50?'good':'bad'}">${wr}%</div><div class="ts-label">Win Rate</div></div>
+    <div class="ts-card"><div class="ts-num good">${avgW>0?'+'+avgW+'₪':'—'}</div><div class="ts-label">Avg Winner</div></div>
+    <div class="ts-card"><div class="ts-num">${avgR}R</div><div class="ts-label">Avg R</div></div>
+  </div>
+  <div class="trade-log"><div class="trade-log-head"><div class="trade-log-title">Trade Log — ${MNAMES[m]} ${y}</div>
+    <button class="ap-add" onclick="editTradeEntry(null,'${y}-${String(m+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}')">+ Log trade</button></div>`;
+  if(!mt.length) html+=`<div style="text-align:center;padding:24px;color:var(--text-3);font-size:12px;font-family:var(--mono)">No trades logged — click + Log trade</div>`;
+  else {
+    html+=`<table class="trade-table"><tr><th>Date</th><th>Instr.</th><th>Dir</th><th>Entry</th><th>Exit</th><th>P&L</th><th>R</th><th>Notes</th></tr>`;
+    mt.forEach(t=>{
+      const r2=t.risk_amount&&t.risk_amount>0?(t.pnl/t.risk_amount).toFixed(1):'—';
+      html+=`<tr onclick="editTradeEntry('${t.id}','${t.trade_date}')">
+        <td>${t.trade_date?.slice(8)||'?'}</td>
+        <td style="color:${INSTR_COLORS[t.instrument]||'var(--text-2)'}">● ${t.instrument}</td>
+        <td class="trade-dir-${t.direction}">${t.direction==='long'?'▲':'▼'} ${t.direction}</td>
+        <td>${t.entry_price||'—'}</td><td>${t.exit_price||'—'}</td>
+        <td class="trade-pnl ${t.pnl>=0?'pos':'neg'}">${t.pnl>=0?'+':''}${fmt(t.pnl)}₪</td>
+        <td style="color:${r2>0?'var(--good)':r2<0?'var(--bad)':'var(--text-3)'}">${r2!=='—'?r2+'R':r2}</td>
+        <td style="color:var(--text-3);font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.notes||''}</td>
+      </tr>`;
+    });
+    html+=`</table>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+window.editTradeEntry = async function(id, defaultDate) {
+  const t = id?_trades.find(x=>x.id===id):null;
+  const r = await openModal({title:id?'Edit Trade':'Log Trade', icon:'📊', saveLabel:id?'Update':'Save', deleteLabel:id?'Delete':null,
+    fields:[
+      {id:'date',       label:'Date',              type:'date',   value:t?.trade_date||defaultDate||new Date().toISOString().split('T')[0]},
+      {id:'instrument', label:'Instrument',         type:'select', options:['NQ','ES','MNQ','MES','YM','RTY','CL','GC','OTHER'], value:t?.instrument||'NQ'},
+      {id:'direction',  label:'Direction',          type:'select', options:['long','short'], value:t?.direction||'long'},
+      {id:'entry',      label:'Entry Price',        type:'number', placeholder:'21050', value:t?.entry_price||'', step:'0.25'},
+      {id:'exit',       label:'Exit Price',         type:'number', placeholder:'21120', value:t?.exit_price||'', step:'0.25'},
+      {id:'size',       label:'Contracts',          type:'number', placeholder:'1',     value:t?.size||1},
+      {id:'pnl',        label:'P&L (₪)',            type:'number', placeholder:'0',     value:t?.pnl||'',step:'0.01'},
+      {id:'risk',       label:'Risk ₪ (for R calc)',type:'number', placeholder:'200',   value:t?.risk_amount||''},
+      {id:'setup',      label:'Setup Type',         placeholder:'ORB / Pullback',       value:t?.setup_type||''},
+      {id:'notes',      label:'Notes',              type:'textarea',value:t?.notes||'',rows:2},
+    ]
+  });
+  if(r.action==='cancel') return;
+  const d=t?.trade_date||defaultDate||'';
+  if(r.action==='delete'&&id){ _trades=_trades.filter(x=>x.id!==id); sbDelete('cockpit_trades',`id=eq.${id}`);
+    const dTrades=_trades.filter(x=>x.trade_date===d); const dPnl=dTrades.reduce((s,x)=>s+x.pnl,0);
+    const dd=new Date(d); safe.set(`cockpit.trade.${dd.getFullYear()}.${dd.getMonth()}.${dd.getDate()}`,dPnl);
+    return renderPage(safe.get('cockpit.page')||'trading');
+  }
+  const v=r.values;
+  const row={trade_date:v.date,instrument:v.instrument,direction:v.direction,entry_price:+v.entry||null,exit_price:+v.exit||null,size:+v.size||1,pnl:+v.pnl||0,risk_amount:+v.risk||null,setup_type:v.setup,notes:v.notes};
+  if(id){ _trades=_trades.map(x=>x.id===id?{...row,id}:x); fetch(`${SUPA_URL}/rest/v1/cockpit_trades?id=eq.${id}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{}); }
+  else { _trades.push({...row,id:'tmp-'+Date.now()}); sbUpsert('cockpit_trades',row); }
+  const dd=new Date(v.date); const dt=_trades.filter(x=>x.trade_date===v.date); const dp=dt.reduce((s,x)=>s+x.pnl,0);
+  safe.set(`cockpit.trade.${dd.getFullYear()}.${dd.getMonth()}.${dd.getDate()}`,dp);
+  sbUpsert('cockpit_trade_days',{trade_date:v.date,pnl:dp});
+  renderPage(safe.get('cockpit.page')||'trading');
+};
+
+// ── Weekly Review ────────────────────────────────
+let _weeklyReviews = [];
+window.openWeeklyReview = function() {
+  const ov=document.getElementById('review-overlay');
+  const inner=document.getElementById('review-inner');
+  const now=new Date(); const day=now.getDay(); const diff=(day===0?-6:1-day);
+  const monday=new Date(now); monday.setDate(now.getDate()+diff);
+  const weekStart=monday.toISOString().split('T')[0];
+  const weekEnd=new Date(monday); weekEnd.setDate(monday.getDate()+6);
+  const F=computeFinancials();
+  const y=now.getFullYear(),m=now.getMonth();
+  const delayed=getMField('autoscale',y,m,'delayed',0);
+  const existing=_weeklyReviews.find(r=>r.week_start===weekStart);
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmt2=d=>`${d.getDate()} ${MN[d.getMonth()]}`;
+  inner.innerHTML=`
+    <div class="review-header">
+      <div><div class="review-title">Weekly Review</div><div class="review-week">${fmt2(monday)} — ${fmt2(weekEnd)} · ${now.getFullYear()}</div></div>
+      <button class="review-close" onclick="closeWeeklyReview()">× Close</button>
+    </div>
+    <div class="review-section">
+      <div class="review-section-title">📥 Income This Week (estimate)</div>
+      <div class="review-item"><span style="color:var(--cyan);font-family:var(--mono);font-size:17px;font-weight:700">~${fmtK(Math.round(F.totalBizIncome/4.33))}₪</span><span style="color:var(--text-3);margin-left:8px;font-size:11px">from ${fmtK(F.totalBizIncome)}₪ month</span></div>
+      ${_clients.filter(c=>c.status==='active').map(c=>`<div class="review-item"><span style="color:var(--text-3)">●</span>${c.name}<span style="margin-left:auto;font-family:var(--mono);color:var(--good)">${fmtK(Math.round(c.mrr/4.33))}₪/wk</span></div>`).join('')}
+    </div>
+    ${delayed>0?`<div class="review-section" style="border-color:rgba(248,113,113,0.25)"><div class="review-section-title" style="color:var(--bad)">⚠️ Overdue</div><div class="review-item"><span style="color:var(--bad)">●</span>${fmtK(delayed)}₪ delayed — follow up<span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--bad)">action needed</span></div></div>`:''}
+    <div class="review-section">
+      <div class="review-section-title">📋 Notes, Priorities & Decisions</div>
+      <textarea class="review-textarea" id="review-note" placeholder="What went well? What to focus on next week? Any decisions to make?">${existing?.content||''}</textarea>
+    </div>
+    <button class="review-save" onclick="saveWeeklyReview('${weekStart}')">Save Review</button>`;
+  ov.style.display='flex';
+};
+window.closeWeeklyReview = function() { document.getElementById('review-overlay').style.display='none'; };
+window.saveWeeklyReview = function(weekStart) {
+  const content=document.getElementById('review-note')?.value||'';
+  const F=computeFinancials();
+  const row={week_start:weekStart,content,income_total:Math.round(F.totalMonthlyIn)};
+  const ex=_weeklyReviews.find(r=>r.week_start===weekStart);
+  if(ex){ex.content=content;fetch(`${SUPA_URL}/rest/v1/cockpit_weekly_reviews?week_start=eq.${weekStart}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});}
+  else{_weeklyReviews.push({...row,id:'tmp-'+Date.now()});sbUpsert('cockpit_weekly_reviews',row);}
+  const btn=document.querySelector('.review-save');
+  if(btn){btn.textContent='✓ Saved';setTimeout(()=>{btn.textContent='Save Review';},1500);}
+};
+
+// ── Mobile ───────────────────────────────────────
+window.mobileTab = function(page, icon, label, el) {
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const navItem=document.querySelector(`.nav-item[data-page="${page}"]`);
+  if(navItem){document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));navItem.classList.add('active');}
+  renderPage(page);
+};
+function renderMobileToday() {
+  const now=new Date(); const y=now.getFullYear(),m=now.getMonth();
+  const F=computeFinancials(); const E=computeRelocationETA();
+  const sleepH=parseFloat(safe.get('cockpit.health.sleep.hours')||0);
+  const sleepQ=parseInt(safe.get('cockpit.health.sleep.quality')||0);
+  const delayed=getMField('autoscale',y,m,'delayed',0);
+  let todayPnl=0; const v=safe.get(`cockpit.trade.${y}.${m}.${now.getDate()}`); if(v)todayPnl=parseFloat(v)||0;
+  const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `<div style="padding-bottom:8px;margin-bottom:16px;border-bottom:1px solid var(--line)">
+    <div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.1em">${DAYS[now.getDay()].toUpperCase()} · ${now.getDate()} ${MONTHS[now.getMonth()]}</div>
+    <div style="font-size:22px;font-weight:800;color:var(--text-1);margin-top:4px;letter-spacing:-0.02em">Good ${now.getHours()<12?'morning':'afternoon'}, Richard</div>
+  </div>
+  ${renderRelocationETA()}
+  <div class="attention" style="margin-bottom:14px">
+    <div class="att cyan" onclick="renderPage('autoscale')" style="cursor:pointer"><div class="att-num">${fmtK(F.totalBizIncome)}<span class="cur">₪</span></div><div class="att-label">Business</div><div class="att-detail">this month</div></div>
+    <div class="att ${todayPnl>=0?'good':'bad'}" onclick="renderPage('trading')" style="cursor:pointer"><div class="att-num">${todayPnl>=0?'+':''}${fmtK(todayPnl)}<span class="cur">₪</span></div><div class="att-label">Trading</div><div class="att-detail">today</div></div>
+    <div class="att ${sleepQ>=70?'good':sleepQ>=50?'warn':sleepQ>0?'bad':''}" onclick="renderPage('health')" style="cursor:pointer"><div class="att-num">${sleepH||'—'}</div><div class="att-label">Sleep</div><div class="att-detail">${sleepQ?sleepQ+'%':'not logged'}</div></div>
+  </div>
+  ${delayed>0?`<div class="signal bad" style="margin-bottom:12px;border-radius:9px;padding:10px 14px;cursor:pointer" onclick="renderPage('autoscale')"><div class="sig-dot"></div>${fmtK(delayed)}₪ delayed — follow up</div>`:''}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="att" onclick="renderPage('autoscale')" style="cursor:pointer;text-align:center"><div style="font-size:20px;margin-bottom:4px">◈</div><div class="att-label">AutoScale</div></div>
+    <div class="att" onclick="openWeeklyReview()" style="cursor:pointer;text-align:center"><div style="font-size:20px;margin-bottom:4px">⊙</div><div class="att-label">Weekly Review</div></div>
+    <div class="att" onclick="renderPage('health')" style="cursor:pointer;text-align:center"><div style="font-size:20px;margin-bottom:4px">💤</div><div class="att-label">Log Sleep</div></div>
+    <div class="att" onclick="renderPage('trading')" style="cursor:pointer;text-align:center"><div style="font-size:20px;margin-bottom:4px">📊</div><div class="att-label">Trading</div></div>
+  </div>`;
+}
+PAGES['mobile-today'] = {title:'Today', arm:'life', armLabel:'Today', sub:'', sections:['mobile-today'], data:{rail:[]}};
 
 function renderPage(key) {
   const page = PAGES[key] || placeholderPage(key.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), 'tech','Placeholder');
@@ -2191,7 +3310,7 @@ function renderPage(key) {
     if (s === 'money')       html += renderMoney(page.data.money, key, pm.y, pm.m);
     if (s === 'sources')     html += renderSources(page.data.sources, key, pm.y, pm.m);
     if (s === 'projects')    html += renderProjects(page.data.projects, key);
-    if (s === 'trading-cal') html += renderTradingCalendar(key, pm.y, pm.m);
+    if (s === 'trading-cal') html += renderTradingSection(key, pm.y, pm.m);
     if (s === 'holdings')    html += renderHoldings(page.data, key);
     if (s === 'angel')       html += renderAngel(page.data, key);
     if (s === 'real-estate') html += renderRealEstate(page.data, key);
@@ -2201,6 +3320,10 @@ function renderPage(key) {
     if (s === 'bike-build')  html += renderBikeBuild();
     if (s === 'health')      html += renderHealth();
     if (s === 'finance')     html += renderFinanceHub(page.data);
+    if (s === 'clients')     html += renderClientManager(key);
+    if (s === 'pipeline')    html += renderPipeline(key);
+    if (s === 'trading-journal') html += renderTradingJournal(key, pm.y, pm.m);
+    if (s === 'mobile-today') html += renderMobileToday();
     if (s === 'empty')       html += renderEmptyState(page.title);
   });
 
@@ -2298,17 +3421,57 @@ setInterval(tick, 30000);
 
 // ── Init ─────────────────────────────────────────────
 wireNav();
-const savedTab  = safe.get('cockpit.tab') || 'work';
-if (savedTab !== 'work') { document.querySelector(`.side-tab[data-tab="${savedTab}"]`).click(); }
-const savedPage = safe.get('cockpit.page') || 'autoscale';
-const startEl   = document.querySelector(`.nav-item[data-page="${savedPage}"]`);
-document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-if (startEl) { startEl.classList.add('active'); renderPage(savedPage); }
-else renderPage('autoscale');
+
+async function bootApp() {
+  // Render from cache first (instant)
+  const savedTab  = safe.get('cockpit.tab') || 'work';
+  const savedPage = safe.get('cockpit.page') || 'autoscale';
+  const startEl = document.querySelector(`.nav-item[data-page="${savedPage}"]`);
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (startEl) { startEl.classList.add('active'); renderPage(savedPage); }
+  else renderPage('autoscale');
+  if (savedTab !== 'work') document.querySelector(`.side-tab[data-tab="${savedTab}"]`)?.click();
+  // Then hydrate from Supabase
+  await loadAllData();
+  renderPage(safe.get('cockpit.page') || 'autoscale');
+  updateBadges();
+}
+
+// Start auth first, then boot
+AUTH.init().then(() => bootApp());
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 }
+
 </script>
+
+<!-- ═══ LOCK SCREEN ═══ -->
+<div id="lock-screen">
+  <div class="lock-logo">⊙</div>
+  <div class="lock-title">Cockpit</div>
+  <div class="lock-sub">PERSONAL MISSION CONTROL</div>
+  <input class="lock-input" id="lock-input" type="password" placeholder="••••••••"
+    onkeydown="if(event.key==='Enter')AUTH.tryUnlock()">
+  <button class="lock-btn" onclick="AUTH.tryUnlock()">Unlock</button>
+  <button class="lock-bio" id="lock-bio-btn" onclick="AUTH.tryBiometric()">Touch ID / Face ID</button>
+  <div class="lock-error" id="lock-error"></div>
+  <div class="lock-timer" id="lock-timer"></div>
+</div>
+
+
+<!-- ═══ MOBILE TABS ═══ -->
+<div class="mobile-tabs" id="mobile-tabs">
+  <button class="mob-tab active" onclick="mobileTab('today','⊙','Today',this)"><span class="mti">⊙</span><span class="mtl">Today</span></button>
+  <button class="mob-tab" onclick="mobileTab('autoscale','◈','Work',this)"><span class="mti">◈</span><span class="mtl">Work</span></button>
+  <button class="mob-tab" onclick="mobileTab('finance','◉','Capital',this)"><span class="mti">◉</span><span class="mtl">Capital</span></button>
+  <button class="mob-tab" onclick="mobileTab('life-overview','◌','Life',this)"><span class="mti">◌</span><span class="mtl">Life</span></button>
+</div>
+
+<!-- ═══ WEEKLY REVIEW OVERLAY ═══ -->
+<div class="review-overlay" id="review-overlay">
+  <div class="review-inner" id="review-inner"></div>
+</div>
+
 </body>
 </html>
