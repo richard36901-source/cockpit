@@ -91,7 +91,7 @@ html,body{background:var(--bg-app);color:var(--text-1);font-family:var(--sans);f
 body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 0% 0%,rgba(56,189,248,0.06) 0%,transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(56,189,248,0.03) 0%,transparent 50%);pointer-events:none;z-index:0}
 
 /* ── APP SHELL ── */
-.app{position:relative;z-index:1;display:grid;grid-template-columns:var(--sidebar-w) 1fr var(--rail-w);grid-template-rows:52px 1fr;grid-template-areas:"side topbar topbar" "side main rail";min-height:100vh}
+.app{position:relative;z-index:1;display:grid;grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:52px 1fr;grid-template-areas:"side topbar" "side main";min-height:100vh}
 
 /* ── SIDEBAR ── */
 .side{grid-area:side;background:var(--bg-deeper);border-right:1px solid var(--line);padding:12px 9px max(12px,var(--safe-bottom)) max(9px,var(--safe-left));display:flex;flex-direction:column;overflow-y:auto}
@@ -357,7 +357,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .prop-add:hover{border-color:var(--cyan);color:var(--cyan)}
 
 /* ── RAIL ── */
-.rail{grid-area:rail;background:var(--bg-deeper);border-left:1px solid var(--line);padding:18px 16px max(18px,var(--safe-bottom)) 16px;padding-right:max(16px,var(--safe-right));display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.rail{display:none !important}
 .rail-block{background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
 .rail-block h4{font-size:10px;font-weight:700;color:var(--text-1);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center}
 .rail-block h4 .badge{font-size:8.5px;color:var(--cyan);background:var(--cyan-soft);border:1px solid var(--cyan-mid);padding:2px 6px;border-radius:4px;font-family:var(--mono);letter-spacing:0.04em;font-weight:500}
@@ -408,7 +408,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 
 /* ── RESPONSIVE (iPad landscape 1194px → desktop 1440px+) ── */
 @media(max-width:1250px){
-  .app{grid-template-columns:var(--sidebar-w) 1fr 210px}
+  .app{grid-template-columns:var(--sidebar-w) 1fr}
   .money-grid{grid-template-columns:1fr}
   .proj-grid{grid-template-columns:1fr;gap:0}
   .charts-row{grid-template-columns:1fr 110px}
@@ -419,7 +419,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 }
 @media(max-width:900px){
   .app{grid-template-columns:var(--sidebar-w) 1fr;grid-template-areas:"side topbar" "side main" "side rail"}
-  .rail{border-left:none;border-top:1px solid var(--line)}
+  .rail{display:none !important}
   .health-grid{grid-template-columns:1fr}
   .re-kpis{grid-template-columns:repeat(2,1fr)}
   .angel-kpis{grid-template-columns:1fr 1fr}
@@ -733,6 +733,251 @@ textarea.modal-input{resize:vertical;min-height:80px;line-height:1.5}
 /* ── REVIEW BUTTON ── */
 .review-btn{height:30px;padding:0 12px;background:transparent;border:1px solid var(--line);color:var(--text-2);border-radius:7px;font-size:11px;cursor:pointer;font-family:var(--mono);letter-spacing:0.06em;display:flex;align-items:center;gap:5px;transition:all 0.15s}
 .review-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ── AI AGENT PANEL ── */
+.agent-panel{position:fixed;top:0;right:0;bottom:0;width:400px;background:#0d1424;border-left:1px solid rgba(56,189,248,0.15);display:flex;flex-direction:column;z-index:8000;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1)}
+.agent-panel.open{transform:translateX(0)}
+.agent-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.agent-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--tech));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--bg-deeper);flex-shrink:0}
+.agent-name{font-size:14px;font-weight:700;color:var(--text-1)}
+.agent-sub{font-size:10px;color:var(--text-3);font-family:var(--mono)}
+.agent-close{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--text-2);width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.15s;flex-shrink:0}
+.agent-close:hover{border-color:var(--bad);color:var(--bad)}
+.agent-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.agent-msg{max-width:90%;animation:rise 0.3s ease}
+.agent-msg.user{align-self:flex-end}
+.agent-msg.claude{align-self:flex-start}
+.agent-bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.agent-msg.user .agent-bubble{background:var(--cyan);color:#060912;border-radius:12px 12px 3px 12px}
+.agent-msg.claude .agent-bubble{background:var(--bg-elev);color:var(--text-1);border:1px solid var(--line);border-radius:12px 12px 12px 3px}
+.agent-msg.claude.thinking .agent-bubble{color:var(--text-3)}
+.agent-input-row{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0}
+.agent-input{flex:1;background:var(--bg-input);border:1px solid var(--line);border-radius:10px;color:var(--text-1);font-family:var(--sans);font-size:13px;padding:10px 13px;outline:none;resize:none;height:44px;transition:border-color 0.15s;line-height:1.4}
+.agent-input:focus{border-color:var(--cyan-mid)}
+.agent-send{width:44px;height:44px;background:var(--cyan);border:none;border-radius:10px;color:#060912;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s}
+.agent-send:hover{opacity:0.85}
+.agent-send:disabled{opacity:0.4;cursor:default}
+.agent-key-notice{padding:14px 16px;background:rgba(56,189,248,0.06);border:1px solid var(--cyan-mid);border-radius:10px;font-size:12px;color:var(--text-2);line-height:1.6;margin:12px}
+.agent-btn{width:100%;margin-top:8px;height:38px;background:var(--cyan);color:#060912;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+
+/* ── AGENT TOPBAR BTN ── */
+.agent-open-btn{height:30px;padding:0 12px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);color:var(--cyan);border-radius:7px;font-size:11px;cursor:pointer;font-family:var(--mono);letter-spacing:0.06em;display:flex;align-items:center;gap:5px;transition:all 0.15s}
+.agent-open-btn:hover{background:rgba(56,189,248,0.15)}
+.agent-open-btn .ag-dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 6px var(--good);animation:pulse 2s infinite}
+
+/* ── LARGE SCREEN (27-inch Mac: 1800px+) ── */
+@media(min-width:1600px){
+  .app{grid-template-columns:200px 1fr}
+  .main{padding:24px 40px 40px;max-width:1400px}
+}
+@media(min-width:2000px){
+  .app{grid-template-columns:220px 1fr;max-width:2200px;margin:0 auto}
+  .main{padding:28px 60px 48px}
+  .fin-hero{grid-template-columns:repeat(3,1fr)}
+  .attention{grid-template-columns:repeat(5,1fr)}
+}
+/* iPad landscape: already tuned. Belt-and-suspenders: */
+@media(min-width:1100px) and (max-width:1280px){
+  .app{grid-template-columns:160px 1fr 230px}
+}
+
+/* ── TRADE MODAL ── */
+.trade-overlay{position:fixed;inset:0;background:rgba(4,6,14,0.96);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;z-index:9500;padding:16px}
+.trade-overlay.open{display:flex}
+.trade-modal{background:#0d1424;border:1px solid rgba(56,189,248,0.15);border-radius:16px;width:100%;max-width:720px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+.tm-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(56,189,248,0.03)}
+.tm-title{font-size:15px;font-weight:800;color:var(--text-1);letter-spacing:-0.02em}
+.tm-close{background:transparent;border:1px solid var(--line);color:var(--text-2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.tm-close:hover{border-color:var(--bad);color:var(--bad)}
+.tm-body{overflow-y:auto;flex:1;padding:20px}
+.tm-row{display:grid;gap:12px;margin-bottom:14px}
+.tm-row.cols2{grid-template-columns:1fr 1fr}
+.tm-row.cols3{grid-template-columns:1fr 1fr 1fr}
+.tm-row.cols4{grid-template-columns:1fr 1fr 1fr 1fr}
+.tm-field{display:flex;flex-direction:column;gap:5px}
+.tm-label{font-size:9px;font-weight:700;color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)}
+.tm-input{background:var(--bg-deeper);border:1px solid var(--line);border-radius:9px;color:var(--text-1);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;width:100%;transition:border-color 0.15s;box-sizing:border-box}
+.tm-input:focus{border-color:var(--cyan-mid)}
+.tm-select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:8px;padding-right:28px}
+.tm-textarea{background:var(--bg-deeper);border:1px solid var(--line);border-radius:9px;color:var(--text-1);font-family:var(--sans);font-size:13px;padding:10px 12px;outline:none;width:100%;resize:vertical;line-height:1.6;transition:border-color 0.15s;box-sizing:border-box;min-height:100px}
+.tm-textarea.tall{min-height:160px}
+.tm-textarea:focus{border-color:var(--cyan-mid)}
+.tm-section-title{font-size:9px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.tm-section-title::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* Grade pills */
+.grade-pills{display:flex;gap:6px}
+.grade-pill{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:var(--mono)}
+.grade-pill:hover{border-color:var(--cyan-mid);color:var(--text-1)}
+.grade-pill.sel-Ap{border-color:var(--good);background:rgba(74,222,128,0.12);color:var(--good)}
+.grade-pill.sel-A{border-color:var(--good);background:rgba(74,222,128,0.07);color:var(--good)}
+.grade-pill.sel-B{border-color:var(--cyan);background:rgba(56,189,248,0.1);color:var(--cyan)}
+.grade-pill.sel-C{border-color:var(--warn);background:rgba(251,191,36,0.1);color:var(--warn)}
+.grade-pill.sel-scratch{border-color:var(--text-3);background:rgba(255,255,255,0.04);color:var(--text-2)}
+
+/* Rules checklist */
+.rules-list{display:flex;flex-direction:column;gap:6px}
+.rule-check{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:background 0.12s;border:1px solid transparent}
+.rule-check:hover{background:var(--bg-deeper)}
+.rule-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--good);cursor:pointer;flex-shrink:0}
+.rule-check-text{font-size:12px;color:var(--text-2);flex:1}
+.rule-cat{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:4px;letter-spacing:0.06em;font-weight:600}
+.rule-cat.entry{background:rgba(56,189,248,0.1);color:var(--cyan)}
+.rule-cat.risk{background:rgba(251,191,36,0.1);color:var(--warn)}
+.rule-cat.mindset{background:rgba(165,180,252,0.1);color:var(--tech)}
+.rule-cat.exit{background:rgba(74,222,128,0.1);color:var(--good)}
+.rules-score{font-size:11px;font-family:var(--mono);color:var(--text-3);margin-top:8px}
+.rules-score span{color:var(--cyan);font-weight:700}
+
+/* TV link button */
+.tv-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.3);color:#60a5fa;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;text-decoration:none;font-family:var(--mono)}
+.tv-btn:hover{background:rgba(37,99,235,0.2)}
+
+/* IBKR import button */
+.ibkr-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;background:rgba(255,0,0,0.06);border:1px solid rgba(255,0,0,0.2);color:#f87171;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.06em;transition:all 0.15s}
+.ibkr-btn:hover{background:rgba(255,0,0,0.12)}
+
+/* Trade modal footer */
+.tm-footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tm-btn{height:38px;padding:0 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:opacity 0.15s;font-family:var(--sans)}
+.tm-btn.save{background:var(--cyan);color:#060912;flex:1}
+.tm-btn.cancel{background:transparent;border:1px solid var(--line);color:var(--text-2)}
+.tm-btn.del{background:transparent;border:1px solid rgba(248,113,113,0.3);color:var(--bad)}
+.tm-btn:hover{opacity:0.85}
+
+/* Enhanced trade stats */
+.trade-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+@media(max-width:768px){.trade-stat-grid{grid-template-columns:repeat(2,1fr)}}
+.tstat{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tstat-val{font-size:18px;font-weight:800;font-family:var(--mono);line-height:1;margin-bottom:3px;letter-spacing:-0.03em}
+.tstat-label{font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase}
+.tstat-sub{font-size:10px;color:var(--text-3);margin-top:2px}
+
+/* Equity curve */
+.equity-chart{width:100%;height:80px;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+
+/* Per-instrument table */
+.inst-table{width:100%;border-collapse:collapse}
+.inst-table td,.inst-table th{padding:7px 12px;font-size:11px;font-family:var(--mono);border-bottom:1px dashed var(--line)}
+.inst-table th{font-size:9px;color:var(--text-3);letter-spacing:0.1em;text-transform:uppercase;text-align:left}
+.inst-table tr:last-child td{border:none}
+
+/* ── TRADEZELLA OVERVIEW ── */
+.tz-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+@media(max-width:900px){.tz-grid{grid-template-columns:repeat(2,1fr)}}
+.tz-card{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tz-card.accent-good{border-color:rgba(74,222,128,0.2);background:rgba(74,222,128,0.03)}
+.tz-card.accent-bad{border-color:rgba(248,113,113,0.2);background:rgba(248,113,113,0.03)}
+.tz-val{font-size:22px;font-weight:800;font-family:var(--mono);line-height:1;letter-spacing:-0.04em;margin-bottom:3px}
+.tz-label{font-size:9px;font-weight:700;color:var(--text-3);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)}
+.tz-sub{font-size:10px;color:var(--text-3);margin-top:3px}
+
+/* Equity curve big */
+.eq-curve-big{width:100%;height:120px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;position:relative}
+.eq-zero-line{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,0.08)}
+
+/* Rules analytics */
+.rules-analytics{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.ra-head{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.ra-title{font-size:10px;font-weight:700;color:var(--text-1);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)}
+.ra-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 60px;gap:4px;align-items:center;padding:9px 18px;border-bottom:1px dashed var(--line);font-size:11px}
+.ra-row:last-child{border:none}
+.ra-row.ra-header{font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.1em;text-transform:uppercase;font-family:var(--mono);padding:8px 18px}
+.ra-rule{color:var(--text-1);font-size:12px}
+.ra-num{font-family:var(--mono);text-align:center}
+.ra-impact{font-family:var(--mono);font-weight:700;text-align:right;font-size:12px}
+.ra-bar-wrap{background:var(--bg-deeper);border-radius:2px;height:4px;overflow:hidden;margin-top:2px}
+.ra-bar-fill{height:100%;border-radius:2px}
+
+/* Day of week */
+.dow-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.dow-card{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+.dow-label{font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px}
+.dow-val{font-size:13px;font-weight:700;font-family:var(--mono)}
+.dow-n{font-size:9px;color:var(--text-3);margin-top:2px}
+
+/* Setup breakdown */
+.setup-list{display:flex;flex-direction:column;gap:6px}
+.setup-row{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--bg-card);border:1px solid var(--line);border-radius:9px}
+.setup-name{font-size:12px;font-weight:600;color:var(--text-1);flex:1}
+.setup-bar-wrap{width:80px;height:5px;background:var(--bg-deeper);border-radius:3px;overflow:hidden}
+.setup-bar-fill{height:100%;border-radius:3px}
+.setup-stats{font-size:10px;font-family:var(--mono);color:var(--text-3);display:flex;gap:10px}
+
+/* ── ANIMATIONS ── */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes countUp{from{opacity:0}to{opacity:1}}
+@keyframes barFill{from{width:0%}to{width:var(--bar-target)}}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+
+.anim-card{opacity:0;animation:rise 0.38s cubic-bezier(0.16,1,0.3,1) forwards}
+.anim-card:nth-child(1){animation-delay:0.02s}
+.anim-card:nth-child(2){animation-delay:0.06s}
+.anim-card:nth-child(3){animation-delay:0.10s}
+.anim-card:nth-child(4){animation-delay:0.14s}
+.anim-card:nth-child(5){animation-delay:0.18s}
+.anim-card:nth-child(6){animation-delay:0.22s}
+.anim-card:nth-child(7){animation-delay:0.26s}
+.anim-card:nth-child(8){animation-delay:0.30s}
+
+/* ── DAILY INSIGHT CARD ── */
+.insight-card{background:linear-gradient(135deg,rgba(56,189,248,0.06) 0%,rgba(165,180,252,0.04) 100%);border:1px solid rgba(56,189,248,0.18);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:13px;position:relative;animation:rise 0.45s cubic-bezier(0.16,1,0.3,1)}
+.insight-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--tech));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#060912;flex-shrink:0;margin-top:1px}
+.insight-body{flex:1;min-width:0}
+.insight-label{font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);margin-bottom:6px;opacity:0.8}
+.insight-text{font-size:14px;color:var(--text-1);line-height:1.65;font-weight:450;letter-spacing:-0.005em}
+.insight-actions{display:flex;gap:6px;margin-top:12px}
+.insight-ask{height:30px;padding:0 14px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--cyan);border-radius:8px;font-size:11px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s;white-space:nowrap}
+.insight-ask:hover{background:rgba(56,189,248,0.22)}
+.insight-dismiss{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:18px;line-height:1;padding:0;transition:color 0.15s;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.insight-dismiss:hover{color:var(--text-1)}
+.insight-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3);font-family:var(--mono)}
+.insight-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:pulse 1.4s ease infinite}
+.insight-dot:nth-child(2){animation-delay:0.2s}
+.insight-dot:nth-child(3){animation-delay:0.4s}
+
+/* ── HERO NUMBER (Finance Hub & Overview) ── */
+.hero-number{font-size:clamp(48px,6vw,80px);font-weight:900;letter-spacing:-0.05em;line-height:0.9;color:var(--text-1);margin-bottom:6px;font-variant-numeric:tabular-nums}
+.hero-label{font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:0.16em;text-transform:uppercase;font-family:var(--mono)}
+.hero-delta{font-size:13px;font-family:var(--mono);margin-top:8px}
+
+/* ── PROGRESS BAR SMOOTH TRANSITION ── */
+.eta-bar-fill,.hours-fill,.skill-fill,.setup-bar-fill{transition:width 1s cubic-bezier(0.16,1,0.3,1) !important}
+
+/* ── CARD HOVER STATE (Mac precision) ── */
+.tz-card,.tstat,.panel,.hld-block,.client-table tr,.trade-table tr{transition:background 0.15s ease}
+.att{transition:transform 0.18s ease,box-shadow 0.18s ease}
+.att:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+
+/* ── BIGGER MAC LAYOUT (no mobile needed) ── */
+@media(min-width:1440px){
+  .side{width:180px}
+  .app{grid-template-columns:180px 1fr}
+  .main{padding:28px 48px 48px;max-width:none}
+  .hero-number{font-size:72px}
+  .attention{gap:12px}
+  .money-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:2000px){
+  .side{width:200px}
+  .app{grid-template-columns:200px 1fr;max-width:2200px;margin:0 auto}
+  .main{padding:32px 72px 60px}
+  .hero-number{font-size:80px}
+}
+
+/* ── IPAD LANDSCAPE (1024-1366px) ── */
+@media(min-width:1024px) and (max-width:1366px){
+  .hero-number{font-size:54px}
+  .tz-grid{grid-template-columns:repeat(4,1fr)}
+  .attention{grid-template-columns:repeat(4,1fr)}
+}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:40px 20px}
+.empty-state-icon{font-size:36px;margin-bottom:12px;opacity:0.4}
+.empty-state-title{font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.empty-state-sub{font-size:12px;color:var(--text-3);line-height:1.6;max-width:280px;margin:0 auto 16px}
+.empty-state-cta{height:36px;padding:0 20px;background:var(--cyan);color:#060912;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)}
 </style>
 </head>
 <body>
@@ -785,25 +1030,22 @@ textarea.modal-input{resize:vertical;min-height:80px;line-height:1.5}
       <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/></svg>
       Overview
     </button>
-    <button class="folder" style="margin-top:8px">
-      <span class="arrow">▾</span><span class="swatch" style="background:var(--cyan)"></span>Body
+    <button class="nav-item" data-page="health">
+      <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2C5 2 2 5 2 7.5c0 4 6 7.5 6 7.5s6-3.5 6-7.5C14 5 11 2 8 2z" opacity="0.8"/></svg>
+      Health
     </button>
-    <div class="folder-body">
-      <button class="nav-item" data-page="health">Health</button>
-    </div>
-    <button class="folder">
-      <span class="arrow">▾</span><span class="swatch" style="background:var(--good)"></span>Skills
+    <button class="nav-item" data-page="skills">
+      <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4"/></svg>
+      Skills
     </button>
-    <div class="folder-body">
-      <button class="nav-item" data-page="skills">All Skills</button>
-    </div>
-    <button class="folder">
-      <span class="arrow">▾</span><span class="swatch" style="background:var(--warn)"></span>Projects
+    <button class="nav-item" data-page="bike-build">
+      <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 10l4-6 4 6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      Bike Build
     </button>
-    <div class="folder-body">
-      <button class="nav-item" data-page="bike-build">Bike Build</button>
-      <button class="nav-item" data-page="relocation">Relocation</button>
-    </div>
+    <button class="nav-item" data-page="relocation">
+      <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2 4h4l-3 3 1 4L8 10l-4 2 1-4L2 5h4z" opacity="0.8"/></svg>
+      Relocation
+    </button>
   </nav>
 
   <div class="side-foot">
@@ -823,11 +1065,12 @@ textarea.modal-input{resize:vertical;min-height:80px;line-height:1.5}
   <div class="topbar-spacer"></div>
   <div class="pill"><span class="live-dot"></span><span id="clock-date">Wed · 06 May</span></div>
   <div class="pill" id="clock-time">00:00</div>
+  <div class="pill" id="rate-indicator-top" style="cursor:pointer;font-size:10px" onclick="refreshLiveRates()" title="Live rates — click to refresh">₪ <span id="rate-top-val" style="color:var(--text-3)">–</span></div>
+  <button class="agent-open-btn" onclick="toggleAgent()"><span class="ag-dot"></span>Ask Claude</button>
   <button class="review-btn" onclick="openWeeklyReview()">⊙ Review</button>
 </header>
 
 <main class="main" id="main"></main>
-<aside class="rail" id="rail"></aside>
 </div>
 
 <script>
@@ -869,7 +1112,7 @@ function openModal(cfg) {
       } else if (f.type==='textarea') {
         inp = `<textarea class="modal-input" id="mf-${f.id}" rows="${f.rows||3}" placeholder="${f.placeholder||''}">${f.value||''}</textarea>`;
       } else {
-        inp = `<input class="modal-input" id="mf-${f.id}" type="${f.type||'text'}" value="${String(f.value??'').replace(/"/g,'&quot;')}" placeholder="${f.placeholder||''}" ${f.step?`step="${f.step}"`:''}  ${f.min!==undefined?`min="${f.min}"`:''}  ${f.max!==undefined?`max="${f.max}"`:''}>`;
+        inp = `<input class="modal-input" id="mf-${f.id}" type="${f.type||'text'}" value="${String(f.value??'').split('"').join('&quot;')}" placeholder="${f.placeholder||''}" ${f.step?`step="${f.step}"`:''}  ${f.min!==undefined?`min="${f.min}"`:''}  ${f.max!==undefined?`max="${f.max}"`:''}>`;
       }
       return `<div class="modal-field ${f.half?'':''}"><label class="modal-label" for="mf-${f.id}">${f.label}</label>${inp}</div>`;
     });
@@ -1159,7 +1402,7 @@ async function loadAllData() {
   try {
     const [monthly, sources, trades, skills, checklists, notes, bike, healthLogs,
            accounts, debt, recurring, holdings, investments, properties, config,
-           clients, pipeline, tradeEntries, weeklyReviews] = await Promise.all([
+           clients, pipeline, tradeEntries, weeklyReviews, projectsData, tradeRulesData] = await Promise.all([
       sbGet('cockpit_monthly'),
       sbGet('cockpit_sources'),
       sbGet('cockpit_trade_days'),
@@ -1178,7 +1421,9 @@ async function loadAllData() {
       sbGet('cockpit_clients','?order=created_at'),
       sbGet('cockpit_pipeline','?order=created_at'),
       sbGet('cockpit_trades','?order=trade_date.desc&limit=100'),
-      sbGet('cockpit_weekly_reviews','?order=week_start.desc&limit=12')
+      sbGet('cockpit_weekly_reviews','?order=week_start.desc&limit=12'),
+      sbGet('cockpit_projects','?order=page_key,sort_order'),
+      sbGet('cockpit_trade_rules','?order=sort_order')
     ]);
 
     // Hydrate localStorage cache from DB so renders use fresh data
@@ -1283,6 +1528,8 @@ async function loadAllData() {
     });
 
     // Hydrate new v3 data
+    _projects = projectsData;
+    _tradeRules = tradeRulesData;
     _clients = clients;
     _pipeline = pipeline;
     _trades = tradeEntries;
@@ -1335,7 +1582,7 @@ const PAGES = {
   'autoscale': {
     title:'AutoScale', arm:'tech', armLabel:'Tech & SaaS',
     sub:'Marketing automation agency',
-    sections:['attention','charts','money','sources','clients','pipeline','projects'],
+    sections:['attention','charts','money','sources','projects'],
     data:{
       attention:[
         {kind:'warn', num:2,       label:'Invoices',    detail:'Awaiting approval'},
@@ -1343,6 +1590,7 @@ const PAGES = {
         {kind:'cyan', num:2,       label:'Quotes',      detail:'Sent · awaiting'},
         {kind:'tech', num:4,       label:'Leads',       detail:'2 from referral'}
       ],
+      moneyConfig:{hideDelayed:true},
       money:{
         month:{income:7500, expense:1200, expected:3000, delayed:2000, scope:'May', tag:''},
         year: {income:28400, expense:4100, scope:'2026', tag:'YTD · 5 mo'}
@@ -1427,7 +1675,7 @@ const PAGES = {
   'trading': {
     title:'Trading', arm:'cap', armLabel:'Capital',
     sub:'Funded accounts · IBKR · Apex',
-    sections:['attention','trading-cal','trading-journal','money'],
+    sections:['trading-overview','trading-cal','trading-journal','money'],
     data:{
       attention:[
         {kind:'good', num:'+3,500', cur:'₪', label:'This Month', detail:'Net P&L'},
@@ -1766,7 +2014,7 @@ function renderChartsSection(pageKey, y, m, sources, money) {
   return nav + signal + `<div class="charts-row">${chart}${donut}</div>`;
 }
 
-function renderMoney(money, pageKey, y, m) {
+function renderMoney(money, pageKey, y, m, cfg) { const hideDelayed = cfg?.hideDelayed;
   const now = new Date();
   const isNow = y === now.getFullYear() && m === now.getMonth();
   const defI = isNow ? money.month.income : 0;
@@ -1802,11 +2050,11 @@ function renderMoney(money, pageKey, y, m) {
           <div class="money-period">${MNAMES[m]} <span class="scope">· ${y}</span></div>
           ${money.month.tag ? `<div class="money-tag">${money.month.tag}</div>` : ''}
         </div>
-        <div class="money-rows four">
+        <div class="${hideDelayed?'money-rows':'money-rows four'}">
           <div><div class="row-label">Income</div><div class="row-val income">${renderEditable(incK, defI, {cur:'₪'})}</div></div>
           <div><div class="row-label">Expenses</div><div class="row-val expense">${renderEditable(expK, defE, {cur:'₪'})}</div></div>
           <div><div class="row-label">Expected</div><div class="row-val expected">${renderEditable(expX, defX, {cur:'₪'})}</div></div>
-          <div><div class="row-label">Delayed</div><div class="row-val delayed">${renderEditable(expD, defD, {cur:'₪'})}</div></div>
+          ${hideDelayed ? '' : `<div><div class="row-label">Delayed</div><div class="row-val delayed">${renderEditable(expD, defD, {cur:'₪'})}</div></div>`}
         </div>
         <div class="net-row">
           <div class="net-num">${fmt(net)}<span class="cur">₪</span></div>
@@ -1851,381 +2099,100 @@ function renderSources(sources, pageKey, y, m) {
 }
 
 function renderProjects(projects, pageKey) {
-  if (!projects || !projects.length) return '';
-  const onTrack = projects.filter(p => p.dot==='active').length;
-  const atRisk  = projects.filter(p => p.dot==='risk').length;
-  let html = `<div class="section-h"><span><span class="num">03</span>Projects</span><div class="line"></div><span class="meta">${projects.length} ACTIVE</span></div>
-    <div class="panel"><div class="panel-head"><div class="panel-title">Progress</div><div class="panel-meta">${atRisk?atRisk+' AT RISK · ':''}${onTrack} ON TRACK</div></div>
+  // Merge: use DB projects if loaded for this page, else fall back to PAGES data
+  const dbProjs = _projects.filter(p => p.page_key === pageKey);
+  const displayProjs = dbProjs.length > 0 ? dbProjs.map(p => ({
+    id: p.id, name: p.name, pct: p.pct, fill: Math.round(p.pct/10),
+    dot: p.status==='done'?'active':p.status, tasks: p.tasks, ddl: p.deadline,
+    urgent: p.is_urgent
+  })) : (projects||[]);
+
+  if (!displayProjs || !displayProjs.length) {
+    return `<div class="section-h"><span><span class="num">03</span>Projects</span><div class="line"></div></div>
+    <button class="acct-add-btn" onclick="editProject(null,'${pageKey}')">+ Add project</button>`;
+  }
+
+  const onTrack = displayProjs.filter(p=>p.dot==='active'||p.dot==='done').length;
+  const atRisk  = displayProjs.filter(p=>p.dot==='risk').length;
+
+  let html = `<div class="section-h"><span><span class="num">03</span>Projects</span><div class="line"></div><span class="meta">${displayProjs.length} ACTIVE</span></div>
+    <div class="panel"><div class="panel-head"><div class="panel-title">Progress</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="panel-meta">${atRisk?atRisk+' AT RISK · ':''}${onTrack} ON TRACK</div>
+      <button class="ap-add" onclick="editProject(null,'${pageKey}')">+ Add</button>
+    </div></div>
     <div class="panel-body"><div class="proj-grid">`;
-  projects.forEach(p => {
+
+  displayProjs.forEach(p => {
+    const pct = Math.min(Math.max(+(p.pct||0), 0), 100);
+    const fill = Math.round(pct/10);
     let bars = '';
-    for (let i=0; i<10; i++) bars += `<div class="seg${i<p.fill?' fill':''}"></div>`;
-    html += `<div class="project"><div class="project-head"><div class="project-name"><span class="dot ${p.dot}"></span>${p.name}</div><div class="project-pct">${p.pct}%</div></div><div class="progress-bar">${bars}</div><div class="project-meta"><span>${p.tasks}</span>${p.ddl?`<span class="${p.urgent?'urgent':''}">${p.ddl}</span>`:''}</div></div>`;
-  });
-  return html + `</div></div></div>`;
-}
-
-// ── Trading Calendar ────────────────────────────────
-function renderTradingSection(pageKey, y, m) {
-  const pm = getPM(pageKey);
-  const nav = `<div class="month-nav"><button class="mnav-btn" onclick="navMonth(-1)">‹</button><span class="mnav-label">${MNAMES[m]} ${y}</span><button class="mnav-btn" onclick="navMonth(1)">›</button></div>`;
-  return nav + renderTradingCalendar(pageKey, y, m);
-}
-function renderTradingCalendar(pageKey, y, m) {
-  const DAYS = ['Mo','Tu','We','Th','Fr','Sa','Su'];
-  const firstDay = new Date(y, m, 1).getDay();
-  const mondayOff = (firstDay + 6) % 7;
-  const daysInMonth = new Date(y, m+1, 0).getDate();
-  const today = new Date();
-
-  // Collect trade data
-  let totalPnl = 0, winDays = 0, lossDays = 0, bestDay = 0, worstDay = 0, tradeDays = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const key = `cockpit.trade.${y}.${m}.${d}`;
-    const stored = safe.get(key);
-    if (stored !== null) {
-      const pnl = parseFloat(stored);
-      if (!isNaN(pnl) && pnl !== 0) {
-        totalPnl += pnl; tradeDays++;
-        if (pnl > 0) { winDays++; if (pnl > bestDay) bestDay = pnl; }
-        if (pnl < 0) { lossDays++; if (pnl < worstDay) worstDay = pnl; }
-      }
-    }
-  }
-  const winRate = tradeDays > 0 ? Math.round((winDays / tradeDays) * 100) : 0;
-
-  let html = `<div class="section-h"><span><span class="num">01</span>Trade Calendar</span><div class="line"></div><span class="meta">${MNAMES[m].toUpperCase()} ${y}</span></div>`;
-  html += `<div class="trade-cal-wrap"><div class="trade-cal">`;
-  DAYS.forEach(d => html += `<div class="cal-hdr">${d}</div>`);
-  for (let i = 0; i < mondayOff; i++) html += `<div class="cal-day empty"></div>`;
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(y, m, d);
-    const dow = date.getDay();
-    const isWeekend = dow === 0 || dow === 6;
-    const isFuture = date > today;
-    const isToday = date.toDateString() === today.toDateString();
-    const pnlKey = `cockpit.trade.${y}.${m}.${d}`;
-    const stored = safe.get(pnlKey);
-    const pnl = stored !== null ? parseFloat(stored) : null;
-
-    let cls = 'cal-day';
-    if (isFuture) cls += ' future';
-    else if (isWeekend) cls += ' weekend';
-    else if (pnl === null) { cls += ' no-trade clickable'; }
-    else if (pnl > 0) cls += ' profit clickable';
-    else if (pnl < 0) cls += ' loss clickable';
-    else cls += ' breakeven clickable';
-    if (isToday) cls += ' today';
-
-    const pnlStr = pnl !== null && pnl !== 0 ? (pnl > 0 ? '+' : '') + pnl : '';
-    const click = (!isFuture && !isWeekend) ? `onclick="editTrade(${y},${m},${d})"` : '';
-
-    html += `<div class="${cls}" ${click}><span class="cal-dn">${d}</span>${pnlStr ? `<span class="cal-pnl">${pnlStr}</span>` : ''}</div>`;
-  }
-
-  html += `</div></div>`;
-  html += `<div class="trade-stats">
-    <div class="ts-card"><div class="ts-num ${totalPnl>=0?'good':'bad'}">${totalPnl>=0?'+':''}${fmt(totalPnl)}<span style="font-size:0.5em;margin-left:2px;color:var(--text-3)">₪</span></div><div class="ts-label">Net P&L</div></div>
-    <div class="ts-card"><div class="ts-num">${winRate}<span style="font-size:0.6em;color:var(--text-3)">%</span></div><div class="ts-label">Win Rate</div></div>
-    <div class="ts-card"><div class="ts-num good">${bestDay>0?'+'+bestDay:'-'}</div><div class="ts-label">Best Day</div></div>
-    <div class="ts-card"><div class="ts-num bad">${worstDay<0?worstDay:'-'}</div><div class="ts-label">Worst Day</div></div>
-  </div>`;
-  return html;
-}
-
-window.editTrade = async function(y, m, d) {
-  const key = `cockpit.trade.${y}.${m}.${d}`;
-  const cur = safe.get(key) || '';
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const r = await openModal({ title:`${d} ${MONTHS[m]} ${y} — Trade`, icon:'📊',
-    fields:[
-      {id:'pnl',   label:'P&L (₪) — use negative for loss', type:'number', placeholder:'0', value:cur, step:'0.01'},
-      {id:'notes', label:'Notes (optional)', placeholder:'NQ long, FOMC day…', value:''}
-    ],
-    deleteLabel: cur ? 'No trade (clear)' : null
-  });
-  if (r.action==='cancel') return;
-  const date = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  if (r.action==='delete') {
-    safe.del(key);
-    sbDelete('cockpit_trade_days', `trade_date=eq.${date}`);
-  } else {
-    const n = parseFloat(r.values.pnl);
-    if (!isNaN(n)) {
-      safe.set(key, n);
-      sbUpsert('cockpit_trade_days', { trade_date:date, pnl:n, notes:r.values.notes||'' });
-    }
-  }
-  renderPage(safe.get('cockpit.page') || 'trading');
-};
-
-// ── Holdings ────────────────────────────────────────
-function renderHoldings(data, pageKey) {
-  const rate = data.usdToIls || 3.7;
-  const toIls = (amt, cur) => cur === 'USD' ? amt * rate : cur === 'EUR' ? amt * rate * 1.08 : amt;
-
-  let cryptoTotal = 0, stockTotal = 0, cashTotal = 0;
-  data.crypto.forEach(c => { cryptoTotal += c.amount * c.price * (c.currency==='USD'?rate:1); });
-  data.stocks.forEach(s => { stockTotal  += s.shares * s.price * (s.currency==='USD'?rate:1); });
-  data.cash.forEach(c   => { cashTotal   += toIls(c.amount, c.currency); });
-  const total = cryptoTotal + stockTotal + cashTotal;
-
-  let html = `
-    <div class="port-total">
-      <div class="net-num">${fmt(Math.round(total))}<span class="cur">₪</span></div>
-      <div class="pt-pills">
-        <div class="pt-pill"><div class="pt-pill-label">Crypto</div><div class="pt-pill-val" style="color:var(--warn)">${fmt(Math.round(cryptoTotal))}₪</div></div>
-        <div class="pt-pill"><div class="pt-pill-label">Stocks</div><div class="pt-pill-val" style="color:var(--tech)">${fmt(Math.round(stockTotal))}₪</div></div>
-        <div class="pt-pill"><div class="pt-pill-label">Cash</div><div class="pt-pill-val" style="color:var(--good)">${fmt(Math.round(cashTotal))}₪</div></div>
+    for (let i=0; i<10; i++) bars += `<div class="seg${i<fill?' fill':''}"></div>`;
+    const dotClass = p.dot==='done'?'active':p.dot;
+    html += `<div class="project" onclick="editProject('${p.id||''}','${pageKey}')" style="cursor:pointer">
+      <div class="project-head">
+        <div class="project-name"><span class="dot ${dotClass}"></span>${p.name}</div>
+        <div class="project-pct">${pct}%</div>
       </div>
-    </div>
-    <div class="hld-sections">`;
-
-  // Crypto
-  html += `<div class="hld-block"><div class="hld-head"><div class="hld-title">Crypto</div><div class="hld-htotal">${fmt(Math.round(cryptoTotal))}₪</div></div>
-    <table class="hld-table"><tr><th>Asset</th><th>Amount</th><th>Price ($)</th><th>Value (₪)</th><th>24h</th></tr>`;
-  data.crypto.forEach((c,i) => {
-    const val = Math.round(c.amount * c.price * rate);
-    const ch = c.change;
-    html += `<tr><td><div class="hld-sym">${c.symbol}</div><div style="font-size:10px;color:var(--text-3)">${c.name}</div></td>
-      <td>${c.amount}</td><td>$${fmt(c.price)}</td><td>${fmt(val)}₪</td>
-      <td class="hld-change ${ch>=0?'pos':'neg'}">${ch>=0?'+':''}${ch}%</td></tr>`;
+      <div class="progress-bar">${bars}</div>
+      <div class="project-meta">
+        <span>${p.tasks||''}</span>
+        ${p.ddl?`<span class="${p.urgent?'urgent':''}">${p.ddl}</span>`:''}
+      </div>
+    </div>`;
   });
-  html += `</table><button class="hld-add" onclick="addHolding('crypto')">+ Add crypto</button></div>`;
 
-  // Stocks
-  html += `<div class="hld-block"><div class="hld-head"><div class="hld-title">Stocks</div><div class="hld-htotal">${fmt(Math.round(stockTotal))}₪</div></div>
-    <table class="hld-table"><tr><th>Ticker</th><th>Shares</th><th>Price ($)</th><th>Value (₪)</th><th>1d</th></tr>`;
-  data.stocks.forEach(s => {
-    const val = Math.round(s.shares * s.price * rate);
-    html += `<tr><td><div class="hld-sym">${s.symbol}</div><div style="font-size:10px;color:var(--text-3)">${s.name}</div></td>
-      <td>${s.shares}</td><td>$${fmt(s.price)}</td><td>${fmt(val)}₪</td>
-      <td class="hld-change ${s.change>=0?'pos':'neg'}">${s.change>=0?'+':''}${s.change}%</td></tr>`;
-  });
-  html += `</table><button class="hld-add" onclick="addHolding('stock')">+ Add stock</button></div>`;
-
-  // Cash
-  html += `<div class="hld-block"><div class="hld-head"><div class="hld-title">Cash</div><div class="hld-htotal">${fmt(Math.round(cashTotal))}₪</div></div>
-    <table class="hld-table"><tr><th>Currency</th><th>Amount</th><th>Rate</th><th>Value (₪)</th></tr>`;
-  data.cash.forEach(c => {
-    const r = c.currency==='ILS'?1 : c.currency==='USD'?rate : rate*1.08;
-    html += `<tr><td class="hld-sym">${c.currency}</td><td>${fmt(c.amount)}</td><td>${c.currency==='ILS'?'1.00':r.toFixed(2)}</td><td>${fmt(Math.round(c.amount*r))}₪</td></tr>`;
-  });
-  html += `</table><button class="hld-add" onclick="addHolding('cash')">+ Add currency</button></div></div>`;
+  html += `</div></div></div>`;
   return html;
 }
 
-window.addHolding = async function(type, existingId) {
-  const isCrypto = type==='crypto', isStock = type==='stock', isCash = type==='cash';
-  const existing = existingId ? [...PAGES.holdings.data.crypto,...PAGES.holdings.data.stocks,...PAGES.holdings.data.cash].find(x=>(x.id||x.symbol)===existingId) : null;
-  const iconMap = {crypto:'₿', stock:'📈', cash:'💵'};
-  const fieldDefs = isCash ?
-    [{id:'currency',label:'Currency',type:'select',options:['ILS','USD','EUR','GBP','THB','AUD'],value:existing?.currency||'USD'},
-     {id:'amount',label:'Amount',type:'number',placeholder:'1000',value:existing?.amount||''}] :
-    [{id:'symbol',label:'Symbol',placeholder:isCrypto?'BTC':'AAPL',value:existing?.symbol||''},
-     {id:'name',label:'Name',placeholder:isCrypto?'Bitcoin':'Apple Inc.',value:existing?.name||''},
-     {id:'amount',label:isCrypto?'Quantity':'Shares',type:'number',placeholder:'0.1',value:existing?.amount||existing?.shares||''},
-     {id:'price_usd',label:'Price (USD)',type:'number',placeholder:'95000',value:existing?.price||''},
-     {id:'change_pct',label:'24h Change (%)',type:'number',placeholder:'0',value:existing?.change||'',step:'0.01'}];
-  const r = await openModal({title:`${existingId?'Edit':'Add'} ${type}`, icon:iconMap[type], saveLabel:existingId?'Update':'Add',
-    deleteLabel:existingId?'Delete':null,
-    fields: fieldDefs
-  });
-  if (r.action==='cancel') return;
-  if (r.action==='delete' && existingId) {
-    PAGES.holdings.data.crypto = PAGES.holdings.data.crypto.filter(x=>x.id!==existingId);
-    PAGES.holdings.data.stocks = PAGES.holdings.data.stocks.filter(x=>x.id!==existingId);
-    PAGES.holdings.data.cash   = PAGES.holdings.data.cash.filter(x=>x.id!==existingId);
-    sbDelete('cockpit_holdings', `id=eq.${existingId}`);
-    return renderPage('holdings');
-  }
-  const v = r.values;
-  let row = null;
-  if (isCrypto) {
-    const obj = {id:existingId,symbol:(v.symbol||'').toUpperCase(),name:v.name||v.symbol,amount:+v.amount,price:+v.price_usd,change:+v.change_pct,currency:'USD'};
-    existingId ? (PAGES.holdings.data.crypto = PAGES.holdings.data.crypto.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.crypto.push(obj);
-    row = {asset_type:'crypto',symbol:obj.symbol,name:obj.name,amount:obj.amount,price_usd:obj.price,change_pct:obj.change,currency:'USD',sort_order:99};
-  } else if (isStock) {
-    const obj = {id:existingId,symbol:(v.symbol||'').toUpperCase(),name:v.name||v.symbol,shares:+v.amount,price:+v.price_usd,change:+v.change_pct,currency:'USD'};
-    existingId ? (PAGES.holdings.data.stocks = PAGES.holdings.data.stocks.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.stocks.push(obj);
-    row = {asset_type:'stock',symbol:obj.symbol,name:obj.name,amount:obj.shares,price_usd:obj.price,change_pct:obj.change,currency:'USD',sort_order:99};
-  } else {
-    const obj = {id:existingId,currency:v.currency,amount:+v.amount};
-    existingId ? (PAGES.holdings.data.cash = PAGES.holdings.data.cash.map(x=>x.id===existingId?obj:x)) : PAGES.holdings.data.cash.push(obj);
-    row = {asset_type:'cash',symbol:v.currency,name:v.currency+' Cash',amount:+v.amount,price_usd:1,change_pct:0,currency:v.currency,sort_order:99};
-  }
-  if (existingId && row) { fetch(`${SUPA_URL}/rest/v1/cockpit_holdings?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{}); }
-  else if (row) sbUpsert('cockpit_holdings', row);
-  renderPage('holdings');
-};
-
-// ── Angel ───────────────────────────────────────────
-function renderAngel(data, pageKey) {
-  const invs = data.investments || [];
-  const totalInvested = invs.reduce((s,i) => s+(i.invested||0), 0);
-  const totalCurrent  = invs.reduce((s,i) => s+(i.current||0), 0);
-  const paperRoi = totalInvested > 0 ? ((totalCurrent - totalInvested) / totalInvested * 100).toFixed(1) : 0;
-
-  let html = `<div class="angel-kpis">
-    <div class="att cyan"><div class="att-num">${fmt(totalInvested)}<span class="cur">₪</span></div><div class="att-label">Deployed</div></div>
-    <div class="att good"><div class="att-num">${fmt(totalCurrent)}<span class="cur">₪</span></div><div class="att-label">Paper Value</div></div>
-    <div class="att ${+paperRoi>=0?'good':'bad'}"><div class="att-num">${+paperRoi>=0?'+':''}${paperRoi}<span class="cur">%</span></div><div class="att-label">Paper ROI</div></div>
-  </div>
-  <div class="angel-panel">
-    <div class="ap-head"><div class="ap-title">Investments</div><button class="ap-add" onclick="addInvestment()">+ Add</button></div>
-    <table class="invest-table">
-      <tr><th>Company</th><th>Invested (₪)</th><th>Value (₪)</th><th>Stake</th><th>ROI</th></tr>`;
-
-  if (invs.length === 0) {
-    html += `<tr><td colspan="5" style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">No investments yet — click + Add</td></tr>`;
-  } else {
-    invs.forEach(inv => {
-      const roi = inv.invested > 0 ? ((inv.current - inv.invested) / inv.invested * 100).toFixed(1) : 0;
-      const roiPos = +roi >= 0;
-      html += `<tr>
-        <td><div class="invest-name">${inv.name}</div><div class="invest-stage">${inv.stage}</div><div style="font-size:10px;color:var(--text-3);margin-top:2px">${inv.notes||''}</div></td>
-        <td>${fmt(inv.invested)}</td>
-        <td>${fmt(inv.current)}</td>
-        <td>${inv.stake}%</td>
-        <td class="invest-roi ${roiPos?'pos':'neg'}">${roiPos?'+':''}${roi}%</td>
-      </tr>`;
-    });
-  }
-  html += `</table></div>`;
-  return html;
-}
-
-window.addInvestment = async function(existingId) {
-  const ex = existingId ? PAGES['angel'].data.investments.find(x=>x.id===existingId) : null;
-  const r = await openModal({title:existingId?'Edit Investment':'Add Investment', icon:'💼', saveLabel:existingId?'Update':'Add',
-    deleteLabel:existingId?'Delete':null,
-    fields:[
-      {id:'name',  label:'Company Name',   placeholder:'Startup Co.',value:ex?.name||''},
-      {id:'stage', label:'Stage',          type:'select', options:['Pre-seed','Seed','Series A','Series B','Growth'], value:ex?.stage||'Seed'},
-      {id:'invested', label:'Amount Invested (₪)', type:'number', placeholder:'10000', value:ex?.invested||''},
-      {id:'current',  label:'Current Value (₪)',   type:'number', placeholder:'10000', value:ex?.current||''},
-      {id:'stake',    label:'Your Stake (%)',       type:'number', placeholder:'2.5',  value:ex?.stake||'', step:'0.1'},
-      {id:'notes',    label:'Notes',               type:'textarea',placeholder:'Sector, year, co-investors…', value:ex?.notes||'', rows:2}
+window.editProject = async function(id, pageKey) {
+  const p = id ? _projects.find(x=>x.id===id) : null;
+  const r = await openModal({
+    title: id ? 'Edit Project' : 'Add Project', icon: '◈',
+    saveLabel: id ? 'Update' : 'Add',
+    deleteLabel: id ? 'Delete project' : null,
+    fields: [
+      {id:'name',   label:'Project Name',    placeholder:'Ben Nahum WhatsApp', value:p?.name||''},
+      {id:'pct',    label:'Progress (%)',     type:'number', min:0, max:100, placeholder:'0', value:p?.pct||''},
+      {id:'status', label:'Status', type:'select', options:[
+        {value:'active',label:'Active (green)'},
+        {value:'risk',  label:'At Risk (amber)'},
+        {value:'idle',  label:'Idle (grey)'},
+        {value:'done',  label:'Done (green)'}
+      ], value:p?.status||'active'},
+      {id:'tasks',  label:'Tasks / Progress note', placeholder:'9/10 tasks', value:p?.tasks||''},
+      {id:'ddl',    label:'Deadline / Label',      placeholder:'18 days',    value:p?.deadline||''},
+      {id:'urgent', label:'Mark as urgent?', type:'select', options:[{value:'false',label:'No'},{value:'true',label:'Yes — show amber'}], value:String(p?.is_urgent||false)},
     ]
   });
   if (r.action==='cancel') return;
-  if (r.action==='delete' && existingId) {
-    PAGES['angel'].data.investments = PAGES['angel'].data.investments.filter(x=>x.id!==existingId);
-    sbDelete('cockpit_investments', `id=eq.${existingId}`);
-    return renderPage('angel');
+  if (r.action==='delete' && id) {
+    _projects = _projects.filter(x=>x.id!==id);
+    sbDelete('cockpit_projects', `id=eq.${id}`);
+    return renderPage(safe.get('cockpit.page')||pageKey);
   }
   const v = r.values;
-  const row = {name:v.name,stage:v.stage,invested:+v.invested,current_value:+v.current,stake_pct:+v.stake,notes:v.notes};
-  if (existingId) {
-    PAGES['angel'].data.investments = PAGES['angel'].data.investments.map(x=>x.id===existingId?{...x,...{name:v.name,stage:v.stage,invested:+v.invested,current:+v.current,stake:+v.stake,notes:v.notes}}:x);
-    fetch(`${SUPA_URL}/rest/v1/cockpit_investments?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
-    renderPage('angel');
+  const row = {
+    page_key: pageKey, name: v.name, pct: +v.pct||0,
+    status: v.status, tasks: v.tasks, deadline: v.ddl,
+    is_urgent: v.urgent==='true', sort_order: _projects.filter(x=>x.page_key===pageKey).length+1
+  };
+  if (id) {
+    _projects = _projects.map(x=>x.id===id?{...x,...row,id}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_projects?id=eq.${id}`,
+      {method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
   } else {
-    sbUpsert('cockpit_investments', row).then(()=>sbGet('cockpit_investments','?order=created_at').then(rows=>{
-      PAGES['angel'].data.investments = rows.map(i=>({id:i.id,name:i.name,stage:i.stage,invested:i.invested,current:i.current_value,stake:i.stake_pct,notes:i.notes||''}));
-      renderPage('angel');
-    }));
+    const tempId = 'tmp-'+Date.now();
+    _projects.push({...row, id:tempId});
+    sbUpsert('cockpit_projects', row).then(()=>
+      sbGet('cockpit_projects','?order=page_key,sort_order'),
+      sbGet('cockpit_trade_rules','?order=sort_order').then(rows=>{ _projects=rows; })
+    );
   }
+  renderPage(safe.get('cockpit.page')||pageKey);
 };
 
-// ── Real Estate ─────────────────────────────────────
-function renderRealEstate(data, pageKey) {
-  const props = data.properties || [];
-  let totalVal = 0, totalPurchase = 0, totalRev = 0, totalExp = 0;
-  props.forEach(p => { totalVal += p.value||0; totalPurchase += p.purchase||0; totalRev += p.monthlyRev||0; totalExp += p.monthlyExp||0; });
-  const totalEquity = totalVal - totalPurchase;
-  const netCash = totalRev - totalExp;
-
-  let html = `<div class="re-kpis">
-    <div class="att cyan"><div class="att-num">${fmtK(totalVal)}<span class="cur">₪</span></div><div class="att-label">Portfolio</div><div class="att-detail">${props.length} properties</div></div>
-    <div class="att good"><div class="att-num">${fmtK(totalEquity)}<span class="cur">₪</span></div><div class="att-label">Equity</div></div>
-    <div class="att good"><div class="att-num">${fmt(netCash)}<span class="cur">₪</span></div><div class="att-label">Net/Month</div></div>
-    <div class="att"><div class="att-num">${Math.round((totalEquity/Math.max(totalPurchase,1))*100)}<span class="cur">%</span></div><div class="att-label">Appreciation</div></div>
-  </div>
-  <div class="prop-list">`;
-
-  if (props.length === 0) {
-    html += `<div class="empty-state" style="margin-top:0"><div class="empty-icon">🏠</div><div class="empty-title">No properties yet</div><div class="empty-body">Add your first property to track value and cash flow.</div></div>`;
-  } else {
-    props.forEach(p => {
-      const appreciation = p.purchase > 0 ? Math.round(((p.value - p.purchase) / p.purchase) * 100) : 0;
-      const net = (p.monthlyRev||0) - (p.monthlyExp||0);
-      html += `<div class="prop-card">
-        <div class="prop-head">
-          <div class="prop-head-left">
-            <div class="prop-name">${p.name}</div>
-            <div class="prop-status ${p.status}">${p.status==='active'?'Active':'Sold'}</div>
-          </div>
-          <div style="font-size:10px;color:var(--text-3);font-family:var(--mono)">Since ${p.bought||'—'}</div>
-        </div>
-        <div class="prop-cells">
-          <div class="prop-cell"><div class="prop-cell-label">Purchase</div><div class="prop-cell-val">${fmtK(p.purchase)}₪</div></div>
-          <div class="prop-cell"><div class="prop-cell-label">Value</div><div class="prop-cell-val cyan">${fmtK(p.value)}₪</div></div>
-          <div class="prop-cell"><div class="prop-cell-label">Monthly Rev</div><div class="prop-cell-val good">${fmt(p.monthlyRev)}₪</div></div>
-          <div class="prop-cell"><div class="prop-cell-label">Monthly Exp</div><div class="prop-cell-val bad">${fmt(p.monthlyExp)}₪</div></div>
-          <div class="prop-cell"><div class="prop-cell-label">Net/Mo</div><div class="prop-cell-val ${net>=0?'good':'bad'}">${fmt(net)}₪</div></div>
-        </div>
-      </div>`;
-    });
-  }
-
-  html += `</div><button class="prop-add" onclick="addProperty()" style="margin-top:10px">+ Add property</button>`;
-  return html;
-}
-
-window.addProperty = async function(existingId) {
-  const ex = existingId ? PAGES['real-estate'].data.properties.find(x=>x.id===existingId) : null;
-  const r = await openModal({title:existingId?'Edit Property':'Add Property', icon:'🏠', saveLabel:existingId?'Update':'Add',
-    deleteLabel:existingId?'Delete':null,
-    fields:[
-      {id:'name',     label:'Property Name',         placeholder:'Apartment — Tel Aviv', value:ex?.name||''},
-      {id:'status',   label:'Status', type:'select',  options:['active','sold'],          value:ex?.status||'active'},
-      {id:'purchase', label:'Purchase Price (₪)',      type:'number', placeholder:'1200000', value:ex?.purchase||''},
-      {id:'value',    label:'Current Value (₪)',        type:'number', placeholder:'1380000', value:ex?.value||''},
-      {id:'rev',      label:'Monthly Revenue (₪)',      type:'number', placeholder:'4500',    value:ex?.monthlyRev||''},
-      {id:'exp',      label:'Monthly Expenses (₪)',     type:'number', placeholder:'900',     value:ex?.monthlyExp||''},
-      {id:'bought',   label:'Purchase Date (YYYY-MM)',  placeholder:'2022-03',              value:ex?.bought||''}
-    ]
-  });
-  if (r.action==='cancel') return;
-  if (r.action==='delete' && existingId) {
-    PAGES['real-estate'].data.properties = PAGES['real-estate'].data.properties.filter(x=>x.id!==existingId);
-    sbDelete('cockpit_properties', `id=eq.${existingId}`);
-    return renderPage('real-estate');
-  }
-  const v = r.values;
-  const row = {name:v.name,status:v.status,purchase_price:+v.purchase,current_value:+v.value,monthly_revenue:+v.rev,monthly_expenses:+v.exp,bought_date:v.bought};
-  if (existingId) {
-    PAGES['real-estate'].data.properties = PAGES['real-estate'].data.properties.map(x=>x.id===existingId?{...x,name:v.name,status:v.status,purchase:+v.purchase,value:+v.value,monthlyRev:+v.rev,monthlyExp:+v.exp,bought:v.bought}:x);
-    fetch(`${SUPA_URL}/rest/v1/cockpit_properties?id=eq.${existingId}`,{method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
-    renderPage('real-estate');
-  } else {
-    sbUpsert('cockpit_properties', row).then(()=>sbGet('cockpit_properties','?order=created_at').then(rows=>{
-      PAGES['real-estate'].data.properties = rows.map(p=>({id:p.id,name:p.name,status:p.status,purchase:p.purchase_price,value:p.current_value,monthlyRev:p.monthly_revenue,monthlyExp:p.monthly_expenses,bought:p.bought_date||''}));
-      renderPage('real-estate');
-    }));
-  }
-};
-
-// ── Empty state ─────────────────────────────────────
-function renderEmptyState(title) {
-  return `<div class="empty-state"><div class="empty-icon">◇</div><div class="empty-title">${title}</div><div class="empty-body">Not configured yet. Fill in the numbers when ready.</div></div>`;
-}
-
-// ── Rail ─────────────────────────────────────────────
-function renderRail(blocks) {
-  if (!blocks || !blocks.length) return `<div class="rail-block"><h4>Activity</h4><div style="font-size:11px;color:var(--text-3)">No data yet.</div></div>`;
-  let html = '';
-  blocks.forEach(b => {
-    html += `<div class="rail-block"><h4>${b.title}${b.badge?`<span class="badge">${b.badge}</span>`:''}</h4>`;
-    b.items.forEach(it => {
-      html += `<div class="activity-row"><div class="activity-icon ${it.tone||''}">${it.icon||'·'}</div><div class="grow"><div class="t">${it.t}</div>${it.d?`<div class="d">${it.d}</div>`:''}</div>${it.val?`<div class="val">${it.val}</div>`:''}</div>`;
-    });
-    html += `</div>`;
-  });
-  return html;
-}
 
 // ── Signal Bar ──────────────────────────────────────
 function renderSignalBar(pageKey, y, m, data) {
@@ -2366,9 +2333,12 @@ function renderLifeOverview() {
 
 // ── Skills Hub ──────────────────────────────────────
 function renderSkillsHub(data) {
-  let html = `<div class="skill-list">`;
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">All Skills</div>
+    <button class="ap-add" onclick="editSkill(null)">+ Add skill</button>
+  </div><div class="skill-list">`;
   data.skills.forEach(s => {
-    const v = parseInt(safe.get(`cockpit.val.skill.${s.name}.pct`) || s.pct);
+    const v = parseInt(safe.get('cockpit.val.skill.'+s.name+'.pct') || s.pct);
     html += `<div class="skill-row">
       <div class="skill-icon">${s.icon}</div>
       <div class="skill-info">
@@ -2376,13 +2346,57 @@ function renderSkillsHub(data) {
         <div class="skill-track"><div class="skill-fill" style="width:${v}%;background:${s.color}"></div></div>
         <div class="skill-sub">${s.status}</div>
       </div>
-      <div class="skill-pct">
-        <span class="editable" data-edit-key="skill.${s.name}.pct" data-edit-num="${v}">${v}</span><span style="font-size:11px;color:var(--text-3)">%</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="skill-pct">
+          <span class="editable" data-edit-key="skill.${s.name}.pct" data-edit-num="${v}">${v}</span><span style="font-size:11px;color:var(--text-3)">%</span>
+        </div>
+        <button onclick="event.stopPropagation();editSkill('${s.name}')" style="background:transparent;border:1px solid var(--line);color:var(--text-3);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='';this.style.color=''">✎ Edit</button>
       </div>
     </div>`;
   });
   return html + `</div>`;
 }
+
+window.editSkill = async function(name) {
+  const s = name ? PAGES['skills'].data.skills.find(x=>x.name===name) : null;
+  const v = name ? parseInt(safe.get('cockpit.val.skill.'+name+'.pct') || s?.pct || 0) : 0;
+  const r = await openModal({
+    title: name ? 'Edit Skill' : 'Add Skill', icon: '◐',
+    saveLabel: name ? 'Update' : 'Add',
+    deleteLabel: name ? 'Delete skill' : null,
+    fields: [
+      {id:'sname',  label:'Skill Name',     placeholder:'Spanish', value:s?.name||''},
+      {id:'pct',    label:'Progress (%)',    type:'number', min:0, max:100, value:v},
+      {id:'icon',   label:'Icon (emoji)',    placeholder:'🇪🇸', value:s?.icon||'⭐'},
+      {id:'color',  label:'Color (hex)',     placeholder:'#38bdf8', value:s?.color||'#38bdf8'},
+      {id:'target', label:'Target',          placeholder:'Conversational B2', value:s?.target||''},
+      {id:'status', label:'Status note',     placeholder:'Ch 4 of 16', value:s?.status||''},
+    ]
+  });
+  if (r.action==='cancel') return;
+  if (r.action==='delete' && name) {
+    PAGES['skills'].data.skills = PAGES['skills'].data.skills.filter(x=>x.name!==name);
+    sbDelete('cockpit_skills', `skill_name=eq.${encodeURIComponent(name)}`);
+    return renderPage(safe.get('cockpit.page')||'skills');
+  }
+  const fv = r.values;
+  const skillObj = {
+    name:fv.sname, icon:fv.icon, pct:+fv.pct, color:fv.color||'#38bdf8',
+    target:fv.target, status:fv.status||'', page:''
+  };
+  if (name) {
+    PAGES['skills'].data.skills = PAGES['skills'].data.skills.map(x=>x.name===name?{...x,...skillObj}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_skills?skill_name=eq.${encodeURIComponent(name)}`,
+      {method:'PATCH',headers:SUPA_HDR,body:JSON.stringify({pct:+fv.pct,status_note:fv.status})}).catch(()=>{});
+    safe.set('cockpit.val.skill.'+fv.sname+'.pct', fv.pct);
+  } else {
+    PAGES['skills'].data.skills.push(skillObj);
+    sbUpsert('cockpit_skills', {skill_name:fv.sname, pct:+fv.pct, status_note:fv.status});
+    safe.set('cockpit.val.skill.'+fv.sname+'.pct', fv.pct);
+  }
+  renderPage(safe.get('cockpit.page')||'skills');
+};
+
 
 // ── Checklist helpers ────────────────────────────────
 function loadChecklist(key, defaults) {
@@ -2679,6 +2693,189 @@ function macroRing(label, cur, target, color, unit) {
   </div>`;
 }
 
+
+// ── Live Market Rates ────────────────────────────
+const COINGECKO_IDS = {
+  BTC:'bitcoin', ETH:'ethereum', SOL:'solana', BNB:'binancecoin',
+  ADA:'cardano', DOT:'polkadot', LINK:'chainlink', AVAX:'avalanche-2',
+  MATIC:'matic-network', UNI:'uniswap', LTC:'litecoin', XRP:'ripple'
+};
+
+const LIVE_RATES = {
+  usdToIls: parseFloat(safe.get('live.usdToIls') || '3.7'),
+  eurToIls: parseFloat(safe.get('live.eurToIls') || '4.01'),
+  gbpToIls: parseFloat(safe.get('live.gbpToIls') || '4.69'),
+  thbToIls: parseFloat(safe.get('live.thbToIls') || '0.105'),
+  crypto: {},
+  lastUpdated: safe.get('live.lastUpdated') || null
+};
+
+function getRateToIls(currency) {
+  const c = (currency||'').toUpperCase();
+  if (c === 'ILS') return 1;
+  if (c === 'USD') return LIVE_RATES.usdToIls;
+  if (c === 'EUR') return LIVE_RATES.eurToIls;
+  if (c === 'GBP') return LIVE_RATES.gbpToIls;
+  if (c === 'THB') return LIVE_RATES.thbToIls;
+  return LIVE_RATES.usdToIls; // default fallback
+}
+
+async function refreshLiveRates() {
+  const el = document.getElementById('rate-indicator');
+  if (el) el.textContent = '⟳';
+
+  try {
+    // Build list of crypto IDs from holdings
+    const cryptos = PAGES['holdings']?.data?.crypto || [];
+    const ids = [...new Set([
+      ...cryptos.map(c => COINGECKO_IDS[c.symbol]).filter(Boolean),
+      'bitcoin', 'ethereum'
+    ])].join(',');
+
+    // CoinGecko — free, no key, CORS enabled
+    const cgRes = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,ils`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (cgRes.ok) {
+      const cg = await cgRes.json();
+      Object.entries(COINGECKO_IDS).forEach(([sym, id]) => {
+        if (!cg[id]) return;
+        LIVE_RATES.crypto[sym] = { usd: cg[id].usd, ils: cg[id].ils };
+        safe.set(`live.${sym}.usd`, cg[id].usd);
+        safe.set(`live.${sym}.ils`, cg[id].ils || 0);
+      });
+      // Derive USD→ILS rate from BTC if available
+      if (cg.bitcoin?.usd && cg.bitcoin?.ils) {
+        LIVE_RATES.usdToIls = +(cg.bitcoin.ils / cg.bitcoin.usd).toFixed(4);
+        safe.set('live.usdToIls', LIVE_RATES.usdToIls);
+      }
+    }
+
+    // ExchangeRate API — free, CORS enabled
+    const fxRes = await fetch(
+      'https://open.er-api.com/v6/latest/USD',
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (fxRes.ok) {
+      const fx = await fxRes.json();
+      if (fx.rates?.ILS) {
+        LIVE_RATES.usdToIls = +fx.rates.ILS.toFixed(4);
+        LIVE_RATES.eurToIls = +(fx.rates.ILS / fx.rates.EUR).toFixed(4);
+        LIVE_RATES.gbpToIls = +(fx.rates.ILS / fx.rates.GBP).toFixed(4);
+        LIVE_RATES.thbToIls = +(fx.rates.ILS / fx.rates.THB).toFixed(6);
+        ['usdToIls','eurToIls','gbpToIls','thbToIls'].forEach(k =>
+          safe.set('live.'+k, LIVE_RATES[k])
+        );
+      }
+    }
+
+    LIVE_RATES.lastUpdated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    safe.set('live.lastUpdated', LIVE_RATES.lastUpdated);
+    if (el) { el.textContent = '● ' + LIVE_RATES.lastUpdated; el.style.color = 'var(--good)'; }
+    const topEl = document.getElementById('rate-top-val');
+    if (topEl) { topEl.textContent = '$' + LIVE_RATES.usdToIls.toFixed(3) + '₪'; topEl.style.color = 'var(--good)'; }
+
+    // Re-render if on a relevant page
+    const pg = safe.get('cockpit.page');
+    if (['holdings','finance'].includes(pg)) renderPage(pg);
+
+  } catch(e) {
+    console.log('Rate refresh failed:', e.message);
+    if (el) { el.textContent = '⚠ offline'; el.style.color = 'var(--warn)'; }
+  }
+}
+
+// ── computeFinancials (true aggregation of all money) ──
+function computeFinancials() {
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const rate = LIVE_RATES.usdToIls || 3.7;
+  const toIls = (amt, cur) => amt * getRateToIls(cur);
+
+  // Business pages
+  const bizDefs = [
+    {key:'autoscale',   label:'AutoScale',    defI:PAGES['autoscale']?.data?.money?.month?.income||0,    defE:PAGES['autoscale']?.data?.money?.month?.expense||0},
+    {key:'wa-saas',     label:'WA SaaS',      defI:PAGES['wa-saas']?.data?.money?.month?.income||0,      defE:PAGES['wa-saas']?.data?.money?.month?.expense||0},
+    {key:'rsvp',        label:'Ishur RSVP',   defI:PAGES['rsvp']?.data?.money?.month?.income||0,         defE:PAGES['rsvp']?.data?.money?.month?.expense||0},
+    {key:'construction',label:'Construction', defI:PAGES['construction']?.data?.money?.month?.income||0, defE:PAGES['construction']?.data?.money?.month?.expense||0},
+  ];
+  const bizBreakdown = bizDefs.map(b => ({
+    ...b,
+    income:  getMField(b.key, y, m, 'income',  b.defI),
+    expense: getMField(b.key, y, m, 'expense', b.defE),
+  }));
+  const totalBizIncome  = bizBreakdown.reduce((s,b)=>s+b.income, 0);
+  const totalBizExpense = bizBreakdown.reduce((s,b)=>s+b.expense, 0);
+
+  // Trading P&L this month
+  let tradePnl = 0;
+  const daysInM = new Date(y, m+1, 0).getDate();
+  for (let d=1; d<=daysInM; d++) {
+    const v = safe.get(`cockpit.trade.${y}.${m}.${d}`);
+    if (v !== null) tradePnl += parseFloat(v)||0;
+  }
+
+  // Recurring
+  const ri = PAGES['finance']?.data?.recurringIncome  || [];
+  const re = PAGES['finance']?.data?.recurringExpenses || [];
+  const totalRI = ri.filter(r=>r.active).reduce((s,r)=>s+(r.amount||0), 0);
+  const totalRE = re.filter(r=>r.active).reduce((s,r)=>s+(r.amount||0), 0);
+
+  // Holdings — use LIVE_RATES for crypto
+  const crypto      = PAGES['holdings']?.data?.crypto       || [];
+  const stocks      = PAGES['holdings']?.data?.stocks       || [];
+  const cashHoldings= PAGES['holdings']?.data?.cash         || [];
+  const cryptoVal   = crypto.reduce((s,c) => {
+    const live = LIVE_RATES.crypto[c.symbol];
+    const priceIls = live ? live.ils || live.usd * rate : (c.price||0) * rate;
+    return s + (c.amount||0) * priceIls;
+  }, 0);
+  const stockVal    = stocks.reduce((s,s2) => s + (s2.shares||s2.amount||0)*(s2.price||0)*rate, 0);
+  const cashVal     = cashHoldings.reduce((s,c) => s + toIls(c.amount||0, c.currency||'ILS'), 0);
+
+  // Bank accounts
+  const accounts    = PAGES['finance']?.data?.accounts || [];
+  const bankBalance = accounts.reduce((s,a)=>s+(+getEdited(`fin.acct.${a.id}.balance`, a.balance)||0), 0);
+  const bankSavings = accounts.reduce((s,a)=>s+(+getEdited(`fin.acct.${a.id}.savings`, a.savings)||0), 0);
+  const bankCredit  = accounts.reduce((s,a)=>s+(+getEdited(`fin.acct.${a.id}.creditLine`, a.creditLine)||0), 0);
+  const cardLimits  = accounts.reduce((s,a)=>s+(+getEdited(`fin.acct.${a.id}.cardLimit`, a.cardLimit)||0), 0);
+
+  // Real estate
+  const props    = PAGES['real-estate']?.data?.properties || [];
+  const reValue  = props.reduce((s,p)=>s+(p.value||0), 0);
+  const reCashflow= props.reduce((s,p)=>s+(p.monthlyRev||0)-(p.monthlyExp||0), 0);
+
+  // Angel
+  const invs     = PAGES['angel']?.data?.investments || [];
+  const angelPaper= invs.reduce((s,i)=>s+(i.current||0), 0);
+
+  // Debt
+  const debts    = PAGES['finance']?.data?.debt || [];
+  const totalDebt= debts.reduce((s,d)=>s+(+getEdited(`fin.debt.${d.id}.balance`, d.balance)||0), 0);
+
+  // Manual assets
+  const manualAssets = +getEdited('fin.manualAssets', 0);
+
+  const totalAssets = bankBalance + bankSavings + cashVal + cryptoVal + stockVal + reValue + angelPaper + manualAssets;
+  const netWorth    = totalAssets - totalDebt;
+  const cashAvail   = bankBalance + cashVal;
+  const spendPower  = cashAvail + bankCredit + cardLimits;
+
+  const totalMonthlyIn  = totalBizIncome + tradePnl + totalRI + reCashflow;
+  const totalMonthlyOut = totalBizExpense + totalRE;
+  const monthlyNet      = totalMonthlyIn - totalMonthlyOut;
+
+  return {
+    netWorth, cashAvail, spendPower, totalDebt, totalAssets,
+    bankBalance, bankSavings, bankCredit, cardLimits,
+    cryptoVal, stockVal, cashVal, reValue, angelPaper, manualAssets,
+    totalBizIncome, totalBizExpense, bizBreakdown,
+    tradePnl, reCashflow, totalRI, totalRE,
+    totalMonthlyIn, totalMonthlyOut, monthlyNet,
+    rate, accounts, debts, ri, re
+  };
+}
+
 // ── Finance Hub ─────────────────────────────────────
 function renderFinanceHub(data) {
   const F = computeFinancials();
@@ -2691,7 +2888,23 @@ function renderFinanceHub(data) {
   const moToTarget = F.monthlyNet>0 ? Math.max(0,Math.ceil((target-currentSav)/F.monthlyNet)) : 999;
   const targetCls = moToTarget<=12?'good':moToTarget<=24?'warn':'bad';
 
+  const heroColor = F.netWorth>=0?'var(--good)':'var(--bad)';
+  const nwFormatted = Math.abs(Math.round(F.netWorth))>=1000000
+    ? (F.netWorth/1000000).toFixed(2)+'M'
+    : fmtK(Math.round(Math.abs(F.netWorth)));
+
   let html = `
+  <div style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--line)">
+    <div class="hero-label" style="margin-bottom:12px">Net Worth</div>
+    <div class="hero-number" style="color:${heroColor}">${F.netWorth<0?'−':''}${nwFormatted}<span style="font-size:0.35em;letter-spacing:0;vertical-align:middle;margin-left:4px">₪</span></div>
+    <div class="hero-delta">
+      <span style="font-family:var(--mono);color:${F.monthlyNet>=0?'var(--good)':'var(--bad)'}">${F.monthlyNet>=0?'+':''}${fmtK(Math.round(F.monthlyNet))}₪/mo</span>
+      <span style="color:var(--text-3);margin:0 8px">·</span>
+      <span style="font-family:var(--mono);color:var(--text-3)">Cash: ${fmtK(Math.round(F.cashAvail))}₪</span>
+      <span style="color:var(--text-3);margin:0 8px">·</span>
+      <span style="font-family:var(--mono);color:var(--text-3)">Debt: ${fmtK(Math.round(F.totalDebt))}₪</span>
+    </div>
+  </div>
   <div class="fin-hero">
     <div class="fin-kpi primary">
       <div class="fin-kpi-num">${fmtK(F.netWorth)}₪</div>
@@ -2978,7 +3191,6 @@ window.delRecur = function(type, id) {
   renderPage('finance');
 };
 const mainEl  = document.getElementById('main');
-const railEl  = document.getElementById('rail');
 const crumbEl = document.getElementById('crumbs');
 
 // ══════════════════════════════════════════════════
@@ -3050,6 +3262,7 @@ function renderRelocationETA() {
 }
 
 // ── Client Manager ───────────────────────────────
+let _projects = [];
 let _clients = [];
 function renderClientManager(pageKey) {
   const clients = _clients;
@@ -3160,13 +3373,13 @@ function renderTradingJournal(pageKey, y, m) {
     <div class="ts-card"><div class="ts-num">${avgR}R</div><div class="ts-label">Avg R</div></div>
   </div>
   <div class="trade-log"><div class="trade-log-head"><div class="trade-log-title">Trade Log — ${MNAMES[m]} ${y}</div>
-    <button class="ap-add" onclick="editTradeEntry(null,'${y}-${String(m+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}')">+ Log trade</button></div>`;
+    <button class="ap-add" onclick="openTradeModal(null,'${y}-${String(m+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}')">+ Log trade</button></div>`;
   if(!mt.length) html+=`<div style="text-align:center;padding:24px;color:var(--text-3);font-size:12px;font-family:var(--mono)">No trades logged — click + Log trade</div>`;
   else {
     html+=`<table class="trade-table"><tr><th>Date</th><th>Instr.</th><th>Dir</th><th>Entry</th><th>Exit</th><th>P&L</th><th>R</th><th>Notes</th></tr>`;
     mt.forEach(t=>{
       const r2=t.risk_amount&&t.risk_amount>0?(t.pnl/t.risk_amount).toFixed(1):'—';
-      html+=`<tr onclick="editTradeEntry('${t.id}','${t.trade_date}')">
+      html+=`<tr onclick="openTradeModal('${t.id}','${t.trade_date}')">
         <td>${t.trade_date?.slice(8)||'?'}</td>
         <td style="color:${INSTR_COLORS[t.instrument]||'var(--text-2)'}">● ${t.instrument}</td>
         <td class="trade-dir-${t.direction}">${t.direction==='long'?'▲':'▼'} ${t.direction}</td>
@@ -3217,6 +3430,7 @@ window.editTradeEntry = async function(id, defaultDate) {
 // ── Weekly Review ────────────────────────────────
 let _weeklyReviews = [];
 window.openWeeklyReview = function() {
+  try {
   const ov=document.getElementById('review-overlay');
   const inner=document.getElementById('review-inner');
   const now=new Date(); const day=now.getDay(); const diff=(day===0?-6:1-day);
@@ -3246,6 +3460,7 @@ window.openWeeklyReview = function() {
     </div>
     <button class="review-save" onclick="saveWeeklyReview('${weekStart}')">Save Review</button>`;
   ov.style.display='flex';
+  } catch(e) { console.error('Review error:', e); alert('Review error: '+e.message); }
 };
 window.closeWeeklyReview = function() { document.getElementById('review-overlay').style.display='none'; };
 window.saveWeeklyReview = function(weekStart) {
@@ -3296,8 +3511,1103 @@ function renderMobileToday() {
 }
 PAGES['mobile-today'] = {title:'Today', arm:'life', armLabel:'Today', sub:'', sections:['mobile-today'], data:{rail:[]}};
 
+
+// ══════════════════════════════════════════════════
+// AI AGENT — Claude-powered, sees all dashboard data
+// ══════════════════════════════════════════════════
+let agentHistory = [];
+let agentBusy = false;
+let agentOpen = false;
+
+function buildAgentSystemPrompt() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+
+  let F, E;
+  try { F = computeFinancials(); } catch(e) { F = { totalBizIncome:0, monthlyNet:0, netWorth:0, cashAvail:0, totalDebt:0, tradePnl:0 }; }
+  try { E = computeRelocationETA(); } catch(e) { E = { moToGo:999, savPct:0, mrrPct:0, bizIncome:0, currentSav:0 }; }
+
+  const clientsList = (_clients||[]).filter(c=>c.status==='active')
+    .map(c=>`  - ${c.name}: ${fmtK(c.mrr)}₪/mo (${c.contract_type})`).join('\n') || '  None loaded';
+  const pipelineList = (_pipeline||[]).filter(l=>l.stage!=='won'&&l.stage!=='lost')
+    .map(l=>`  - ${l.name}: ${fmtK(l.expected_value)}₪ (${l.stage})`).join('\n') || '  None loaded';
+
+  const sleepH = parseFloat(safe.get('cockpit.health.sleep.hours')||0);
+  const sleepQ = parseInt(safe.get('cockpit.health.sleep.quality')||0);
+
+  return `You are Richard's embedded AI assistant inside his personal Cockpit dashboard.
+
+ABOUT RICHARD:
+• Israeli entrepreneur, solo agency owner (AutoScale — digital marketing automation, Make.com, WhatsApp API, funnels)
+• Active futures trader on Apex funded accounts (NQ, ES — mostly intraday)
+• Building toward relocating to Koh Samui, Thailand when: savings ≥ 30,000₪ AND MRR ≥ 6,000₪
+• Also building: Ishur.io (wedding RSVP SaaS), WhatsApp SaaS product, considering EMT course
+• Goals: independence, leverage, discipline. Dislikes: dependency, wasted time, unclear thinking
+
+LIVE FINANCIAL SNAPSHOT (${now.toLocaleDateString('en-IL')}):
+• Net Worth: ${fmtK(Math.round(F.netWorth))}₪
+• Monthly Net Cash Flow: ${F.monthlyNet>=0?'+':''}${fmtK(Math.round(F.monthlyNet))}₪/mo
+• AutoScale + Biz Income (this month): ${fmtK(Math.round(F.totalBizIncome))}₪
+• Trading P&L (this month): ${F.tradePnl>=0?'+':''}${fmtK(Math.round(F.tradePnl))}₪
+• Cash Available: ${fmtK(Math.round(F.cashAvail))}₪
+• Total Debt: ${fmtK(Math.round(F.totalDebt))}₪ (mortgages)
+• USD→ILS Rate: ${LIVE_RATES.usdToIls.toFixed(3)}
+
+RELOCATION PROGRESS:
+• Savings: ${fmtK(E.currentSav)}₪ of 30,000₪ (${E.savPct}%)
+• MRR: ${fmtK(E.bizIncome)}₪ of 6,000₪ (${E.mrrPct}%)
+• ETA: ${E.moToGo>=999?'need consistent data':E.moToGo+' months at current pace'}
+• Constraint: ${E.constraint||'savings'}
+
+ACTIVE CLIENTS:
+${clientsList}
+
+PIPELINE (open):
+${pipelineList}
+
+HEALTH:
+• Last night: ${sleepH}h sleep, ${sleepQ}% quality
+
+INSTRUCTIONS:
+• Be direct, concise, data-driven. Richard prefers short answers over long explanations.
+• Reference his actual numbers. Don't give generic advice.
+• When he asks "what should I focus on?" — prioritize by impact on relocation target.
+• You can see his full financial picture. Use it.
+• Always answer in English unless he writes in Hebrew.`;
+}
+
+window.toggleAgent = function() {
+  const panel = document.getElementById('agent-panel');
+  agentOpen = !agentOpen;
+  panel.classList.toggle('open', agentOpen);
+  if (agentOpen) {
+    setTimeout(() => document.getElementById('agent-input')?.focus(), 350);
+    // Update system prompt context silently
+  }
+};
+
+window.sendToAgent = async function() {
+  if (agentBusy) return;
+  const input = document.getElementById('agent-input');
+  const msg = input?.value?.trim();
+  if (!msg) return;
+
+  // Check for API key
+  let apiKey = safe.get('cockpit.agent.key');
+  if (!apiKey) {
+    const r = await openModal({
+      title: 'Connect Claude AI', icon: '⊛',
+      fields: [
+        {id:'key', label:'Anthropic API Key', type:'password', placeholder:'sk-ant-api03-...'},
+      ],
+      saveLabel: 'Connect'
+    });
+    if (r.action !== 'save' || !r.values.key?.startsWith('sk-')) {
+      appendAgentMsg('claude', '⚠️ Need a valid Anthropic API key (starts with sk-ant-). Get one at console.anthropic.com');
+      return;
+    }
+    safe.set('cockpit.agent.key', r.values.key);
+    apiKey = r.values.key;
+  }
+
+  // Add user message
+  input.value = '';
+  input.style.height = '44px';
+  appendAgentMsg('user', msg);
+  agentHistory.push({ role: 'user', content: msg });
+
+  // Thinking indicator
+  agentBusy = true;
+  document.getElementById('agent-send').disabled = true;
+  const thinkId = appendAgentMsg('claude', '…', true);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: buildAgentSystemPrompt(),
+        messages: agentHistory
+      })
+    });
+
+    if (res.status === 401) {
+      safe.del('cockpit.agent.key');
+      throw new Error('Invalid API key. Key cleared — try again.');
+    }
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || '(No response)';
+
+    // Replace thinking indicator
+    removeAgentMsg(thinkId);
+    appendAgentMsg('claude', reply);
+    agentHistory.push({ role: 'assistant', content: reply });
+
+    // Keep history manageable (last 20 messages)
+    if (agentHistory.length > 20) agentHistory = agentHistory.slice(-20);
+
+  } catch(e) {
+    removeAgentMsg(thinkId);
+    appendAgentMsg('claude', '⚠️ ' + e.message);
+  } finally {
+    agentBusy = false;
+    document.getElementById('agent-send').disabled = false;
+  }
+};
+
+function appendAgentMsg(role, text, isThinking) {
+  const msgs = document.getElementById('agent-msgs');
+  if (!msgs) return null;
+  const id = 'amsg-' + Date.now();
+  const div = document.createElement('div');
+  div.className = `agent-msg ${role}${isThinking?' thinking':''}`;
+  div.id = id;
+  div.innerHTML = `<div class="agent-bubble">${text.split('<').join('&lt;').split('
+').join('<br>')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+
+function removeAgentMsg(id) {
+  if (id) document.getElementById(id)?.remove();
+}
+
+
+
+// ══════════════════════════════════════════════════
+// TRADEZELLA-STYLE TRADING SYSTEM
+// ══════════════════════════════════════════════════
+let _tradeRules = [];
+
+// TradingView symbol map
+const TV_SYMBOLS = {
+  NQ:'CME_MINI:NQ1!', ES:'CME_MINI:ES1!', MNQ:'CME_MINI:MNQ1!', MES:'CME_MINI:MES1!',
+  YM:'CBOT_MINI:YM1!', RTY:'CME_MINI:RTY1!', CL:'NYMEX:CL1!', GC:'COMEX:GC1!', OTHER:'NASDAQ:COMP'
+};
+
+function getTVLink(instrument, dateStr) {
+  const sym = TV_SYMBOLS[instrument] || `CME_MINI:${instrument}1!`;
+  if (!dateStr) return `https://www.tradingview.com/chart/?symbol=${sym}&interval=5`;
+  const d = new Date(dateStr);
+  const from = Math.floor(d.getTime()/1000) - 3600*6;
+  const to   = Math.floor(d.getTime()/1000) + 3600*6;
+  return `https://www.tradingview.com/chart/?symbol=${sym}&interval=5&from=${from}&to=${to}`;
+}
+
+// ── Custom Trade Modal ────────────────────────────
+let _tmCurrentId   = null;
+let _tmCurrentDate = null;
+let _tmGrade = '';
+let _tmChecked = [];
+
+window.openTradeModal = function(id, defaultDate) {
+  _tmCurrentId   = id || null;
+  _tmCurrentDate = defaultDate || new Date().toISOString().split('T')[0];
+  _tmGrade = '';
+  _tmChecked = [];
+
+  const t = id ? _trades.find(x=>x.id===id) : null;
+  if (t) {
+    _tmGrade   = t.trade_grade || '';
+    _tmChecked = Array.isArray(t.rules_checked) ? [...t.rules_checked] : [];
+  }
+
+  document.getElementById('tm-title').textContent = id ? 'Edit Trade' : 'Log Trade';
+
+  // Update TV link
+  const tvEl = document.getElementById('tm-tv-link');
+  const instr = t?.instrument || 'NQ';
+  const dateForTV = t?.trade_date || _tmCurrentDate;
+  tvEl.href = getTVLink(instr, dateForTV);
+  tvEl.style.display = 'inline-flex';
+
+  renderTradeModalBody(t);
+  document.getElementById('trade-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('tm-date')?.focus(), 100);
+};
+
+window.closeTradeModal = function() {
+  document.getElementById('trade-overlay').classList.remove('open');
+};
+
+function renderTradeModalBody(t) {
+  const body   = document.getElementById('tm-body');
+  const footer = document.getElementById('tm-footer');
+
+  const INSTRUMENTS = ['NQ','ES','MNQ','MES','YM','RTY','CL','GC','OTHER'];
+  const instrOpts = INSTRUMENTS.map(i=>`<option${(t?.instrument||'NQ')===i?' selected':''}>${i}</option>`).join('');
+  const gradeOpts = [
+    {val:'',    label:'—'},
+    {val:'A+',  label:'A+ Perfect'},
+    {val:'A',   label:'A Good'},
+    {val:'B',   label:'B Okay'},
+    {val:'C',   label:'C Poor'},
+    {val:'scratch',label:'Scratch'}
+  ];
+
+  // Group rules by category
+  const cats = ['entry','risk','mindset','exit'];
+  const catLabels = {entry:'Entry Rules',risk:'Risk Management',mindset:'Mindset',exit:'Exit Rules'};
+
+  const rulesHtml = _tradeRules.filter(r=>r.is_active).length > 0
+    ? cats.filter(cat=>_tradeRules.some(r=>r.category===cat&&r.is_active)).map(cat => {
+        const catRules = _tradeRules.filter(r=>r.category===cat && r.is_active);
+        return `<div style="margin-bottom:10px">
+          <div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">${catLabels[cat]}</div>
+          ${catRules.map(r=>`
+            <label class="rule-check">
+              <input type="checkbox" value="${r.id}" ${_tmChecked.includes(r.id)?'checked':''} onchange="toggleRule('${r.id}')">
+              <span class="rule-check-text">${r.rule_text}</span>
+            </label>`).join('')}
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--text-3);font-size:12px;padding:12px">No rules set yet — <span style="color:var(--cyan);cursor:pointer" onclick="closeTradeModal();openTradeRulesSettings()">set up your rules</span></div>`;
+
+  const checkedCount = _tmChecked.length;
+  const totalRules   = _tradeRules.filter(r=>r.is_active).length;
+  const pct          = totalRules>0 ? Math.round((checkedCount/totalRules)*100) : 0;
+  const pctColor     = pct>=80?'var(--good)':pct>=50?'var(--warn)':'var(--bad)';
+
+  body.innerHTML = `
+    <div class="tm-row cols2">
+      <div class="tm-field">
+        <div class="tm-label">Date</div>
+        <input class="tm-input" type="date" id="tm-date" value="${t?.trade_date||_tmCurrentDate}" onchange="updateTVLink()">
+      </div>
+      <div class="tm-field">
+        <div class="tm-label">Instrument</div>
+        <select class="tm-input tm-select" id="tm-instrument" onchange="updateTVLink()">
+          ${instrOpts}
+        </select>
+      </div>
+    </div>
+    <div class="tm-row cols2">
+      <div class="tm-field">
+        <div class="tm-label">Direction</div>
+        <select class="tm-input tm-select" id="tm-direction">
+          <option${(t?.direction||'long')==='long'?' selected':''}>long</option>
+          <option${t?.direction==='short'?' selected':''}>short</option>
+        </select>
+      </div>
+      <div class="tm-field">
+        <div class="tm-label">Contracts</div>
+        <input class="tm-input" type="number" id="tm-size" min="0.01" step="0.01" value="${t?.size||1}" placeholder="1">
+      </div>
+    </div>
+    <div class="tm-row cols3">
+      <div class="tm-field">
+        <div class="tm-label">Entry Price</div>
+        <input class="tm-input" type="number" id="tm-entry" step="0.25" value="${t?.entry_price||''}" placeholder="21050">
+      </div>
+      <div class="tm-field">
+        <div class="tm-label">Exit Price</div>
+        <input class="tm-input" type="number" id="tm-exit" step="0.25" value="${t?.exit_price||''}" placeholder="21120">
+      </div>
+      <div class="tm-field">
+        <div class="tm-label">P&L (₪)</div>
+        <input class="tm-input" type="number" id="tm-pnl" step="0.01" value="${t?.pnl||''}" placeholder="0">
+      </div>
+    </div>
+    <div class="tm-row cols2">
+      <div class="tm-field">
+        <div class="tm-label">Risk (₪) for R</div>
+        <input class="tm-input" type="number" id="tm-risk" step="0.01" value="${t?.risk_amount||''}" placeholder="200">
+      </div>
+      <div class="tm-field">
+        <div class="tm-label">Setup Type</div>
+        <input class="tm-input" id="tm-setup" value="${t?.setup_type||''}" placeholder="ORB / Pullback / Breakout">
+      </div>
+    </div>
+
+    <div class="tm-section-title" style="margin-top:6px">Trade Grade</div>
+    <div class="grade-pills" id="grade-pills">
+      ${gradeOpts.map(g=>`<button class="grade-pill${_tmGrade===g.val?` sel-${g.val.replace('+','p')}`:''}" onclick="selectGrade('${g.val}')" id="gp-${g.val.replace('+','p')}">${g.label}</button>`).join('')}
+    </div>
+
+    <div class="tm-section-title" style="margin-top:18px">Pre-Trade Rules
+      ${totalRules>0?`<span class="rules-score"><span style="color:${pctColor}">${checkedCount}/${totalRules}</span> followed</span>`:''}
+      <button onclick="openTradeRulesSettings()" style="background:transparent;border:1px solid var(--line);color:var(--text-3);border-radius:5px;padding:2px 7px;font-size:9px;cursor:pointer;font-family:var(--mono);margin-left:4px">⚙ Edit rules</button>
+    </div>
+    <div class="rules-list" id="rules-list">${rulesHtml}</div>
+
+    <div class="tm-section-title" style="margin-top:18px">Notes</div>
+    <textarea class="tm-textarea tall" id="tm-notes" placeholder="What did you see? What was the plan? How did the trade develop? What would you do differently?">${t?.notes||''}</textarea>
+
+    <div class="tm-section-title" style="margin-top:14px">Mistakes (optional)</div>
+    <textarea class="tm-textarea" id="tm-mistakes" style="min-height:60px" placeholder="What went wrong? Entered too early? Moved stop? FOMO?">${t?.mistakes||''}</textarea>
+
+    <div style="margin-top:14px">
+      <div class="tm-label" style="margin-bottom:6px">Screenshot URL</div>
+      <input class="tm-input" id="tm-screenshot" value="${t?.screenshot_url||''}" placeholder="https://prnt.sc/... or Loom/Drive link">
+    </div>
+  `;
+
+  footer.innerHTML = `
+    <div style="display:flex;gap:8px;flex:1">
+      ${_tmCurrentId?`<button class="tm-btn del" onclick="saveTradeModal('delete')">Delete</button>`:''}
+      <button class="tm-btn cancel" onclick="closeTradeModal()">Cancel</button>
+    </div>
+    <button class="tm-btn save" onclick="saveTradeModal('save')">Save Trade</button>
+  `;
+}
+
+window.selectGrade = function(val) {
+  _tmGrade = val;
+  document.querySelectorAll('.grade-pill').forEach(el => {
+    const grades = ['','A+','A','B','C','scratch'];
+    grades.forEach(g => el.classList.remove('sel-'+g.replace('+','p')));
+  });
+  const selEl = document.getElementById('gp-'+val.replace('+','p'));
+  if (selEl) selEl.classList.add('sel-'+val.replace('+','p'));
+};
+
+window.toggleRule = function(ruleId) {
+  if (_tmChecked.includes(ruleId)) {
+    _tmChecked = _tmChecked.filter(x=>x!==ruleId);
+  } else {
+    _tmChecked.push(ruleId);
+  }
+  // Update score display
+  const totalRules = _tradeRules.filter(r=>r.is_active).length;
+  const pct = totalRules>0 ? Math.round((_tmChecked.length/totalRules)*100) : 0;
+  const pctColor = pct>=80?'var(--good)':pct>=50?'var(--warn)':'var(--bad)';
+  document.querySelectorAll('.rules-score').forEach(el => {
+    el.innerHTML = `<span style="color:${pctColor}">${_tmChecked.length}/${totalRules}</span> followed`;
+  });
+};
+
+window.updateTVLink = function() {
+  const instr = document.getElementById('tm-instrument')?.value || 'NQ';
+  const date  = document.getElementById('tm-date')?.value || _tmCurrentDate;
+  const tvEl  = document.getElementById('tm-tv-link');
+  if (tvEl) { tvEl.href = getTVLink(instr, date); tvEl.style.display='inline-flex'; }
+};
+
+window.saveTradeModal = async function(action) {
+  if (action === 'cancel') return closeTradeModal();
+
+  const id   = _tmCurrentId;
+  const date = document.getElementById('tm-date')?.value;
+  const t    = id ? _trades.find(x=>x.id===id) : null;
+
+  if (action === 'delete' && id) {
+    _trades = _trades.filter(x=>x.id!==id);
+    sbDelete('cockpit_trades', `id=eq.${id}`);
+    const dd=new Date(t.trade_date);
+    const dayTrades=_trades.filter(x=>x.trade_date===t.trade_date);
+    const dayPnl=dayTrades.reduce((s,x)=>s+x.pnl,0);
+    safe.set(`cockpit.trade.${dd.getFullYear()}.${dd.getMonth()}.${dd.getDate()}`, dayPnl);
+    if(dayTrades.length>0) sbUpsert('cockpit_trade_days',{trade_date:t.trade_date,pnl:dayPnl});
+    else sbDelete('cockpit_trade_days',`trade_date=eq.${t.trade_date}`);
+    closeTradeModal();
+    return renderPage(safe.get('cockpit.page')||'trading');
+  }
+
+  const row = {
+    trade_date:     date,
+    instrument:     document.getElementById('tm-instrument')?.value||'NQ',
+    direction:      document.getElementById('tm-direction')?.value||'long',
+    entry_price:    +document.getElementById('tm-entry')?.value||null,
+    exit_price:     +document.getElementById('tm-exit')?.value||null,
+    size:           +document.getElementById('tm-size')?.value||1,
+    pnl:            +document.getElementById('tm-pnl')?.value||0,
+    risk_amount:    +document.getElementById('tm-risk')?.value||null,
+    setup_type:     document.getElementById('tm-setup')?.value||'',
+    screenshot_url: document.getElementById('tm-screenshot')?.value||'',
+    notes:          document.getElementById('tm-notes')?.value||'',
+    mistakes:       document.getElementById('tm-mistakes')?.value||'',
+    trade_grade:    _tmGrade||'',
+    rules_checked:  _tmChecked
+  };
+
+  if (id) {
+    _trades = _trades.map(x=>x.id===id?{...row,id}:x);
+    fetch(`${SUPA_URL}/rest/v1/cockpit_trades?id=eq.${id}`,
+      {method:'PATCH',headers:SUPA_HDR,body:JSON.stringify(row)}).catch(()=>{});
+  } else {
+    _trades.push({...row,id:'tmp-'+Date.now()});
+    sbUpsert('cockpit_trades', row);
+  }
+
+  // Update daily aggregate
+  const dd=new Date(date);
+  const dayTrades=_trades.filter(x=>x.trade_date===date);
+  const dayPnl=dayTrades.reduce((s,x)=>s+x.pnl,0);
+  safe.set(`cockpit.trade.${dd.getFullYear()}.${dd.getMonth()}.${dd.getDate()}`, dayPnl);
+  sbUpsert('cockpit_trade_days',{trade_date:date,pnl:dayPnl});
+
+  closeTradeModal();
+  renderPage(safe.get('cockpit.page')||'trading');
+};
+
+// ── Trade Rules Settings Panel ────────────────────
+window.openTradeRulesSettings = async function() {
+  // Build a modal-within-the-flow for rules management
+  const cats = ['entry','risk','mindset','exit'];
+  const catLabels = {entry:'Entry',risk:'Risk',mindset:'Mindset',exit:'Exit'};
+
+  const rulesRows = _tradeRules.map(r=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)">
+      <span class="rule-cat ${r.category}">${catLabels[r.category]}</span>
+      <span style="flex:1;font-size:12px;color:var(--text-1)">${r.rule_text}</span>
+      <button onclick="deleteTradeRule('${r.id}')" style="background:transparent;border:none;color:var(--bad);cursor:pointer;font-size:14px;padding:0 4px">×</button>
+    </div>`).join('');
+
+  const r = await openModal({
+    title: 'Trading Rules Checklist', icon: '☑',
+    saveLabel: 'Add Rule',
+    fields: [
+      {id:'rule',  label:'Rule Text',     placeholder:'Trend aligned on 4H chart', value:''},
+      {id:'cat',   label:'Category', type:'select', options:['entry','risk','mindset','exit'], value:'entry'},
+    ],
+    extra: rulesRows ? `<div style="margin-bottom:12px;border:1px solid var(--line);border-radius:9px;padding:0 12px">${rulesRows}</div>` : ''
+  });
+
+  if (r.action !== 'save' || !r.values.rule) return;
+  const newRule = {
+    rule_text: r.values.rule, category: r.values.cat,
+    sort_order: _tradeRules.length+1, is_active: true
+  };
+  sbUpsert('cockpit_trade_rules', newRule).then(()=>
+    sbGet('cockpit_trade_rules','?order=sort_order').then(rows=>{ _tradeRules=rows; })
+  );
+  _tradeRules.push({...newRule, id:'tmp-'+Date.now()});
+};
+
+window.deleteTradeRule = function(id) {
+  _tradeRules = _tradeRules.filter(x=>x.id!==id);
+  sbDelete('cockpit_trade_rules', `id=eq.${id}`);
+  openTradeRulesSettings(); // reopen to show updated list
+};
+
+// ── IBKR CSV Import ───────────────────────────────
+window.importFromIBKR = function() {
+  document.getElementById('ibkr-file-input')?.click();
+};
+
+window.handleIBKRFile = function(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const csv = e.target.result;
+    const imported = parseIBKRcsv(csv);
+    if (!imported.length) {
+      alert('No trades found in file. Make sure it is an IBKR Activity Statement or Trade Confirmation CSV.');
+      return;
+    }
+    const confirmed = confirm(`Found ${imported.length} trades. Import all?`);
+    if (!confirmed) return;
+    let added=0;
+    for (const t of imported) {
+      const exists = _trades.find(x=>x.trade_date===t.trade_date&&Math.abs(x.pnl-t.pnl)<0.01&&x.instrument===t.instrument);
+      if (!exists) {
+        _trades.push({...t, id:'tmp-'+Date.now()+Math.random()});
+        await sbUpsert('cockpit_trades', t);
+        // Update daily aggregate
+        const dd=new Date(t.trade_date);
+        const dayTrades=_trades.filter(x=>x.trade_date===t.trade_date);
+        const dayPnl=dayTrades.reduce((s,x)=>s+x.pnl,0);
+        safe.set(`cockpit.trade.${dd.getFullYear()}.${dd.getMonth()}.${dd.getDate()}`, dayPnl);
+        sbUpsert('cockpit_trade_days',{trade_date:t.trade_date,pnl:dayPnl});
+        added++;
+      }
+    }
+    alert(`Imported ${added} new trades (${imported.length-added} duplicates skipped).`);
+    renderPage(safe.get('cockpit.page')||'trading');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+};
+
+function parseIBKRcsv(csv) {
+  const lines = csv.split('\n');
+  const trades = [];
+  const INSTR_MAP = {NQ:'NQ',ES:'ES',MNQ:'MNQ',MES:'MES',YM:'YM',RTY:'RTY',CL:'CL',GC:'GC'};
+
+  // Try to detect IBKR format
+  for (const line of lines) {
+    const cols = line.split(',').map(c=>{const s=c.trim();return(s.startsWith('"')&&s.endsWith('"'))?s.slice(1,-1):s;});
+    // IBKR Activity Statement trades section
+    // Format: Trades,Data,Order,Futures,USD,NQ MAR 2026,"2026-05-05, 10:32:00",1,21050,...,Realized P&L,...
+    if (cols[0]==='Trades' && cols[1]==='Data' && cols[2]==='Order' && cols[3]==='Futures') {
+      const symbol   = cols[5]||'';
+      const dateTime = cols[6]||'';
+      const qty      = parseFloat(cols[7])||0;
+      const price    = parseFloat(cols[8])||0;
+      const pnl      = parseFloat(cols[13])||0;
+
+      // Extract instrument name
+      let instrument = 'OTHER';
+      for (const k of Object.keys(INSTR_MAP)) {
+        if (symbol.startsWith(k)) { instrument=k; break; }
+      }
+
+      // Parse date
+      const dPart = dateTime.split(',')[0].trim();
+      const tradeDate = (dPart.length>=10&&dPart[4]==='-'&&dPart[7]==='-') ? dPart.slice(0,10) : null;
+      if (!tradeDate) continue;
+
+      trades.push({
+        trade_date: tradeDate,
+        instrument,
+        direction: qty>0?'long':'short',
+        entry_price: price,
+        exit_price: null,
+        size: Math.abs(qty),
+        pnl: Math.round(pnl*3.7), // USD→ILS approx
+        risk_amount: null,
+        setup_type: 'IBKR Import',
+        notes: `Imported from IBKR · Symbol: ${symbol}`,
+        rules_checked: [],
+        trade_grade: '',
+        mistakes: ''
+      });
+    }
+    // Also handle simple CSV: date,symbol,direction,qty,entry,exit,pnl
+    if (cols.length>=7 && (cols[0].length===10&&cols[0][4]==='-'&&cols[0][7]==='-')) {
+      let instrument='OTHER';
+      for(const k of Object.keys(INSTR_MAP)){if((cols[1]||'').startsWith(k)){instrument=k;break;}}
+      trades.push({
+        trade_date: cols[0],
+        instrument,
+        direction: (cols[2]||'').toLowerCase().includes('short')?'short':'long',
+        size: Math.abs(parseFloat(cols[3])||1),
+        entry_price: parseFloat(cols[4])||null,
+        exit_price: parseFloat(cols[5])||null,
+        pnl: parseFloat(cols[6])||0,
+        risk_amount: null,
+        setup_type: 'CSV Import',
+        notes: '',
+        rules_checked: [],
+        trade_grade: '',
+        mistakes: ''
+      });
+    }
+  }
+  return trades;
+}
+
+// ── Enhanced renderTradingJournal ─────────────────
+function renderTradingJournalV2(pageKey, y, m) {
+  const monthStr = `${y}-${String(m+1).padStart(2,'0')}`;
+  const mt = _trades.filter(t=>t.trade_date?.startsWith(monthStr))
+                    .sort((a,b)=>a.trade_date.localeCompare(b.trade_date));
+
+  const wins   = mt.filter(t=>t.pnl>0);
+  const losses = mt.filter(t=>t.pnl<0);
+  const totalPnl  = mt.reduce((s,t)=>s+t.pnl,0);
+  const winRate   = mt.length>0 ? Math.round((wins.length/mt.length)*100) : 0;
+  const avgWin    = wins.length>0 ? Math.round(wins.reduce((s,t)=>s+t.pnl,0)/wins.length) : 0;
+  const avgLoss   = losses.length>0 ? Math.round(losses.reduce((s,t)=>s+t.pnl,0)/losses.length) : 0;
+  const profFactor= losses.length>0 && avgLoss!==0 ? (Math.abs(wins.reduce((s,t)=>s+t.pnl,0)/losses.reduce((s,t)=>s+t.pnl,0))).toFixed(2) : '∞';
+  const avgR      = mt.filter(t=>t.risk_amount>0).length>0
+    ? (mt.filter(t=>t.risk_amount>0).reduce((s,t)=>s+t.pnl/t.risk_amount,0)/mt.filter(t=>t.risk_amount>0).length).toFixed(2)
+    : '—';
+
+  // Equity curve data
+  let running=0;
+  const equity = mt.map(t=>{ running+=t.pnl; return running; });
+  const eqMin = Math.min(0,...equity), eqMax = Math.max(1,...equity);
+  const eqRange = eqMax-eqMin||1;
+  const eqPoints = equity.map((v,i)=>{
+    const x = equity.length>1 ? (i/(equity.length-1))*100 : 50;
+    const y2 = 80 - ((v-eqMin)/eqRange)*76;
+    return `${x},${y2}`;
+  }).join(' ');
+
+  // Per-instrument breakdown
+  const byInstr = {};
+  mt.forEach(t=>{
+    if(!byInstr[t.instrument]) byInstr[t.instrument]={n:0,pnl:0,wins:0};
+    byInstr[t.instrument].n++;
+    byInstr[t.instrument].pnl+=t.pnl;
+    if(t.pnl>0) byInstr[t.instrument].wins++;
+  });
+
+  const INSTR_COLORS2={NQ:'var(--cyan)',ES:'var(--tech)',MNQ:'var(--cap)',MES:'var(--good)',OTHER:'var(--text-2)'};
+  const pnlColor = totalPnl>=0?'var(--good)':'var(--bad)';
+
+  let html = `
+  <div class="section-h"><span><span class="num">02</span>Trade Journal</span><div class="line"></div>
+    <span class="meta">${mt.length} TRADES · ${winRate}% WIN · ${profFactor}PF</span>
+    <div style="display:flex;gap:6px;margin-left:auto">
+      <button class="ibkr-btn" onclick="importFromIBKR()" title="Import trades from IBKR Activity Statement CSV">IBKR Import</button>
+      <button class="ap-add" onclick="openTradeModal(null,'${y}-${String(m+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}')">+ Log trade</button>
+    </div>
+  </div>
+
+  <div class="trade-stat-grid">
+    <div class="tstat"><div class="tstat-val" style="color:${pnlColor}">${totalPnl>=0?'+':''}${fmtK(Math.round(totalPnl))}₪</div><div class="tstat-label">Net P&L</div><div class="tstat-sub">${mt.length} trades</div></div>
+    <div class="tstat"><div class="tstat-val" style="color:${winRate>=50?'var(--good)':'var(--bad)'}">${winRate}%</div><div class="tstat-label">Win Rate</div><div class="tstat-sub">${wins.length}W · ${losses.length}L</div></div>
+    <div class="tstat"><div class="tstat-val" style="color:var(--text-1)">${profFactor}</div><div class="tstat-label">Profit Factor</div><div class="tstat-sub">wins÷losses</div></div>
+    <div class="tstat"><div class="tstat-val">${avgR!=='—'?avgR+'R':avgR}</div><div class="tstat-label">Avg R</div><div class="tstat-sub">${avgWin>0?'+'+avgWin+'₪':'—'} avg win</div></div>
+    <div class="tstat"><div class="tstat-val" style="color:var(--good)">${avgWin>0?'+'+avgWin+'₪':'—'}</div><div class="tstat-label">Avg Winner</div></div>
+    <div class="tstat"><div class="tstat-val" style="color:var(--bad)">${avgLoss<0?avgLoss+'₪':'—'}</div><div class="tstat-label">Avg Loser</div></div>
+    <div class="tstat"><div class="tstat-val">${wins.length>0?Math.max(...wins.map(t=>t.pnl)).toFixed(0)+'₪':'—'}</div><div class="tstat-label">Best Trade</div></div>
+    <div class="tstat"><div class="tstat-val">${losses.length>0?Math.min(...losses.map(t=>t.pnl)).toFixed(0)+'₪':'—'}</div><div class="tstat-label">Worst Trade</div></div>
+  </div>`;
+
+  // Equity curve
+  if (equity.length > 1) {
+    const fillColor = totalPnl>=0?'rgba(74,222,128,0.08)':'rgba(248,113,113,0.08)';
+    const lineColor = totalPnl>=0?'var(--good)':'var(--bad)';
+    const lastX = equity.length>1?100:50, lastY = equity.length>0?80-((equity[equity.length-1]-eqMin)/eqRange)*76:80;
+    html += `<svg class="equity-chart" viewBox="0 0 100 80" preserveAspectRatio="none">
+      <defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lineColor}" stop-opacity="0.2"/><stop offset="100%" stop-color="${lineColor}" stop-opacity="0"/></linearGradient></defs>
+      <polyline points="${eqPoints}" fill="none" stroke="${lineColor}" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+      <polygon points="${eqPoints} ${lastX},80 0,80" fill="url(#eqFill)"/>
+    </svg>`;
+  }
+
+  // Per-instrument mini table
+  if (Object.keys(byInstr).length > 0) {
+    html += `<div class="panel" style="margin-bottom:12px"><div class="panel-head"><div class="panel-title">By Instrument</div></div>
+      <table class="inst-table"><tr><th>Instrument</th><th>Trades</th><th>Win%</th><th>Net P&L</th></tr>`;
+    Object.entries(byInstr).sort((a,b)=>b[1].pnl-a[1].pnl).forEach(([sym,d])=>{
+      const wr2=Math.round((d.wins/d.n)*100);
+      html+=`<tr><td style="color:${INSTR_COLORS2[sym]||'var(--text-2)'};font-weight:600">● ${sym}</td><td>${d.n}</td><td style="color:${wr2>=50?'var(--good)':'var(--bad)'}">${wr2}%</td><td style="color:${d.pnl>=0?'var(--good)':'var(--bad)'};font-weight:600">${d.pnl>=0?'+':''}${fmt(Math.round(d.pnl))}₪</td></tr>`;
+    });
+    html+=`</table></div>`;
+  }
+
+  // Trade log
+  html += `<div class="trade-log"><div class="trade-log-head"><div class="trade-log-title">Trade Log — ${MNAMES[m]} ${y}</div></div>`;
+  if(!mt.length) {
+    html+=`<div style="text-align:center;padding:28px;color:var(--text-3);font-size:12px;font-family:var(--mono)">No trades logged — click + Log trade or IBKR Import</div>`;
+  } else {
+    html+=`<table class="trade-table">
+      <tr><th>Date</th><th>Instr.</th><th>Dir</th><th>Grade</th><th>Setup</th><th>P&L</th><th>R</th><th>Rules</th></tr>`;
+    mt.forEach(t=>{
+      const r2=t.risk_amount&&t.risk_amount>0?(t.pnl/t.risk_amount).toFixed(1):'—';
+      const gradeColor={'A+':'var(--good)','A':'var(--good)','B':'var(--cyan)','C':'var(--warn)','scratch':'var(--text-3)','':'var(--text-3)'}[t.trade_grade||''];
+      const INSTR_COLORS3={NQ:'var(--cyan)',ES:'var(--tech)',MNQ:'var(--cap)',MES:'var(--good)',YM:'var(--warn)',OTHER:'var(--text-2)'};
+      const checked=(Array.isArray(t.rules_checked)?t.rules_checked.length:0);
+      const total=_tradeRules.filter(r=>r.is_active).length;
+      const rulesScore=total>0?`${checked}/${total}`:checked>0?String(checked):'—';
+      const rulesPct=total>0?Math.round((checked/total)*100):0;
+      html+=`<tr onclick="openTradeModal('${t.id}','${t.trade_date}')" style="cursor:pointer">
+        <td>${t.trade_date?.slice(8)||'?'}</td>
+        <td style="color:${INSTR_COLORS3[t.instrument]||'var(--text-2)'}">● ${t.instrument}</td>
+        <td class="trade-dir-${t.direction}">${t.direction==='long'?'▲':'▼'} ${t.direction}</td>
+        <td style="color:${gradeColor};font-weight:700;font-family:var(--mono)">${t.trade_grade||'—'}</td>
+        <td style="font-size:10px;color:var(--text-3)">${t.setup_type||'—'}</td>
+        <td class="trade-pnl ${t.pnl>=0?'pos':'neg'}">${t.pnl>=0?'+':''}${fmt(t.pnl)}₪</td>
+        <td style="color:${parseFloat(r2)>0?'var(--good)':parseFloat(r2)<0?'var(--bad)':'var(--text-3)'}">${r2!=='—'?r2+'R':r2}</td>
+        <td style="color:${rulesPct>=80?'var(--good)':rulesPct>=50?'var(--warn)':'var(--bad)'};font-family:var(--mono);font-size:10px">${rulesScore}</td>
+      </tr>`;
+    });
+    html+=`</table>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
+
+
+// ══════════════════════════════════════════════════
+// FULL TRADEZELLA ANALYTICS
+// ══════════════════════════════════════════════════
+
+function calcMaxDrawdown(trades) {
+  let peak=0, maxDD=0, running=0;
+  trades.forEach(t=>{ running+=t.pnl; if(running>peak)peak=running; const dd=peak-running; if(dd>maxDD)maxDD=dd; });
+  return maxDD;
+}
+
+function calcByDOW(trades) {
+  const days = [0,1,2,3,4,5,6].map(d=>({day:d,pnl:0,n:0,wins:0}));
+  trades.forEach(t=>{ const d=new Date(t.trade_date+'T12:00:00').getDay(); days[d].pnl+=t.pnl; days[d].n++; if(t.pnl>0)days[d].wins++; });
+  return days;
+}
+
+function calcBySetup(trades) {
+  const map={};
+  trades.forEach(t=>{
+    const k=t.setup_type||'Untagged';
+    if(!map[k]) map[k]={n:0,pnl:0,wins:0};
+    map[k].n++; map[k].pnl+=t.pnl; if(t.pnl>0)map[k].wins++;
+  });
+  return Object.entries(map).map(([name,v])=>({name,...v,avg:Math.round(v.pnl/v.n),wr:Math.round((v.wins/v.n)*100)})).sort((a,b)=>b.pnl-a.pnl);
+}
+
+function calcRulesAnalytics(trades, rules) {
+  return rules.filter(r=>r.is_active).map(r=>{
+    const withR = trades.filter(t=>Array.isArray(t.rules_checked)&&t.rules_checked.includes(r.id));
+    const woR   = trades.filter(t=>!Array.isArray(t.rules_checked)||!t.rules_checked.includes(r.id));
+    const wW    = withR.filter(t=>t.pnl>0);
+    const woW   = woR.filter(t=>t.pnl>0);
+    const withWR  = withR.length>0 ? Math.round((wW.length/withR.length)*100) : null;
+    const withAvg = withR.length>0 ? Math.round(withR.reduce((s,t)=>s+t.pnl,0)/withR.length) : null;
+    const woWR    = woR.length>0   ? Math.round((woW.length/woR.length)*100)   : null;
+    const woAvg   = woR.length>0   ? Math.round(woR.reduce((s,t)=>s+t.pnl,0)/woR.length)   : null;
+    const impact  = (withWR!==null&&woWR!==null) ? withWR-woWR : null;
+    return {rule:r, withR:{n:withR.length,wr:withWR,avg:withAvg}, woR:{n:woR.length,wr:woWR,avg:woAvg}, impact};
+  }).sort((a,b)=>(b.impact||0)-(a.impact||0));
+}
+
+function renderEquityCurveBig(trades, height) {
+  if (!trades.length) return '<div class="eq-curve-big" style="display:flex;align-items:center;justify-content:center;color:var(--text-3);font-family:var(--mono);font-size:12px">No trades yet</div>';
+  let running=0;
+  const pts = trades.map(t=>{ running+=t.pnl; return running; });
+  const eqMin=Math.min(0,...pts), eqMax=Math.max(1,...pts), rng=eqMax-eqMin||1;
+  const H = height||120;
+  const points = pts.map((v,i)=>{
+    const x = pts.length>1?(i/(pts.length-1))*100:50;
+    const y = H - ((v-eqMin)/rng)*(H-4) - 2;
+    return x+','+y;
+  }).join(' ');
+  const lastX = pts.length>1?100:50;
+  const lastY = H - ((pts[pts.length-1]-eqMin)/rng)*(H-4) - 2;
+  const zeroY = H - ((0-eqMin)/rng)*(H-4) - 2;
+  const isPos = pts[pts.length-1]>=0;
+  const lc = isPos?'var(--good)':'var(--bad)';
+  return '<svg class="eq-curve-big" viewBox="0 0 100 '+H+'" preserveAspectRatio="none">' +
+    '<defs><linearGradient id="eqBig" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+lc+'" stop-opacity="0.18"/><stop offset="100%" stop-color="'+lc+'" stop-opacity="0"/></linearGradient></defs>' +
+    '<line x1="0" y1="'+zeroY+'" x2="100" y2="'+zeroY+'" stroke="rgba(255,255,255,0.06)" stroke-width="0.4"/>' +
+    '<polygon points="'+points+' '+lastX+','+H+' 0,'+H+'" fill="url(#eqBig)"/>' +
+    '<polyline points="'+points+'" fill="none" stroke="'+lc+'" stroke-width="0.8" vector-effect="non-scaling-stroke"/>' +
+    '</svg>';
+}
+
+function renderTradingOverview() {
+  const allTrades = [..._trades].sort((a,b)=>a.trade_date.localeCompare(b.trade_date));
+  const wins   = allTrades.filter(t=>t.pnl>0);
+  const losses = allTrades.filter(t=>t.pnl<0);
+  const totalPnl = allTrades.reduce((s,t)=>s+t.pnl,0);
+  const wr = allTrades.length>0?Math.round((wins.length/allTrades.length)*100):0;
+  const pf = losses.length>0&&wins.length>0 ? (Math.abs(wins.reduce((s,t)=>s+t.pnl,0)/losses.reduce((s,t)=>s+t.pnl,0))).toFixed(2) : '∞';
+  const avgR = allTrades.filter(t=>t.risk_amount>0).length>0
+    ? (allTrades.filter(t=>t.risk_amount>0).reduce((s,t)=>s+t.pnl/t.risk_amount,0)/allTrades.filter(t=>t.risk_amount>0).length).toFixed(2) : '—';
+  const maxDD = calcMaxDrawdown(allTrades);
+  const tradingDays = new Set(allTrades.map(t=>t.trade_date)).size;
+  const avgWin  = wins.length>0?Math.round(wins.reduce((s,t)=>s+t.pnl,0)/wins.length):0;
+  const avgLoss = losses.length>0?Math.round(losses.reduce((s,t)=>s+t.pnl,0)/losses.length):0;
+  const pnlColor = totalPnl>=0?'var(--good)':'var(--bad)';
+
+  // Best month
+  const byMonth={};
+  allTrades.forEach(t=>{ const k=t.trade_date.slice(0,7); if(!byMonth[k])byMonth[k]=0; byMonth[k]+=t.pnl; });
+  const bestMonth = Object.entries(byMonth).sort((a,b)=>b[1]-a[1])[0];
+
+  // Grade distribution
+  const grades={'A+':0,'A':0,'B':0,'C':0,'scratch':0,'':0};
+  allTrades.forEach(t=>{ if(grades[t.trade_grade]!==undefined) grades[t.trade_grade]++; });
+
+  // DOW
+  const dow = calcByDOW(allTrades);
+  const DOW_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const maxDowPnl = Math.max(...dow.filter(d=>d.n>0).map(d=>Math.abs(d.pnl/Math.max(d.n,1))));
+
+  // Setup breakdown
+  const setups = calcBySetup(allTrades).slice(0,6);
+  const maxSetupPnl = Math.max(1,...setups.map(s=>Math.abs(s.pnl)));
+
+  // Rules analytics
+  const rulesAna = calcRulesAnalytics(allTrades, _tradeRules);
+
+  let html = '<div class="section-h"><span><span class="num">01</span>Trading Dashboard</span><div class="line"></div>' +
+    '<span class="meta">'+allTrades.length+' TRADES · '+tradingDays+' DAYS</span>' +
+    '<div style="display:flex;gap:6px;margin-left:auto">' +
+    '<button class="ibkr-btn" onclick="importFromIBKR()">IBKR Import</button>' +
+    '<button class="ap-add" onclick="openTradeModal(null,''+new Date().toISOString().split('T')[0]+'')">+ Log trade</button>' +
+    '</div></div>';
+
+  // KPI grid
+  const tzHeroColor = totalPnl>=0?'var(--good)':'var(--bad)';
+  const tzHeroFmt = Math.abs(totalPnl)>=10000
+    ? (totalPnl>=0?'+':'-') + Math.abs(Math.round(totalPnl/1000))+'k'
+    : (totalPnl>=0?'+':'') + Math.round(totalPnl);
+
+  html += '<div style="margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--line)">' +
+    '<div class="hero-label" style="margin-bottom:10px">All-Time P&L</div>' +
+    '<div class="hero-number" style="color:'+tzHeroColor+'">'+tzHeroFmt+'<span style="font-size:0.35em;letter-spacing:0;vertical-align:middle;margin-left:4px">₪</span></div>' +
+    '<div class="hero-delta">' +
+    '<span style="font-family:var(--mono);color:'+(wr>=50?'var(--good)':'var(--bad)')+'">'+wr+'% win rate</span>' +
+    '<span style="color:var(--text-3);margin:0 8px">·</span>' +
+    '<span style="font-family:var(--mono);color:var(--text-3)">'+allTrades.length+' trades · '+pf+'PF</span>' +
+    '</div></div>';
+
+  html += '<div class="tz-grid">' +
+    '<div class="tz-card '+(totalPnl>=0?'accent-good':'accent-bad')+'"><div class="tz-val" style="color:'+pnlColor+'">'+(totalPnl>=0?'+':'')+fmtK(Math.round(totalPnl))+'₪</div><div class="tz-label">All-Time P&L</div><div class="tz-sub">'+allTrades.length+' trades</div></div>' +
+    '<div class="tz-card"><div class="tz-val" style="color:'+(wr>=50?'var(--good)':'var(--bad)')+'">'+wr+'%</div><div class="tz-label">Win Rate</div><div class="tz-sub">'+wins.length+'W · '+losses.length+'L</div></div>' +
+    '<div class="tz-card"><div class="tz-val">'+pf+'</div><div class="tz-label">Profit Factor</div><div class="tz-sub">'+avgR+'R avg</div></div>' +
+    '<div class="tz-card"><div class="tz-val" style="color:var(--bad)">'+(maxDD>0?'-'+fmtK(Math.round(maxDD))+'₪':'—')+'</div><div class="tz-label">Max Drawdown</div></div>' +
+    '<div class="tz-card"><div class="tz-val" style="color:var(--good)">'+(avgWin>0?'+'+avgWin+'₪':'—')+'</div><div class="tz-label">Avg Winner</div></div>' +
+    '<div class="tz-card"><div class="tz-val" style="color:var(--bad)">'+(avgLoss<0?avgLoss+'₪':'—')+'</div><div class="tz-label">Avg Loser</div></div>' +
+    '<div class="tz-card"><div class="tz-val">'+tradingDays+'</div><div class="tz-label">Trading Days</div></div>' +
+    '<div class="tz-card"><div class="tz-val" style="color:var(--good)">'+(bestMonth?bestMonth[0]:'—')+'</div><div class="tz-label">Best Month</div><div class="tz-sub">'+(bestMonth?'+'+fmtK(Math.round(bestMonth[1]))+'₪':'')+'</div></div>' +
+  '</div>';
+
+  // Equity curve
+  html += renderEquityCurveBig(allTrades, 120);
+
+  // ── RULES ANALYTICS ──
+  if (rulesAna.length > 0 && allTrades.some(t=>Array.isArray(t.rules_checked)&&t.rules_checked.length>0)) {
+    html += '<div class="rules-analytics"><div class="ra-head"><div class="ra-title">Rules Analytics — What Actually Works</div>' +
+      '<span style="font-size:9px;color:var(--text-3);font-family:var(--mono)">checked vs not checked</span></div>' +
+      '<div class="ra-row ra-header"><span>Rule</span><span style="text-align:center">N (with)</span><span style="text-align:center">Win% ✓</span><span style="text-align:center">Win% ✗</span><span style="text-align:center">Avg ✓</span><span style="text-align:right">Impact</span></div>';
+    rulesAna.forEach(ra=>{
+      const impColor = ra.impact===null?'var(--text-3)':ra.impact>10?'var(--good)':ra.impact>0?'var(--warn)':'var(--bad)';
+      const impStr = ra.impact===null?'N/A':(ra.impact>0?'+':'')+ra.impact+'%';
+      html += '<div class="ra-row">' +
+        '<div><div class="ra-rule">'+ra.rule.rule_text+'</div>' +
+        '<span class="rule-cat '+ra.rule.category+'" style="font-size:8px;padding:1px 5px">'+ra.rule.category+'</span></div>' +
+        '<div class="ra-num">'+ra.withR.n+'</div>' +
+        '<div class="ra-num" style="color:'+(ra.withR.wr>=50?'var(--good)':'var(--bad)')+';font-weight:600">'+(ra.withR.wr!==null?ra.withR.wr+'%':'—')+'</div>' +
+        '<div class="ra-num" style="color:'+(ra.woR.wr!==null&&ra.woR.wr>=50?'var(--good)':'var(--text-3)')+'">'+(ra.woR.wr!==null?ra.woR.wr+'%':'—')+'</div>' +
+        '<div class="ra-num" style="color:'+(ra.withR.avg!==null&&ra.withR.avg>=0?'var(--good)':'var(--bad)')+'">'+(ra.withR.avg!==null?(ra.withR.avg>=0?'+':'')+ra.withR.avg+'₪':'—')+'</div>' +
+        '<div class="ra-impact" style="color:'+impColor+'">'+impStr+'</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  } else if (_tradeRules.length > 0) {
+    html += '<div class="rules-analytics"><div class="ra-head"><div class="ra-title">Rules Analytics</div></div>' +
+      '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;font-family:var(--mono)">Start checking rules on your trades to see analytics here</div></div>';
+  } else {
+    html += '<div class="rules-analytics"><div class="ra-head"><div class="ra-title">Rules Analytics</div></div>' +
+      '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;font-family:var(--mono)">Set up trading rules first — click <span style="color:var(--cyan);cursor:pointer" onclick="openTradeRulesSettings()">⚙ Edit rules</span></div></div>';
+  }
+
+  // ── DAY OF WEEK ──
+  html += '<div class="section-h" style="margin-top:4px"><span>By Day</span><div class="line"></div></div><div class="dow-grid">';
+  dow.forEach(d=>{
+    const avgPnl = d.n>0?Math.round(d.pnl/d.n):0;
+    const wr2 = d.n>0?Math.round((d.wins/d.n)*100):0;
+    const col = d.n===0?'var(--text-3)':avgPnl>=0?'var(--good)':'var(--bad)';
+    html += '<div class="dow-card"><div class="dow-label">'+DOW_NAMES[d.day]+'</div>' +
+      '<div class="dow-val" style="color:'+col+'">'+(d.n>0?(avgPnl>=0?'+':'')+fmtK(avgPnl)+'₪':'—')+'</div>' +
+      '<div class="dow-n">'+(d.n>0?d.n+' · '+wr2+'%wr':'no trades')+'</div></div>';
+  });
+  html += '</div>';
+
+  // ── BY SETUP ──
+  if (setups.length > 0 && setups.some(s=>s.name!=='Untagged')) {
+    html += '<div class="section-h" style="margin-top:4px"><span>By Setup</span><div class="line"></div></div><div class="setup-list">';
+    setups.forEach(s=>{
+      const barW = Math.round((Math.abs(s.pnl)/maxSetupPnl)*100);
+      const col = s.pnl>=0?'var(--good)':'var(--bad)';
+      html += '<div class="setup-row">' +
+        '<div class="setup-name">'+s.name+'</div>' +
+        '<div class="setup-bar-wrap"><div class="setup-bar-fill" style="width:'+barW+'%;background:'+col+'"></div></div>' +
+        '<div class="setup-stats">' +
+        '<span>'+s.n+' trades</span>' +
+        '<span style="color:'+(s.wr>=50?'var(--good)':'var(--bad)')+'">'+s.wr+'% win</span>' +
+        '<span style="color:'+col+'">'+(s.avg>=0?'+':'')+s.avg+'₪ avg</span>' +
+        '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // ── GRADE BREAKDOWN ──
+  const gradedTrades = allTrades.filter(t=>t.trade_grade&&t.trade_grade!=='');
+  if (gradedTrades.length > 0) {
+    const gradeColors={'A+':'var(--good)','A':'var(--good)','B':'var(--cyan)','C':'var(--warn)','scratch':'var(--text-3)'};
+    html += '<div class="section-h" style="margin-top:4px"><span>By Grade</span><div class="line"></div></div>' +
+      '<div class="tz-grid" style="grid-template-columns:repeat(5,1fr)">';
+    ['A+','A','B','C','scratch'].forEach(g=>{
+      const gt=gradedTrades.filter(t=>t.trade_grade===g);
+      const gPnl=gt.reduce((s,t)=>s+t.pnl,0);
+      const gWr=gt.length>0?Math.round(gt.filter(t=>t.pnl>0).length/gt.length*100):0;
+      html += '<div class="tz-card"><div class="tz-val" style="color:'+gradeColors[g]+'">'+g+'</div>' +
+        '<div class="tz-sub">'+gt.length+' trades · '+gWr+'%wr</div>' +
+        '<div class="tz-sub" style="color:'+(gPnl>=0?'var(--good)':'var(--bad)')+'">'+(gPnl>=0?'+':'')+fmtK(Math.round(gPnl))+'₪</div></div>';
+    });
+    html += '</div>';
+  }
+
+  return html;
+}
+
+
+
+// ══════════════════════════════════════════════════
+// APPLE DESIGN SYSTEM — Animations + Daily Insight
+// ══════════════════════════════════════════════════
+
+let _insightDismissed = false;
+
+// ── Page animation runner ─────────────────────────
+function runPageAnimations() {
+  // Stagger cards
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.panel,.tz-card,.tstat,.hld-block,.client-table,.trade-log,.att,.relocation-eta,.insight-card').forEach((el, i) => {
+      if (el.classList.contains('insight-card')) return; // has own anim
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px)';
+      const delay = Math.min(i * 28, 300);
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1)';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      }, delay);
+    });
+
+    // Animate progress bars (reset to 0 then fill)
+    document.querySelectorAll('.eta-bar-fill,.hours-fill,.skill-fill,.setup-bar-fill,.ra-bar-fill').forEach(el => {
+      const target = el.style.width;
+      el.style.transition = 'none';
+      el.style.width = '0%';
+      setTimeout(() => { el.style.width = target; }, 80);
+    });
+
+    // Count-up numbers
+    setTimeout(() => {
+      document.querySelectorAll('.hero-number,.att-num,.tz-val,.tstat-val,.net-num').forEach(el => {
+        animateCountUp(el);
+      });
+    }, 60);
+  });
+}
+
+function animateCountUp(el) {
+  const original = el.textContent;
+  // Extract leading sign, number, and suffix
+  const m = original.match(/^([+\-]?)([₪$]?)([\d,]+)(.*)/);
+  if (!m) return;
+  const sign = m[1], pre = m[2], numStr = m[3].split(',').join(''), suf = m[4];
+  const target = parseInt(numStr);
+  if (!target || target < 50 || isNaN(target)) return;
+
+  const start = performance.now();
+  const dur = 700;
+
+  const step = (now) => {
+    const t = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const cur = Math.round(target * ease);
+    const formatted = cur >= 1000 ? (cur >= 10000 ? Math.round(cur/1000)+'k' : (cur/1000).toFixed(1)+'k') : String(cur);
+    el.textContent = sign + pre + formatted + suf;
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = original; // snap to exact final
+  };
+  requestAnimationFrame(step);
+}
+
+// ── Daily Proactive Insight ───────────────────────
+async function fetchDailyInsight() {
+  const today = new Date().toISOString().split('T')[0];
+  const cacheKey = 'cockpit.insight.' + today;
+
+  // Already cached today?
+  const cached = safe.get(cacheKey);
+  if (cached) { injectInsightCard(cached); return; }
+
+  const apiKey = safe.get('cockpit.agent.key');
+  if (!apiKey) return; // No key, no insight — silent
+
+  // Show loading state
+  injectInsightCard(null, true);
+
+  let F, E;
+  try { F = computeFinancials(); } catch(e) { F = {totalBizIncome:0,monthlyNet:0,tradePnl:0}; }
+  try { E = computeRelocationETA(); } catch(e) { E = {moToGo:999,constraint:'savings',currentSav:0,bizIncome:0,savPct:0,mrrPct:0}; }
+
+  const now = new Date(); const y=now.getFullYear(),m=now.getMonth();
+  const delayed = getMField('autoscale',y,m,'delayed',0);
+  const monthStr = today.slice(0,7);
+  const mTrades = _trades.filter(t=>t.trade_date?.startsWith(monthStr));
+  const mWR = mTrades.length>0?Math.round(mTrades.filter(t=>t.pnl>0).length/mTrades.length*100):0;
+  const activeClients = (_clients||[]).filter(c=>c.status==='active').length;
+
+  const prompt = 'Richard runs AutoScale (digital marketing agency, Israel) and trades NQ/ES futures on Apex funded accounts. He is relocating to Thailand when savings hit 30k₪ AND MRR hits 6k₪.\n\nToday\'s data:\n' +
+    '- Business income this month: ' + fmtK(Math.round(F.totalBizIncome||0)) + '₪\n' +
+    '- Trading P&L this month: ' + (F.tradePnl>=0?'+':'') + fmtK(Math.round(F.tradePnl||0)) + '₪ (' + mWR + '% win rate, ' + mTrades.length + ' trades)\n' +
+    '- Monthly net cash flow: ' + (F.monthlyNet>=0?'+':'') + fmtK(Math.round(F.monthlyNet||0)) + '₪\n' +
+    '- Delayed payments outstanding: ' + fmtK(delayed) + '₪\n' +
+    '- Active clients: ' + activeClients + '\n' +
+    '- Savings: ' + fmtK(E.currentSav||0) + '₪ / 30,000₪ (' + (E.savPct||0) + '%)\n' +
+    '- MRR: ' + fmtK(E.bizIncome||0) + '₪ / 6,000₪ (' + (E.mrrPct||0) + '%)\n' +
+    '- Thailand ETA: ' + (E.moToGo>=999?'needs more data':E.moToGo+' months') + ' (constrained by ' + (E.constraint||'savings') + ')\n\n' +
+    'Give ONE specific, actionable insight for today. Reference real numbers. Be direct — say what he needs to hear, not what he wants to hear. Maximum 2 sentences. No preamble. Start directly with the insight.';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 120,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim();
+    if (text) {
+      safe.set(cacheKey, text);
+      injectInsightCard(text);
+    }
+  } catch(e) {
+    console.log('Daily insight error:', e.message);
+    removeInsightCard();
+  }
+}
+
+function injectInsightCard(text, loading) {
+  // Remove any existing
+  removeInsightCard();
+  const mainEl = document.getElementById('main');
+  if (!mainEl || _insightDismissed) return;
+
+  const now = new Date();
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+  const MO  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()];
+  const dateStr = DOW + ' ' + now.getDate() + ' ' + MO;
+
+  const card = document.createElement('div');
+  card.className = 'insight-card';
+  card.id = 'daily-insight-card';
+
+  if (loading) {
+    card.innerHTML = '<div class="insight-avatar">C</div>' +
+      '<div class="insight-body"><div class="insight-label">Today\'s Insight · ' + dateStr + '</div>' +
+      '<div class="insight-loading"><span class="insight-dot"></span><span class="insight-dot"></span><span class="insight-dot"></span><span style="margin-left:4px;font-size:11px">Generating insight from your data…</span></div></div>';
+  } else if (text) {
+    card.innerHTML = '<div class="insight-avatar">C</div>' +
+      '<div class="insight-body">' +
+      '<div class="insight-label">Today\'s Insight · ' + dateStr + '</div>' +
+      '<div class="insight-text">' + text + '</div>' +
+      '<div class="insight-actions"><button class="insight-ask" onclick="toggleAgent()">Ask Claude →</button></div>' +
+      '</div>' +
+      '<button class="insight-dismiss" onclick="dismissInsightCard()" title="Dismiss">×</button>';
+  }
+
+  mainEl.insertBefore(card, mainEl.firstChild);
+}
+
+function removeInsightCard() {
+  document.getElementById('daily-insight-card')?.remove();
+}
+
+window.dismissInsightCard = function() {
+  _insightDismissed = true;
+  const el = document.getElementById('daily-insight-card');
+  if (!el) return;
+  el.style.transition = 'opacity 0.25s ease, transform 0.25s ease, max-height 0.35s ease';
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(-6px)';
+  setTimeout(() => el.remove(), 280);
+};
+
+
 function renderPage(key) {
-  const page = PAGES[key] || placeholderPage(key.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), 'tech','Placeholder');
+  const page = PAGES[key] || placeholderPage(key.split('-').map(w=>w?w[0].toUpperCase()+w.slice(1):w).join(' '), 'tech','Placeholder');
   const pm = getPM(key);
 
   crumbEl.innerHTML = `<span>${page.armLabel.startsWith('Life')?'Life':'Work'}</span><span class="sep">/</span><span class="arm-tag ${page.arm}">${page.armLabel}</span><span class="sep">/</span><span class="here">${page.title}</span>`;
@@ -3307,7 +4617,13 @@ function renderPage(key) {
   page.sections.forEach(s => {
     if (s === 'attention')   html += renderAttention(page.data.attention, key);
     if (s === 'charts')      html += renderChartsSection(key, pm.y, pm.m, page.data.sources, page.data.money);
-    if (s === 'money')       html += renderMoney(page.data.money, key, pm.y, pm.m);
+    if (s === 'money') {
+      // If this page has no 'charts' section (which includes nav), add a standalone month nav
+      if (!page.sections.includes('charts') && !page.sections.includes('trading-cal')) {
+        html += `<div class="month-nav"><button class="mnav-btn" onclick="navMonth(-1)">‹</button><span class="mnav-label">${MNAMES[pm.m]} ${pm.y}</span><button class="mnav-btn" onclick="navMonth(1)">›</button></div>`;
+      }
+      html += renderMoney(page.data.money, key, pm.y, pm.m, page.data.moneyConfig);
+    }
     if (s === 'sources')     html += renderSources(page.data.sources, key, pm.y, pm.m);
     if (s === 'projects')    html += renderProjects(page.data.projects, key);
     if (s === 'trading-cal') html += renderTradingSection(key, pm.y, pm.m);
@@ -3322,14 +4638,19 @@ function renderPage(key) {
     if (s === 'finance')     html += renderFinanceHub(page.data);
     if (s === 'clients')     html += renderClientManager(key);
     if (s === 'pipeline')    html += renderPipeline(key);
-    if (s === 'trading-journal') html += renderTradingJournal(key, pm.y, pm.m);
+    if (s === 'trading-journal') html += renderTradingJournalV2(key, pm.y, pm.m);
     if (s === 'mobile-today') html += renderMobileToday();
     if (s === 'empty')       html += renderEmptyState(page.title);
   });
 
   mainEl.innerHTML = html;
-  railEl.innerHTML = renderRail(page.data.rail);
-
+  // Re-inject insight if not dismissed
+  if (!_insightDismissed) {
+    const cachedInsight = safe.get('cockpit.insight.' + new Date().toISOString().split('T')[0]);
+    if (cachedInsight) injectInsightCard(cachedInsight);
+  }
+  // Run animations
+  setTimeout(runPageAnimations, 20);
   // Save bars
   mainEl.querySelectorAll('.save-bar').forEach(bar => {
     const n = parseInt(bar.dataset.save, 10) || 0;
@@ -3364,7 +4685,7 @@ function startEdit(el) {
   inp.focus(); inp.select();
 
   function commit() {
-    const raw = inp.value.replace(/[, ]/g,'').trim();
+    const raw = inp.value.split(',').join('').split(' ').join('').trim();
     const num = raw === '' ? '0' : raw;
     setEdited(key, num);
     el.classList.remove('editing');
@@ -3435,6 +4756,11 @@ async function bootApp() {
   await loadAllData();
   renderPage(safe.get('cockpit.page') || 'autoscale');
   updateBadges();
+  // Fetch live rates + daily insight (non-blocking)
+  refreshLiveRates();
+  setTimeout(fetchDailyInsight, 1500); // after data loads
+  // Auto-refresh every 5 minutes
+  setInterval(refreshLiveRates, 5 * 60 * 1000);
 }
 
 // Start auth first, then boot
@@ -3459,6 +4785,52 @@ if ('serviceWorker' in navigator) {
   <div class="lock-timer" id="lock-timer"></div>
 </div>
 
+
+
+<!-- ═══ AI AGENT PANEL ═══ -->
+<div class="agent-panel" id="agent-panel">
+  <div class="agent-header">
+    <div class="agent-avatar">C</div>
+    <div>
+      <div class="agent-name">Claude</div>
+      <div class="agent-sub">Your Cockpit AI · sees all your data</div>
+    </div>
+    <button class="agent-close" onclick="toggleAgent()">×</button>
+  </div>
+  <div class="agent-msgs" id="agent-msgs">
+    <div class="agent-msg claude">
+      <div class="agent-bubble">Hi Richard 👋 I can see your full Cockpit dashboard — finances, trading, clients, pipeline, and goals. Ask me anything: "Where should I focus this week?", "How far am I from Thailand?", "Which client should I chase for payment?" — I have the context.</div>
+    </div>
+  </div>
+  <div class="agent-input-row">
+    <textarea class="agent-input" id="agent-input" placeholder="Ask anything about your finances, business, trading…" rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendToAgent()}"
+      oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+    <button class="agent-send" id="agent-send" onclick="sendToAgent()">↑</button>
+  </div>
+</div>
+
+
+<!-- ═══ TRADE ENTRY OVERLAY ═══ -->
+<div class="trade-overlay" id="trade-overlay">
+  <div class="trade-modal" id="trade-modal">
+    <div class="tm-header">
+      <div class="tm-title" id="tm-title">Log Trade</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <a class="tv-btn" id="tm-tv-link" href="#" target="_blank" style="display:none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v14h14v-5h2v7H3V3zm11 0h7v7h-2V6.41l-9.3 9.3-1.41-1.41L17.59 5H14V3z"/></svg>
+          TradingView
+        </a>
+        <button class="tm-close" onclick="closeTradeModal()">×</button>
+      </div>
+    </div>
+    <div class="tm-body" id="tm-body"></div>
+    <div class="tm-footer" id="tm-footer"></div>
+  </div>
+</div>
+
+<!-- hidden IBKR file input -->
+<input type="file" id="ibkr-file-input" accept=".csv,.txt" style="display:none" onchange="handleIBKRFile(event)">
 
 <!-- ═══ MOBILE TABS ═══ -->
 <div class="mobile-tabs" id="mobile-tabs">
