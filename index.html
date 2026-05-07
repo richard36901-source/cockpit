@@ -2492,22 +2492,30 @@ input, textarea, select, [contenteditable="true"], .editable {
 }
 
 
-/* Fullscreen calendar */
-.cal-grid-wrap:fullscreen,
-.cal-grid-wrap:-webkit-full-screen {
-  background: #0a0d18;
-  padding: 24px;
-  overflow: auto;
-  border-radius: 0;
+/* CSS-based pseudo-fullscreen for the calendar (works on iPad, iPhone, all browsers) */
+.cal-grid-wrap.cal-pseudo-fs {
+  position: fixed !important;
+  top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  margin: 0 !important;
+  z-index: 9999 !important;
+  border-radius: 0 !important;
+  background: #0a0d18 !important;
+  padding: 24px !important;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
-.cal-grid-wrap:fullscreen .cal-grid,
-.cal-grid-wrap:fullscreen .cal-month-grid,
-.cal-grid-wrap:-webkit-full-screen .cal-grid,
-.cal-grid-wrap:-webkit-full-screen .cal-month-grid { margin: 0; }
+body.cal-fs-active { overflow: hidden !important; }
+/* When in fullscreen, kill outer page constraints from the iPad fix */
+body.cal-fs-active .app,
+body.cal-fs-active .main,
+body.cal-fs-active html { overflow: visible !important; }
+.cal-grid-wrap.cal-pseudo-fs .cal-grid,
+.cal-grid-wrap.cal-pseudo-fs .cal-month-grid { margin: 0 !important; }
 
 .cal-fs-exit {
   position: fixed; top: 16px; right: 16px;
-  z-index: 9999;
+  z-index: 10000;
   height: 38px; padding: 0 16px;
   background: rgba(255,255,255,0.10);
   backdrop-filter: blur(20px) saturate(160%);
@@ -2516,10 +2524,9 @@ input, textarea, select, [contenteditable="true"], .editable {
   color: #fff; font-size: 12px; font-weight: 600;
   cursor: pointer; font-family: var(--mono);
   letter-spacing: 0.04em;
-  display: none;
+  display: flex; align-items: center; gap: 7px;
 }
-:fullscreen .cal-fs-exit,
-:-webkit-full-screen .cal-fs-exit { display: flex; align-items: center; gap: 7px; }
+.cal-fs-exit:hover { background: rgba(255,255,255,0.16); }
 
 /* Eraser cursor & active state */
 #cal-draw-canvas.eraser-mode { cursor: cell; }
@@ -4736,61 +4743,53 @@ function showSaveToast() {
 window.toggleCalFullscreen = function() {
   const wrap = document.querySelector('.cal-grid-wrap');
   if (!wrap) return;
-  const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+  const isFs = wrap.classList.contains('cal-pseudo-fs');
+
   if (isFs) {
-    if (document.exitFullscreen) document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    // Exit
+    wrap.classList.remove('cal-pseudo-fs');
+    document.body.classList.remove('cal-fs-active');
+    const ex = wrap.querySelector('.cal-fs-exit');
+    if (ex) ex.remove();
+    setTimeout(_resizeCalCanvas, 120);
   } else {
-    // Add an exit button if not already there
+    // Enter
+    wrap.classList.add('cal-pseudo-fs');
+    document.body.classList.add('cal-fs-active');
     if (!wrap.querySelector('.cal-fs-exit')) {
       const btn = document.createElement('button');
       btn.className = 'cal-fs-exit';
-      btn.innerHTML = '⛶ Exit Fullscreen';
-      btn.onclick = () => toggleCalFullscreen();
+      btn.innerHTML = '\u2A2F Exit Fullscreen';
+      btn.onclick = (e) => { e.stopPropagation(); toggleCalFullscreen(); };
       wrap.appendChild(btn);
     }
-    if (wrap.requestFullscreen) wrap.requestFullscreen();
-    else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
-    // Re-init the canvas at fullscreen dimensions after a short delay
-    setTimeout(() => {
-      const canvas = document.getElementById('cal-draw-canvas');
-      if (canvas) {
-        // Save current strokes
-        const dataUrl = canvas.toDataURL('image/png');
-        const wrap2 = canvas.parentElement;
-        const w = Math.max(wrap2.scrollWidth, wrap2.clientWidth, 800);
-        const h = Math.max(wrap2.scrollHeight, wrap2.clientHeight, 400);
-        canvas.width = w; canvas.height = h;
-        canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
-        // Restore the strokes
-        const img = new Image();
-        img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0);
-        img.src = dataUrl;
-      }
-    }, 250);
+    setTimeout(_resizeCalCanvas, 120);
   }
 };
 
+// Resize the draw canvas to match the current wrap dimensions, preserving strokes
+function _resizeCalCanvas() {
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  if (!wrap) return;
+  // Save current strokes
+  let dataUrl = '';
+  try { dataUrl = canvas.toDataURL('image/png'); } catch(_) {}
+  const w = Math.max(wrap.scrollWidth, wrap.clientWidth, 800);
+  const h = Math.max(wrap.scrollHeight, wrap.clientHeight, 400);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  if (dataUrl) {
+    const img = new Image();
+    img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0);
+    img.src = dataUrl;
+  }
+}
+
 // Re-fit canvas when entering/exiting fullscreen
-['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => {
-  document.addEventListener(ev, () => {
-    setTimeout(() => {
-      const canvas = document.getElementById('cal-draw-canvas');
-      if (!canvas) return;
-      const wrap = canvas.parentElement;
-      if (!wrap) return;
-      // Save current strokes before resize
-      const dataUrl = canvas.toDataURL('image/png');
-      const w = Math.max(wrap.scrollWidth, wrap.clientWidth, 800);
-      const h = Math.max(wrap.scrollHeight, wrap.clientHeight, 400);
-      canvas.width = w; canvas.height = h;
-      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
-      const img = new Image();
-      img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0);
-      img.src = dataUrl;
-    }, 200);
-  });
-});
 
 
 // ──────────────────────────────────────────────
@@ -6439,7 +6438,7 @@ window.toggleRelocItem = function(key) {
 // CLIENTS SECTION (per-client MRR tracking)
 // ══════════════════════════════════════════════════
 function renderClientsSection(pageKey) {
-  const clients = (_clients || []).filter(c => !c.product || c.product === pageKey || c.product === 'autoscale');
+  const clients = (_clients || []).filter(c => !c.page_key || c.page_key === pageKey || c.page_key === 'autoscale');
   const totalMrr = clients.filter(c => c.status === 'active').reduce((s, c) => s + (c.mrr || 0), 0);
   let h = '<div class="section-h"><span><span class="num">04</span>Clients</span><div class="line"></div><span class="meta">' + clients.filter(c => c.status === 'active').length + ' ACTIVE \u00B7 ' + fmtK(Math.round(totalMrr)) + '\u20AA MRR</span><button class="ap-add" onclick="editClient(null,\'' + pageKey + '\')">+ Add Client</button></div>';
   if (clients.length === 0) {
@@ -6452,7 +6451,7 @@ function renderClientsSection(pageKey) {
   h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:left">Client</th>';
   h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:left">Status</th>';
   h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:right">MRR</th>';
-  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:right">Since</th>';
+  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:right">Notes</th>';
   h += '</tr></thead><tbody>';
   clients.forEach(c => {
     const statusColor = c.status === 'active' ? 'var(--good)' : c.status === 'pause' ? 'var(--warn)' : 'var(--text-3)';
@@ -6460,7 +6459,7 @@ function renderClientsSection(pageKey) {
     h += '<td style="padding:10px 14px;font-size:12.5px;color:var(--text-1);font-weight:600">' + escapeHtml(c.name || '') + '</td>';
     h += '<td style="padding:10px 14px;font-size:10px;font-family:var(--mono);color:' + statusColor + ';letter-spacing:0.06em;text-transform:uppercase">' + (c.status || 'pending') + '</td>';
     h += '<td style="padding:10px 14px;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--good);text-align:right">' + (c.mrr ? '+' + fmtK(c.mrr) + '\u20AA' : '\u2014') + '</td>';
-    h += '<td style="padding:10px 14px;font-size:10.5px;font-family:var(--mono);color:var(--text-3);text-align:right">' + (c.since || '\u2014') + '</td>';
+    h += '<td style="padding:10px 14px;font-size:10.5px;color:var(--text-3);text-align:right;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml((c.notes || '').split('\n')[0].replace(/^Since: .*?$/m, '').trim() || '\u2014') + '</td>';
     h += '</tr>';
   });
   h += '</tbody></table></div>';
@@ -6488,9 +6487,9 @@ window.editClient = async function(id, pageKey) {
     return renderPage(pageKey);
   }
   const v = r.values;
-  const row = { name: v.name, status: v.status, mrr: +v.mrr || 0, since: v.since, notes: v.notes, product: pageKey };
+  const row = { name: v.name, status: v.status, mrr: +v.mrr || 0, notes: (v.since ? 'Since: '+v.since+'\n\n' : '') + (v.notes || ''), page_key: pageKey };
   if (id) {
-    _clients = _clients.map(c => c.id === id ? Object.assign({}, c, row, {id}) : c);
+    _clients = _clients.map(c => c.id === id ? Object.assign({}, c, row, {id, since: c.since}) : c);
     sbPatch('cockpit_clients', 'id=eq.' + id, row);
   } else {
     const tmpId = 'tmp-' + Date.now();
