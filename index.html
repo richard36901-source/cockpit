@@ -2470,6 +2470,85 @@ input, textarea, select, [contenteditable="true"], .editable {
   .cal-dow-mini { font-size: 7.5px; gap: 4px; }
 }
 
+
+/* Ensure iPad never scrolls the outer page — only the .main can scroll if needed */
+@media (min-width: 800px) and (max-width: 1300px) {
+  html, body {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden !important;
+    position: fixed;
+    width: 100%;
+  }
+  .app {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  .main {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+
+/* Fullscreen calendar */
+.cal-grid-wrap:fullscreen,
+.cal-grid-wrap:-webkit-full-screen {
+  background: #0a0d18;
+  padding: 24px;
+  overflow: auto;
+  border-radius: 0;
+}
+.cal-grid-wrap:fullscreen .cal-grid,
+.cal-grid-wrap:fullscreen .cal-month-grid,
+.cal-grid-wrap:-webkit-full-screen .cal-grid,
+.cal-grid-wrap:-webkit-full-screen .cal-month-grid { margin: 0; }
+
+.cal-fs-exit {
+  position: fixed; top: 16px; right: 16px;
+  z-index: 9999;
+  height: 38px; padding: 0 16px;
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 11px;
+  color: #fff; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: var(--mono);
+  letter-spacing: 0.04em;
+  display: none;
+}
+:fullscreen .cal-fs-exit,
+:-webkit-full-screen .cal-fs-exit { display: flex; align-items: center; gap: 7px; }
+
+/* Eraser cursor & active state */
+#cal-draw-canvas.eraser-mode { cursor: cell; }
+.cal-draw-btn.tool-active {
+  background: linear-gradient(135deg, rgba(251,146,60,0.20), rgba(251,146,60,0.10));
+  border-color: rgba(251,146,60,0.40);
+  color: #fb923c;
+}
+
+/* Save indicator (small toast) */
+.cal-save-toast {
+  position: absolute; top: 8px; right: 8px;
+  z-index: 300;
+  padding: 6px 11px;
+  background: rgba(74,222,128,0.18);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(74,222,128,0.40);
+  border-radius: 9px;
+  color: var(--good);
+  font-size: 10px; font-weight: 600;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+.cal-save-toast.show { opacity: 1; transform: translateY(0); }
+
 </style>
 </head>
 <body>
@@ -2606,6 +2685,21 @@ input, textarea, select, [contenteditable="true"], .editable {
 </div>
 
 <script>
+
+// Prevent iPad/iOS Safari from zooming on double-tap (modern Safari ignores user-scalable=no)
+(function() {
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 350) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+  // Also block multi-touch zoom (pinch)
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('gesturechange', e => e.preventDefault());
+  document.addEventListener('gestureend', e => e.preventDefault());
+})();
+
 'use strict';
 
 // ── Constants ──────────────────────────────────────
@@ -3237,20 +3331,20 @@ const PAGES = {
       projects:[]
     }
   },
-  'wa-saas':      { title:'WhatsApp SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'WhatsApp automation product', sections:['empty'], data:{} },
+  'wa-saas':      { title:'WhatsApp SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'WhatsApp automation product', sections:['saas'], data:{name:'WhatsApp SaaS', tagline:'Make.com-free WhatsApp Business automation', stage:'planning', mrr:0} },
   'rsvp':         { title:'Ishur RSVP', arm:'tech', armLabel:'Tech & SaaS', sub:'Wedding RSVP via WhatsApp', sections:['ishur'], data:{} },
-  'crm-saas':     { title:'CRM SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'Simple CRM', sections:['empty'], data:{} },
-  'construction': { title:'Construction', arm:'cap', armLabel:'Capital', sub:'Construction work', sections:['empty'], data:{} },
+  'crm-saas':     { title:'CRM SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'Simple CRM', sections:['saas'], data:{name:'CRM SaaS', tagline:'Lightweight Supabase-first CRM for solo operators', stage:'foundation', mrr:0} },
+  'construction': { title:'Construction', arm:'cap', armLabel:'Capital', sub:'Construction work', sections:['construction'], data:{} },
   'trading':      { title:'Trading', arm:'cap', armLabel:'Capital', sub:'Tradezella-style P&L · funded accounts', sections:['trading-overview'], data:{} },
   'holdings':     { title:'Holdings', arm:'cap', armLabel:'Capital', sub:'Portfolio snapshot · live rates', sections:['holdings'], data:{crypto:[],stocks:[],cash:[]} },
   'angel':        { title:'Angel', arm:'cap', armLabel:'Capital', sub:'Early-stage investments', sections:['angel'], data:{investments:[]} },
   'real-estate':  { title:'Real Estate', arm:'cap', armLabel:'Capital', sub:'Portfolio', sections:['real-estate'], data:{properties:[]} },
   'finance':      { title:'Finance Hub', arm:'cap', armLabel:'Capital', sub:'Net worth · Accounts · Debt', sections:['finance'], data:{accounts:[],debt:[],recurringIncome:[],recurringExpenses:[],targetSavings:30000,currentSavings:0} },
-  'life-overview':{ title:'Life Overview', arm:'life', armLabel:'Life', sub:'Skills, projects, body', sections:['life-overview'], data:{} },
-  'health':       { title:'Health', arm:'life', armLabel:'Life · Body', sub:'Sleep · Nutrition', sections:['empty'], data:{} },
-  'skills':       { title:'Skills', arm:'life', armLabel:'Life · Skills', sub:'All skills tracked', sections:['empty'], data:{skills:[]} },
-  'bike-build':   { title:'Bike Build', arm:'life', armLabel:'Life · Projects', sub:'Custom build', sections:['empty'], data:{} },
-  'relocation':   { title:'Relocation', arm:'life', armLabel:'Life', sub:'Thailand → Austin → Europe', sections:['empty'], data:{destinations:[]} }
+  'life-overview':{ title:'Life Overview', arm:'life', armLabel:'Life', sub:'Today, income, calendar, ETA', sections:['life-overview'], data:{} },
+  'relocation':   { title:'Relocation', arm:'life', armLabel:'Life · Move', sub:'Thailand prep', sections:['relocation'], data:{} },
+  'health':       { title:'Health', arm:'life', armLabel:'Life · Body', sub:'Training, sleep, nutrition', sections:['health'], data:{} },
+  'skills':       { title:'Skills', arm:'life', armLabel:'Life · Skills', sub:'Languages, licenses, certifications', sections:['skills'], data:{} },
+  'bike-build':   { title:'Bike Build', arm:'life', armLabel:'Life · Projects', sub:'Custom motorbike build', sections:['bike'], data:{} },
 };
 
 function placeholderPage(title) { return {title, arm:'tech', armLabel:'', sub:'Not configured', sections:['empty'], data:{}}; }
@@ -3545,6 +3639,9 @@ function renderBigCalendar() {
   }
 
   h += '<button class="cal-draw-btn" id="cal-draw-toggle"' + (_drawMode ? ' style="background:linear-gradient(135deg, rgba(56,189,248,0.20), rgba(192,132,252,0.16));border-color:rgba(56,189,248,0.40);color:var(--cyan)"' : '') + ' onclick="toggleCalDraw()">✎ Draw</button>';
+  h += '<button class="cal-draw-btn" id="cal-eraser-toggle" onclick="toggleEraser()" title="Eraser (pen only)">⌫ Erase</button>';
+  h += '<button class="cal-draw-btn" onclick="clearCanvas()" title="Clear all drawings">⨯ Clear</button>';
+  h += '<button class="cal-draw-btn" onclick="toggleCalFullscreen()" title="Fullscreen">⛶ Fullscreen</button>';
   h += '<button class="cal-draw-btn" onclick="openStickersList()">🏷 Stickers</button>';
 
   if (GCAL.isValid()) {
@@ -4043,18 +4140,30 @@ window._smAct = function(action) {
   if (!ov) return;
   let result = null;
   if (action === 'save') {
+    const nameEl = document.getElementById('sm-name');
+    const name = nameEl ? nameEl.value.trim() : '';
+    if (!name) {
+      // Make the empty state OBVIOUS instead of silently failing
+      if (nameEl) {
+        nameEl.style.borderColor = 'var(--bad)';
+        nameEl.placeholder = 'Name is required — type something';
+        nameEl.focus();
+        setTimeout(() => { if (nameEl) nameEl.style.borderColor = ''; }, 2000);
+      }
+      return;
+    }
     result = {
-      name:  document.getElementById('sm-name').value.trim(),
-      emoji: document.getElementById('sm-emoji').value.trim(),
-      color: document.getElementById('sm-color').value,
-      gcal:  document.getElementById('sm-gcal').value
+      name:  name,
+      emoji: (document.getElementById('sm-emoji').value || '').trim(),
+      color: document.getElementById('sm-color').value || '#38bdf8',
+      gcal:  document.getElementById('sm-gcal').value || ''
     };
-    if (!result.name) { document.getElementById('sm-name').focus(); return; }
   } else if (action === 'delete') {
+    if (!confirm('Delete this sticker?')) return;
     result = { _delete: true };
   }
   ov.remove();
-  if (_modalResolve) { _modalResolve(result); _modalResolve = null; }
+  if (_modalResolve) { const r = _modalResolve; _modalResolve = null; r(result); }
 };
 
 window.editSticker = async function(id) {
@@ -4092,8 +4201,65 @@ window.editSticker = async function(id) {
 // Drawing
 window.toggleCalDraw = function() {
   _drawMode = !_drawMode;
-  renderPage('big-calendar');
-  setTimeout(() => { if (_drawMode) initCalCanvas(); }, 50);
+  // Update button visually without re-rendering the calendar (which would wipe the canvas)
+  const btn = document.getElementById('cal-draw-toggle');
+  if (btn) {
+    if (_drawMode) {
+      btn.style.background = 'linear-gradient(135deg, rgba(56,189,248,0.20), rgba(192,132,252,0.16))';
+      btn.style.borderColor = 'rgba(56,189,248,0.40)';
+      btn.style.color = 'var(--cyan)';
+    } else {
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+  }
+  // Toggle canvas active state
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (canvas) {
+    if (_drawMode) {
+      // First time entering draw mode in this session, ensure canvas is sized + listeners attached
+      if (!canvas.dataset.initialized) {
+        initCalCanvas();
+        canvas.dataset.initialized = '1';
+      }
+      canvas.classList.add('active');
+    } else {
+      canvas.classList.remove('active');
+    }
+  }
+};
+
+// Save the canvas to localStorage so strokes persist across reloads
+function saveCanvasToStorage() {
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (!canvas || canvas.width <= 1) return;
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    if (dataUrl.length < 4 * 1024 * 1024) safe.set('cockpit.cal.canvas', dataUrl);
+  } catch(e) { console.warn('Canvas save failed:', e.message); }
+}
+
+function restoreCanvasFromStorage() {
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (!canvas) return;
+  const dataUrl = safe.get('cockpit.cal.canvas');
+  if (!dataUrl) return;
+  const img = new Image();
+  img.onload = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = dataUrl;
+}
+
+window.clearCanvas = function() {
+  if (!confirm('Clear all drawings on the calendar?')) return;
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  safe.del('cockpit.cal.canvas');
 };
 window.setDrawColor = function(c) { _drawColor = c; renderPage('big-calendar'); setTimeout(initCalCanvas, 50); };
 window.clearCalCanvas = function() {
@@ -4104,13 +4270,10 @@ window.clearCalCanvas = function() {
 function initCalCanvas() {
   const canvas = document.getElementById('cal-draw-canvas');
   if (!canvas) return;
-  // Size the canvas to the FULL scrollable extent of the calendar wrapper
-  // so drawing flows across all months/weeks like a whiteboard
   const wrap = canvas.parentElement;
   if (!wrap) return;
-  const w = Math.max(wrap.scrollWidth, wrap.clientWidth);
-  const h = Math.max(wrap.scrollHeight, wrap.clientHeight);
-  // Position the canvas absolutely over the wrap content
+  const w = Math.max(wrap.scrollWidth, wrap.clientWidth, 800);
+  const h = Math.max(wrap.scrollHeight, wrap.clientHeight, 400);
   canvas.style.position = 'absolute';
   canvas.style.top = '0';
   canvas.style.left = '0';
@@ -4118,15 +4281,15 @@ function initCalCanvas() {
   canvas.height = h;
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
-  canvas.classList.add('active');
 
   const ctx = canvas.getContext('2d');
+  // Restore any saved strokes
+  restoreCanvasFromStorage();
+
   let drawing = false, lx = 0, ly = 0;
 
-  // Apple Pencil ONLY — finger and mouse are ignored.
-  // pointerType: 'pen' = Apple Pencil / stylus, 'touch' = finger, 'mouse' = mouse
   canvas.addEventListener('pointerdown', e => {
-    if (e.pointerType !== 'pen') return;  // ignore finger and mouse
+    if (e.pointerType !== 'pen') return;
     e.preventDefault();
     drawing = true;
     lx = e.offsetX;
@@ -4140,18 +4303,34 @@ function initCalCanvas() {
     if (!drawing) return;
     e.preventDefault();
     ctx.beginPath();
-    ctx.strokeStyle = _drawColor;
-    // Apple Pencil pressure ranges 0..1 — map to a smooth 1.5..6 px stroke
-    const press = e.pressure > 0 ? e.pressure : 0.5;
-    ctx.lineWidth = 1.5 + press * 4.5;
+    if (_drawTool === 'eraser') {
+      // Eraser: actually remove pixels using destination-out compositing
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.lineWidth = 18;  // wider eraser stroke
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = _drawColor;
+      const press = e.pressure > 0 ? e.pressure : 0.5;
+      ctx.lineWidth = 1.5 + press * 4.5;
+    }
     ctx.moveTo(lx, ly);
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.stroke();
     lx = e.offsetX;
     ly = e.offsetY;
   });
-  canvas.addEventListener('pointerup',     e => { if (e.pointerType === 'pen') drawing = false; });
-  canvas.addEventListener('pointercancel', e => { if (e.pointerType === 'pen') drawing = false; });
+  canvas.addEventListener('pointerup', e => {
+    if (e.pointerType !== 'pen') return;
+    drawing = false;
+    saveCanvasToStorage();
+    showSaveToast();
+  });
+  canvas.addEventListener('pointercancel', e => {
+    if (e.pointerType !== 'pen') return;
+    drawing = false;
+    saveCanvasToStorage();
+  });
 }
 
 window.reauthGCal = function() {
@@ -4159,6 +4338,119 @@ window.reauthGCal = function() {
   if (!url) { alert('Set up Google Client ID first in Settings → API Keys'); return; }
   location.href = url;
 };
+
+
+// ──────────────────────────────────────────────
+// Draw tool state (pen | eraser)
+// ──────────────────────────────────────────────
+let _drawTool = 'pen';
+
+window.toggleEraser = function() {
+  // Eraser also requires draw mode to be ON
+  if (!_drawMode) {
+    _drawMode = true;
+    const drawBtn = document.getElementById('cal-draw-toggle');
+    if (drawBtn) {
+      drawBtn.style.background = 'linear-gradient(135deg, rgba(56,189,248,0.20), rgba(192,132,252,0.16))';
+      drawBtn.style.borderColor = 'rgba(56,189,248,0.40)';
+      drawBtn.style.color = 'var(--cyan)';
+    }
+    const canvas = document.getElementById('cal-draw-canvas');
+    if (canvas) {
+      if (!canvas.dataset.initialized) {
+        initCalCanvas();
+        canvas.dataset.initialized = '1';
+      }
+      canvas.classList.add('active');
+    }
+  }
+  _drawTool = (_drawTool === 'eraser') ? 'pen' : 'eraser';
+  const eBtn = document.getElementById('cal-eraser-toggle');
+  if (eBtn) eBtn.classList.toggle('tool-active', _drawTool === 'eraser');
+  const canvas = document.getElementById('cal-draw-canvas');
+  if (canvas) canvas.classList.toggle('eraser-mode', _drawTool === 'eraser');
+};
+
+// ──────────────────────────────────────────────
+// Save indicator toast — confirms persistence
+// ──────────────────────────────────────────────
+let _saveToastTimer = null;
+function showSaveToast() {
+  const wrap = document.querySelector('.cal-grid-wrap');
+  if (!wrap) return;
+  let toast = wrap.querySelector('.cal-save-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'cal-save-toast';
+    toast.textContent = '✓ SAVED';
+    wrap.appendChild(toast);
+  }
+  toast.classList.add('show');
+  if (_saveToastTimer) clearTimeout(_saveToastTimer);
+  _saveToastTimer = setTimeout(() => toast.classList.remove('show'), 1200);
+}
+
+// ──────────────────────────────────────────────
+// Fullscreen toggle for the calendar
+// ──────────────────────────────────────────────
+window.toggleCalFullscreen = function() {
+  const wrap = document.querySelector('.cal-grid-wrap');
+  if (!wrap) return;
+  const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (isFs) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  } else {
+    // Add an exit button if not already there
+    if (!wrap.querySelector('.cal-fs-exit')) {
+      const btn = document.createElement('button');
+      btn.className = 'cal-fs-exit';
+      btn.innerHTML = '⛶ Exit Fullscreen';
+      btn.onclick = () => toggleCalFullscreen();
+      wrap.appendChild(btn);
+    }
+    if (wrap.requestFullscreen) wrap.requestFullscreen();
+    else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+    // Re-init the canvas at fullscreen dimensions after a short delay
+    setTimeout(() => {
+      const canvas = document.getElementById('cal-draw-canvas');
+      if (canvas) {
+        // Save current strokes
+        const dataUrl = canvas.toDataURL('image/png');
+        const wrap2 = canvas.parentElement;
+        const w = Math.max(wrap2.scrollWidth, wrap2.clientWidth, 800);
+        const h = Math.max(wrap2.scrollHeight, wrap2.clientHeight, 400);
+        canvas.width = w; canvas.height = h;
+        canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+        // Restore the strokes
+        const img = new Image();
+        img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0);
+        img.src = dataUrl;
+      }
+    }, 250);
+  }
+};
+
+// Re-fit canvas when entering/exiting fullscreen
+['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    setTimeout(() => {
+      const canvas = document.getElementById('cal-draw-canvas');
+      if (!canvas) return;
+      const wrap = canvas.parentElement;
+      if (!wrap) return;
+      // Save current strokes before resize
+      const dataUrl = canvas.toDataURL('image/png');
+      const w = Math.max(wrap.scrollWidth, wrap.clientWidth, 800);
+      const h = Math.max(wrap.scrollHeight, wrap.clientHeight, 400);
+      canvas.width = w; canvas.height = h;
+      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+      const img = new Image();
+      img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0);
+      img.src = dataUrl;
+    }, 200);
+  });
+});
 
 // ══════════════════════════════════════════════════
 // FINANCIAL COMPUTATION
@@ -4259,78 +4551,164 @@ function renderRelocationETA() {
 // ══════════════════════════════════════════════════
 function renderFinanceHub() {
   const F = computeFinancials();
-
-  // Hero: Net Worth — the most important number, displayed huge
+  const E = computeRelocationETA();
   const nwColor = F.netWorth >= 0 ? 'var(--good)' : 'var(--bad)';
   const monthlyColor = F.monthlyNet >= 0 ? 'var(--good)' : 'var(--bad)';
-  let html = '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(56,189,248,0.25);border-radius:22px;padding:28px 32px;margin-bottom:18px;box-shadow:var(--hl-top-strong),var(--shadow-1),0 0 60px rgba(56,189,248,0.10);position:relative;overflow:hidden">';
-  html += '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:10px">Net Worth</div>';
-  html += '<div style="font-size:clamp(40px,5.5vw,72px);font-weight:900;color:'+nwColor+';letter-spacing:-0.05em;line-height:0.95;text-shadow:0 0 36px '+(F.netWorth>=0?'rgba(74,222,128,0.30)':'rgba(248,113,113,0.30)')+'">' +
-    (F.netWorth>=0?'':'-') + fmt(Math.abs(Math.round(F.netWorth))) + '<span style="font-size:0.4em;color:var(--text-3);margin-left:6px;font-weight:600">\u20AA</span></div>';
-  html += '<div style="display:flex;gap:32px;margin-top:18px;flex-wrap:wrap">';
-  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Total Assets</div><div style="font-size:18px;font-weight:700;color:var(--cyan);font-family:var(--mono)">'+fmtK(Math.round(F.totalAssets))+'\u20AA</div></div>';
-  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Total Debt</div><div style="font-size:18px;font-weight:700;color:var(--bad);font-family:var(--mono)">'+fmtK(Math.round(F.totalDebt))+'\u20AA</div></div>';
-  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Monthly Net</div><div style="font-size:18px;font-weight:700;color:'+monthlyColor+';font-family:var(--mono)">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div></div>';
-  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Cash Available</div><div style="font-size:18px;font-weight:700;color:var(--good);font-family:var(--mono)">'+fmtK(Math.round(F.cashAvail))+'\u20AA</div></div>';
+
+  // Asset breakdown for allocation chart
+  const cashTotal = F.cashAvail;
+  const holdingsTotal = computeHoldingsTotal();
+  const reTotal = F.reValue;
+  const angelTotal = F.angelPaper;
+  const allocSum = cashTotal + holdingsTotal + reTotal + angelTotal;
+  const alloc = [
+    { label: 'Cash',        value: cashTotal,     color: '#4ade80' },
+    { label: 'Holdings',    value: holdingsTotal, color: '#38bdf8' },
+    { label: 'Real Estate', value: reTotal,       color: '#c084fc' },
+    { label: 'Angel',       value: angelTotal,    color: '#a5b4fc' }
+  ];
+
+  // ─── Hero net worth panel ───
+  let html = '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(56,189,248,0.25);border-radius:18px;padding:18px 22px;margin-bottom:12px;box-shadow:var(--hl-top-strong),var(--shadow-1),0 0 60px rgba(56,189,248,0.10);position:relative;overflow:hidden;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center">';
+
+  // Left: net worth
+  html += '<div>';
+  html += '<div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Net Worth</div>';
+  html += '<div style="font-size:clamp(28px,4vw,52px);font-weight:900;color:'+nwColor+';letter-spacing:-0.04em;line-height:0.95;text-shadow:0 0 32px '+(F.netWorth>=0?'rgba(74,222,128,0.30)':'rgba(248,113,113,0.30)')+'">' +
+    (F.netWorth>=0?'':'-') + fmt(Math.abs(Math.round(F.netWorth))) + '<span style="font-size:0.4em;color:var(--text-3);margin-left:5px;font-weight:600">\u20AA</span></div>';
+  html += '<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">';
+  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Assets</div><div style="font-size:13px;font-weight:700;color:var(--cyan);font-family:var(--mono)">'+fmtK(Math.round(F.totalAssets))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Debt</div><div style="font-size:13px;font-weight:700;color:var(--bad);font-family:var(--mono)">'+fmtK(Math.round(F.totalDebt))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Cash</div><div style="font-size:13px;font-weight:700;color:var(--good);font-family:var(--mono)">'+fmtK(Math.round(F.cashAvail))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Monthly</div><div style="font-size:13px;font-weight:700;color:'+monthlyColor+';font-family:var(--mono)">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div></div>';
   html += '</div></div>';
 
-  // Relocation ETA (savings & MRR progress)
-  html += renderRelocationETA();
+  // Right: allocation donut
+  html += '<div>' + renderAllocationDonut(alloc, allocSum) + '</div>';
+  html += '</div>';
 
-  // Quick access to money sections — same pattern as Life Overview
-  html += '<div class="section-h"><span><span class="num">01</span>Quick Access</span><div class="line"></div></div>';
-  html += '<div class="attention">';
-  html += '<div class="att cyan" onclick="navigate(\'holdings\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.totalAssets - F.totalDebt - F.reValue - F.angelPaper))+'<span class="cur">\u20AA</span></div><div class="att-label">Holdings</div><div class="att-detail">Crypto · Stocks · Cash</div></div>';
-  html += '<div class="att good" onclick="navigate(\'real-estate\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.reValue))+'<span class="cur">\u20AA</span></div><div class="att-label">Real Estate</div><div class="att-detail">CF: '+(F.reCashflow>=0?'+':'')+fmtK(Math.round(F.reCashflow))+'\u20AA/mo</div></div>';
-  html += '<div class="att tech" onclick="navigate(\'angel\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.angelPaper))+'<span class="cur">\u20AA</span></div><div class="att-label">Angel</div><div class="att-detail">'+(_investments||[]).length+' positions</div></div>';
+  // ─── Progress bars: Savings & MRR ───
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
+  html += renderProgressCard('Savings', E.currentSav, 30000, '\u20AA', '#4ade80', 'Thailand fund');
+  html += renderProgressCard('MRR', E.bizIncome, 6000, '\u20AA/mo', '#38bdf8', 'Recurring income target');
+  html += '</div>';
+
+  // ─── Per-section summary cards ───
+  html += '<div class="section-h"><span><span class="num">01</span>By Section</span><div class="line"></div></div>';
+  html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  html += '<div class="att cyan" onclick="navigate(\'holdings\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(holdingsTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Holdings</div><div class="att-detail">Crypto \u00B7 Stocks \u00B7 Cash</div></div>';
+  html += '<div class="att good" onclick="navigate(\'real-estate\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(reTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Real Estate</div><div class="att-detail">CF: '+(F.reCashflow>=0?'+':'')+fmtK(Math.round(F.reCashflow))+'\u20AA/mo</div></div>';
+  html += '<div class="att tech" onclick="navigate(\'angel\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(angelTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Angel</div><div class="att-detail">'+(_investments||[]).length+' positions</div></div>';
   const tradeColor = F.tradePnl>=0 ? 'good' : 'bad';
-  html += '<div class="att '+tradeColor+'" onclick="navigate(\'trading\')" style="cursor:pointer"><div class="att-num">'+(F.tradePnl>=0?'+':'')+fmtK(Math.round(F.tradePnl))+'<span class="cur">\u20AA</span></div><div class="att-label">Trading</div><div class="att-detail">P&L this month</div></div>';
+  html += '<div class="att '+tradeColor+'" onclick="navigate(\'trading\')" style="cursor:pointer"><div class="att-num">'+(F.tradePnl>=0?'+':'')+fmtK(Math.round(F.tradePnl))+'<span class="cur">\u20AA</span></div><div class="att-label">Trading P&L</div><div class="att-detail">This month</div></div>';
   html += '</div>';
 
-  // Income & Expenses (this month)
-  html += '<div class="section-h"><span><span class="num">02</span>This Month</span><div class="line"></div></div>';
-  html += '<div class="attention">';
-  html += '<div class="att good"><div class="att-num">+'+fmtK(Math.round(F.totalBizIncome))+'<span class="cur">\u20AA</span></div><div class="att-label">Business Income</div><div class="att-detail">AutoScale + SaaS</div></div>';
-  html += '<div class="att tech"><div class="att-num">+'+fmtK(Math.round(F.totalRI))+'<span class="cur">\u20AA</span></div><div class="att-label">Recurring Income</div><div class="att-detail">'+F.ri.filter(r=>r.active).length+' active</div></div>';
-  html += '<div class="att bad"><div class="att-num">-'+fmtK(Math.round(F.totalBizExpense))+'<span class="cur">\u20AA</span></div><div class="att-label">Business Expense</div></div>';
-  html += '<div class="att bad"><div class="att-num">-'+fmtK(Math.round(F.totalRE))+'<span class="cur">\u20AA</span></div><div class="att-label">Recurring Expenses</div><div class="att-detail">'+F.re.filter(r=>r.active).length+' active</div></div>';
-  html += '</div>';
-
-  // Bank breakdown
-  if (F.accounts.length > 0) {
-    html += '<div class="section-h"><span><span class="num">03</span>Bank Accounts</span><div class="line"></div><span class="meta">'+F.accounts.length+' ACCOUNTS</span></div>';
-    html += '<div class="attention">';
-    F.accounts.forEach(a => {
-      const bal = +getEdited('fin.acct.'+a.id+'.balance', a.balance) || 0;
-      const sav = +getEdited('fin.acct.'+a.id+'.savings', a.savings) || 0;
-      html += '<div class="att cyan" onclick="navigate(\'finance\')" style="cursor:pointer">';
-      html += '<div class="att-num">'+fmtK(bal+sav)+'<span class="cur">\u20AA</span></div>';
-      html += '<div class="att-label">'+escapeHtml(a.bank)+'</div>';
-      html += '<div class="att-detail">Bal: '+fmtK(bal)+' · Sav: '+fmtK(sav)+'</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  // Debt breakdown
-  if (F.debts.length > 0) {
-    html += '<div class="section-h"><span><span class="num">04</span>Debt</span><div class="line"></div><span class="meta">'+F.debts.length+' OUTSTANDING</span></div>';
-    html += '<div class="attention">';
-    F.debts.forEach(d => {
-      const bal = +getEdited('fin.debt.'+d.id+'.balance', d.balance) || 0;
-      html += '<div class="att bad"><div class="att-num">'+fmtK(bal)+'<span class="cur">\u20AA</span></div>';
-      html += '<div class="att-label">'+escapeHtml(d.name)+'</div>';
-      html += '<div class="att-detail">'+fmtK(d.monthly)+'\u20AA/mo · '+(d.ratePercent||0)+'%</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  if (F.accounts.length === 0 && F.debts.length === 0 && F.totalRI === 0 && F.totalRE === 0) {
-    html += '<div class="empty-state" style="margin-top:24px"><div class="empty-state-icon">\u{1F4B0}</div><div class="empty-state-title">No bank accounts or debt yet</div><div class="empty-state-sub">Add accounts, debts, and recurring items in Supabase to see them aggregated here.</div></div>';
-  }
+  // ─── Cash flow waterfall (this month) ───
+  html += '<div class="section-h"><span><span class="num">02</span>Cash Flow This Month</span><div class="line"></div></div>';
+  html += renderCashFlowChart(F);
 
   return html;
+}
+
+// Helper: total holdings value in ILS
+function computeHoldingsTotal() {
+  const data = (PAGES.holdings && PAGES.holdings.data) || {};
+  const rate = LIVE_RATES.usdToIls || 3.7;
+  let total = 0;
+  (data.crypto||[]).forEach(c => {
+    const live = LIVE_RATES.crypto[c.symbol];
+    const pi = live ? (live.ils || live.usd * rate) : ((c.price||0) * rate);
+    total += (c.amount||0) * pi;
+  });
+  (data.stocks||[]).forEach(s => { total += (s.shares||s.amount||0) * (s.price||0) * rate; });
+  (data.cash||[]).forEach(c => { total += (c.amount||0) * getRateToIls(c.currency || 'ILS'); });
+  return total;
+}
+
+// Helper: render a donut chart for asset allocation
+function renderAllocationDonut(segments, total) {
+  if (total <= 0) {
+    return '<div style="text-align:center;padding:20px 10px;color:var(--text-3);font-size:11px;font-family:var(--mono)">No assets logged yet</div>';
+  }
+  const filtered = segments.filter(s => s.value > 0);
+  let cumulative = 0;
+  const radius = 42;
+  const strokeWidth = 14;
+  const circ = 2 * Math.PI * radius;
+  let svg = '<svg viewBox="0 0 100 100" style="width:130px;height:130px;display:block;margin:0 auto"><g transform="rotate(-90 50 50)">';
+  // Background ring
+  svg += '<circle cx="50" cy="50" r="'+radius+'" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="'+strokeWidth+'"/>';
+  filtered.forEach(seg => {
+    const pct = seg.value / total;
+    const dash = pct * circ;
+    const offset = -cumulative * circ;
+    svg += '<circle cx="50" cy="50" r="'+radius+'" fill="none" stroke="'+seg.color+'" stroke-width="'+strokeWidth+'" stroke-dasharray="'+dash+' '+(circ-dash)+'" stroke-dashoffset="'+offset+'"/>';
+    cumulative += pct;
+  });
+  svg += '</g><text x="50" y="48" text-anchor="middle" fill="#fff" font-size="13" font-weight="800" font-family="var(--mono)">'+fmtK(Math.round(total))+'\u20AA</text>';
+  svg += '<text x="50" y="60" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="6.5" letter-spacing="0.10em">ASSETS</text></svg>';
+
+  // Legend
+  let legend = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:6px">';
+  segments.forEach(seg => {
+    const pct = total > 0 ? Math.round((seg.value/total)*100) : 0;
+    legend += '<div style="display:flex;align-items:center;gap:6px;font-size:9.5px;font-family:var(--mono)">' +
+      '<span style="width:8px;height:8px;border-radius:2px;background:'+seg.color+';flex-shrink:0"></span>' +
+      '<span style="color:var(--text-3)">'+seg.label+'</span>' +
+      '<span style="margin-left:auto;color:var(--text-1);font-weight:700">'+pct+'%</span>' +
+      '</div>';
+  });
+  legend += '</div>';
+  return svg + legend;
+}
+
+// Helper: progress card
+function renderProgressCard(label, current, target, suffix, color, sub) {
+  const pct = Math.min(100, target > 0 ? Math.round((current/target)*100) : 0);
+  return '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">' +
+      '<div><div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:700">'+label+'</div>' +
+      '<div style="font-size:10px;color:var(--text-3);margin-top:2px">'+sub+'</div></div>' +
+      '<div style="text-align:right"><div style="font-size:18px;font-weight:800;color:'+color+';font-family:var(--mono);letter-spacing:-0.02em;line-height:1">'+fmtK(Math.round(current))+suffix+'</div>' +
+      '<div style="font-size:9.5px;color:var(--text-3);font-family:var(--mono);margin-top:2px">'+pct+'% of '+fmtK(target)+'</div></div>' +
+    '</div>' +
+    '<div style="height:6px;background:var(--bg-deeper);border-radius:3px;overflow:hidden">' +
+      '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+color+',rgba(255,255,255,0.3));border-radius:3px;transition:width 0.6s;box-shadow:0 0 8px '+color+'66"></div>' +
+    '</div></div>';
+}
+
+// Helper: cash flow waterfall (Apple-style)
+function renderCashFlowChart(F) {
+  const rows = [
+    { label: 'Business income',    value: F.totalBizIncome,         color: 'var(--good)' },
+    { label: 'Recurring income',   value: F.totalRI,                color: 'var(--good)' },
+    { label: 'Trading P&L',        value: F.tradePnl,               color: F.tradePnl >= 0 ? 'var(--good)' : 'var(--bad)' },
+    { label: 'Real estate CF',     value: F.reCashflow,             color: F.reCashflow >= 0 ? 'var(--good)' : 'var(--bad)' },
+    { label: 'Business expenses',  value: -Math.abs(F.totalBizExpense), color: 'var(--bad)' },
+    { label: 'Recurring expenses', value: -Math.abs(F.totalRE),     color: 'var(--bad)' }
+  ];
+  const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.value)));
+  let h = '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 18px;box-shadow:var(--hl-top),var(--shadow-1)">';
+  rows.forEach(r => {
+    const w = Math.round((Math.abs(r.value) / maxAbs) * 100);
+    const sign = r.value > 0 ? '+' : (r.value < 0 ? '-' : '');
+    h += '<div style="display:grid;grid-template-columns:140px 1fr 90px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--stroke-1)">' +
+      '<div style="font-size:11px;color:var(--text-2)">'+r.label+'</div>' +
+      '<div style="height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;position:relative">' +
+        '<div style="height:100%;width:'+w+'%;background:'+r.color+';border-radius:3px;'+(r.value<0?'margin-left:auto':'')+'"></div>' +
+      '</div>' +
+      '<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:'+r.color+';text-align:right">'+sign+fmtK(Math.round(Math.abs(r.value)))+'\u20AA</div>' +
+    '</div>';
+  });
+  // Net total
+  const netColor = F.monthlyNet >= 0 ? 'var(--good)' : 'var(--bad)';
+  h += '<div style="display:grid;grid-template-columns:140px 1fr 90px;gap:12px;align-items:center;padding:10px 0 0;margin-top:6px;border-top:1px solid var(--stroke-2)">' +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-1);letter-spacing:0.06em;text-transform:uppercase">Net this month</div>' +
+    '<div></div>' +
+    '<div style="font-size:15px;font-weight:800;font-family:var(--mono);color:'+netColor+';text-align:right;letter-spacing:-0.02em">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div>' +
+    '</div>';
+  h += '</div>';
+  return h;
 }
 
 // ══════════════════════════════════════════════════
@@ -5183,6 +5561,223 @@ window.closeSettings = closeSettings;
 window.setSettingsTab = setSettingsTab;
 window.renderSettingsTab = renderSettingsTab;
 
+
+// ══════════════════════════════════════════════════
+// SAAS PRODUCT PAGE (generic — used by WhatsApp SaaS, CRM SaaS, etc)
+// ══════════════════════════════════════════════════
+function renderSaasPage(data, pageKey) {
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const income = getMField(pageKey, y, m, 'income', 0);
+  const expense = getMField(pageKey, y, m, 'expense', 0);
+  const expected = getMField(pageKey, y, m, 'expected', 0);
+  const stages = { planning: 'PLANNING', foundation: 'FOUNDATION', alpha: 'ALPHA', beta: 'BETA', launched: 'LAUNCHED' };
+  const stageLabel = stages[data.stage] || 'PLANNING';
+  const stageColor = data.stage === 'launched' ? 'var(--good)' :
+                     data.stage === 'beta' ? 'var(--cyan)' :
+                     data.stage === 'alpha' ? 'var(--warn)' : 'var(--text-3)';
+
+  let h = '<div class="section-h"><span><span class="num">01</span>Product</span><div class="line"></div><span class="meta" style="color:' + stageColor + '">' + stageLabel + '</span></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  h += '<div class="att good"><div class="att-num">+' + fmtK(income) + '<span class="cur">\u20AA</span></div><div class="att-label">MRR This Month</div></div>';
+  h += '<div class="att warn"><div class="att-num">+' + fmtK(expected) + '<span class="cur">\u20AA</span></div><div class="att-label">Expected</div></div>';
+  h += '<div class="att bad"><div class="att-num">-' + fmtK(expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Costs</div></div>';
+  h += '<div class="att tech"><div class="att-num">' + fmtK(income - expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Net</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>About</span><div class="line"></div></div>';
+  h += '<div class="panel"><div class="panel-body" style="padding:16px 22px">';
+  h += '<div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">' + escapeHtml(data.name || '') + '</div>';
+  h += '<div style="font-size:12px;color:var(--text-3);line-height:1.6">' + escapeHtml(data.tagline || 'No description yet.') + '</div>';
+  h += '</div></div>';
+
+  h += '<div class="section-h"><span><span class="num">03</span>Status</span><div class="line"></div></div>';
+  h += '<div class="empty-state" style="margin:0;padding:24px 18px"><div class="empty-state-icon" style="font-size:24px;margin-bottom:8px">' + (data.stage === 'launched' ? '\u{1F680}' : '\u{1F6E0}\uFE0F') + '</div><div class="empty-state-title" style="font-size:13px">Add tasks, customers, and pipeline here</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Wire to Supabase tables for live tracking. For now, log monthly income on this page (tap any number to edit).</div></div>';
+
+  return h;
+}
+
+// ══════════════════════════════════════════════════
+// CONSTRUCTION PAGE
+// ══════════════════════════════════════════════════
+function renderConstructionPage() {
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const income = getMField('construction', y, m, 'income', 0);
+  const expense = getMField('construction', y, m, 'expense', 0);
+
+  let h = '<div class="section-h"><span><span class="num">01</span>Job Status</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  h += '<div class="att cyan"><div class="att-num">0</div><div class="att-label">Active Jobs</div><div class="att-detail">Currently running</div></div>';
+  h += '<div class="att warn"><div class="att-num">0</div><div class="att-label">Bids Out</div><div class="att-detail">Awaiting decision</div></div>';
+  h += '<div class="att good"><div class="att-num">+' + fmtK(income) + '<span class="cur">\u20AA</span></div><div class="att-label">Revenue MTD</div></div>';
+  h += '<div class="att bad"><div class="att-num">-' + fmtK(expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Costs MTD</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>Pipeline</span><div class="line"></div></div>';
+  h += '<div class="empty-state" style="margin:0"><div class="empty-state-icon">\u{1F3D7}\uFE0F</div><div class="empty-state-title">No active construction jobs</div><div class="empty-state-sub">When you have an active job, log its progress, costs, and revenue here. Tap the income/expense numbers above to set monthly totals manually.</div></div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════
+// HEALTH PAGE
+// ══════════════════════════════════════════════════
+function renderHealthPage() {
+  // Pull editable values from localStorage
+  const sleepHrs    = getEdited('health.sleep.avg', 7.5);
+  const workoutsWk  = getEdited('health.workouts.week', 4);
+  const weight      = getEdited('health.weight.kg', 78);
+  const restingHr   = getEdited('health.resting.hr', 56);
+  const streak      = getEdited('health.streak', 14);
+
+  let h = '<div class="section-h"><span><span class="num">01</span>This Week</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.sleep.avg" data-edit-num="' + sleepHrs + '">' + sleepHrs + '</span><span class="cur">h</span></div><div class="att-label">Avg Sleep</div><div class="att-detail">Per night</div></div>';
+  h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="health.workouts.week" data-edit-num="' + workoutsWk + '">' + workoutsWk + '</span></div><div class="att-label">Workouts</div><div class="att-detail">This week</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.weight.kg" data-edit-num="' + weight + '">' + weight + '</span><span class="cur">kg</span></div><div class="att-label">Weight</div><div class="att-detail">Current</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.streak" data-edit-num="' + streak + '">' + streak + '</span></div><div class="att-label">Streak</div><div class="att-detail">Days clean diet</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>Vitals</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(3,1fr)">';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.resting.hr" data-edit-num="' + restingHr + '">' + restingHr + '</span><span class="cur">bpm</span></div><div class="att-label">Resting HR</div></div>';
+  h += '<div class="att good"><div class="att-num">' + getEdited('health.bp.sys', '120') + '/' + getEdited('health.bp.dia', '78') + '</div><div class="att-label">Blood Pressure</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.bodyfat" data-edit-num="' + getEdited('health.bodyfat', '15') + '">' + getEdited('health.bodyfat', '15') + '</span><span class="cur">%</span></div><div class="att-label">Body Fat</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">03</span>Routine</span><div class="line"></div></div>';
+  h += '<div class="panel"><div class="panel-body" style="padding:8px 22px 16px">';
+  ['Strength training (3x/week)', 'Cardio / runs (2x/week)', 'Mobility / stretch (daily)', 'Clean eating', 'Sleep 7-8h'].forEach((item, i) => {
+    h += '<div class="project" style="display:flex;align-items:center;gap:11px"><span class="dot active"></span><span style="font-size:12.5px;color:var(--text-1);flex:1">' + item + '</span><span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">' + (Math.random() > 0.3 ? 'on track' : 'this week') + '</span></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════
+// SKILLS PAGE
+// ══════════════════════════════════════════════════
+function renderSkillsPage() {
+  // Pull skill % from saved values; sensible defaults seeded from Richard's actual goals
+  const skills = [
+    { name: 'Spanish (B1 → B2)',          icon: '\u{1F1EA}\u{1F1F8}', key: 'skill.spanish',     defaultPct: 35, target: 'Conversational' },
+    { name: 'Motorbike license (A1)',     icon: '\u{1F3CD}\uFE0F',   key: 'skill.motorbike',   defaultPct: 60, target: 'Test scheduled' },
+    { name: 'Sailing license',            icon: '\u26F5',            key: 'skill.sailing',     defaultPct: 20, target: 'Course enrolled' },
+    { name: 'EMT course',                 icon: '\u{1F691}',         key: 'skill.emt',         defaultPct: 0,  target: 'Researching' },
+    { name: 'Trading discipline (Apex)',  icon: '\u{1F4C8}',         key: 'skill.trading',     defaultPct: 55, target: 'Funded account' },
+    { name: 'Make.com mastery',           icon: '\u26A1',            key: 'skill.make',        defaultPct: 85, target: 'Expert' }
+  ];
+
+  let h = '<div class="section-h"><span><span class="num">01</span>Tracked Skills</span><div class="line"></div><span class="meta">' + skills.length + ' ACTIVE</span></div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  skills.forEach(s => {
+    const pct = +getEdited(s.key, s.defaultPct);
+    const pctClamped = Math.min(100, Math.max(0, pct));
+    const color = pctClamped >= 80 ? 'var(--good)' : pctClamped >= 50 ? 'var(--cyan)' : pctClamped >= 25 ? 'var(--warn)' : 'var(--text-3)';
+    h += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    h += '<div style="font-size:22px">' + s.icon + '</div>';
+    h += '<div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:var(--text-1)">' + s.name + '</div>';
+    h += '<div style="font-size:10px;color:var(--text-3);margin-top:2px">' + s.target + '</div></div>';
+    h += '<div style="text-align:right"><div style="font-size:18px;font-weight:800;color:' + color + ';font-family:var(--mono);letter-spacing:-0.02em;line-height:1"><span class="editable" data-edit-key="' + s.key + '" data-edit-num="' + pct + '">' + pct + '</span><span class="cur" style="font-size:11px;color:var(--text-3)">%</span></div></div>';
+    h += '</div>';
+    h += '<div style="height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pctClamped + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.25));border-radius:3px;box-shadow:0 0 6px ' + color + '66"></div></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════
+// BIKE BUILD PAGE
+// ══════════════════════════════════════════════════
+function renderBikePage() {
+  const totalBudget = +getEdited('bike.budget', 8000);
+  const spent       = +getEdited('bike.spent', 0);
+  const pct = totalBudget > 0 ? Math.round((spent / totalBudget) * 100) : 0;
+
+  let h = '<div class="section-h"><span><span class="num">01</span>Build Status</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="bike.budget" data-edit-num="' + totalBudget + '">' + fmt(totalBudget) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Budget</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="bike.spent" data-edit-num="' + spent + '">' + fmt(spent) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Spent</div><div class="att-detail">' + pct + '% of budget</div></div>';
+  h += '<div class="att good"><div class="att-num">' + fmtK(totalBudget - spent) + '<span class="cur">\u20AA</span></div><div class="att-label">Remaining</div></div>';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="bike.parts.count" data-edit-num="' + getEdited('bike.parts.count', 0) + '">' + getEdited('bike.parts.count', 0) + '</span></div><div class="att-label">Parts Owned</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>Build Stages</span><div class="line"></div></div>';
+  const stages = [
+    { name: 'Frame & geometry',         pct: 0, key: 'bike.stage.frame' },
+    { name: 'Engine / drivetrain',      pct: 0, key: 'bike.stage.engine' },
+    { name: 'Suspension',               pct: 0, key: 'bike.stage.susp' },
+    { name: 'Wheels & brakes',          pct: 0, key: 'bike.stage.wheels' },
+    { name: 'Electrical & lights',      pct: 0, key: 'bike.stage.elec' },
+    { name: 'Tank, seat, controls',     pct: 0, key: 'bike.stage.body' },
+    { name: 'Paint & finish',           pct: 0, key: 'bike.stage.paint' },
+    { name: 'Registration & first ride',pct: 0, key: 'bike.stage.reg' }
+  ];
+  h += '<div class="panel"><div class="panel-body" style="padding:6px 22px 14px">';
+  stages.forEach(s => {
+    const sp = +getEdited(s.key, s.pct);
+    const dot = sp >= 100 ? 'active' : sp > 0 ? 'risk' : 'idle';
+    h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot ' + dot + '"></span>' + s.name + '</div><div class="project-pct"><span class="editable" data-edit-key="' + s.key + '" data-edit-num="' + sp + '">' + sp + '</span>%</div></div>';
+    h += '<div class="progress-bar">';
+    for (let i = 0; i < 10; i++) h += '<div class="seg' + (i < sp/10 ? ' fill' : '') + '"></div>';
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════
+// RELOCATION PAGE (Thailand prep checklist)
+// ══════════════════════════════════════════════════
+function renderRelocationPage() {
+  const E = computeRelocationETA();
+  let h = renderRelocationETA();
+
+  h += '<div class="section-h"><span><span class="num">01</span>Pre-move Checklist</span><div class="line"></div></div>';
+  const sections = {
+    'Documents & Visa': [
+      { txt: 'DTV visa application (5 yr, multi-entry)', key: 'reloc.visa.dtv' },
+      { txt: 'Passport valid 18+ months from move date', key: 'reloc.passport' },
+      { txt: 'International driving permit',             key: 'reloc.idp' },
+      { txt: 'Birth certificate apostille',              key: 'reloc.birth' },
+      { txt: 'Tax residency consultation',               key: 'reloc.tax' }
+    ],
+    'Money': [
+      { txt: '30,000 ILS savings buffer',                key: 'reloc.savings' },
+      { txt: '6,000 ILS MRR confirmed',                  key: 'reloc.mrr' },
+      { txt: 'Wise/Revolut multi-currency setup',        key: 'reloc.wise' },
+      { txt: 'Bangkok Bank account research',            key: 'reloc.bbl' },
+      { txt: 'IBKR account stays in IL or transfers',    key: 'reloc.ibkr' }
+    ],
+    'Logistics': [
+      { txt: 'Koh Samui scouting trip',                  key: 'reloc.scout' },
+      { txt: 'Long-stay accommodation booked',           key: 'reloc.stay' },
+      { txt: 'Health insurance (Cigna/SafetyWing)',      key: 'reloc.health' },
+      { txt: 'Cancel IL phone / setup eSIM',             key: 'reloc.phone' },
+      { txt: 'Storage / shipping plan',                  key: 'reloc.shipping' }
+    ]
+  };
+  Object.entries(sections).forEach(([title, items]) => {
+    h += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:12px 18px;margin-bottom:10px;box-shadow:var(--hl-top),var(--shadow-1)">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);margin-bottom:8px">' + title + '</div>';
+    items.forEach(it => {
+      const done = getEdited(it.key, '0') === '1';
+      h += '<div style="display:flex;align-items:center;gap:11px;padding:6px 0;border-bottom:1px dashed var(--stroke-1);cursor:pointer" onclick="toggleRelocItem(\'' + it.key + '\')">';
+      h += '<span style="width:18px;height:18px;border-radius:5px;border:1.5px solid ' + (done ? 'var(--good)' : 'var(--stroke-3)') + ';background:' + (done ? 'var(--good)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:900">' + (done ? '\u2713' : '') + '</span>';
+      h += '<span style="font-size:12.5px;color:' + (done ? 'var(--text-3)' : 'var(--text-1)') + ';' + (done ? 'text-decoration:line-through' : '') + '">' + it.txt + '</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
+
+window.toggleRelocItem = function(key) {
+  const cur = getEdited(key, '0');
+  setEdited(key, cur === '1' ? '0' : '1');
+  renderPage('relocation');
+};
+
 // ══════════════════════════════════════════════════
 // MAIN ROUTER
 // ══════════════════════════════════════════════════
@@ -5235,6 +5830,12 @@ function renderPage(key) {
     else if (s === 'real-estate') html += renderRealEstate();
     else if (s === 'trading-overview') html += renderTradingOverview();
     else if (s === 'ishur')       html += renderIshurPage();
+    else if (s === 'saas')        html += renderSaasPage(page.data, key);
+    else if (s === 'construction') html += renderConstructionPage();
+    else if (s === 'health')      html += renderHealthPage();
+    else if (s === 'skills')      html += renderSkillsPage();
+    else if (s === 'bike')        html += renderBikePage();
+    else if (s === 'relocation')  html += renderRelocationPage();
     else if (s === 'finance-hub') html += renderFinanceHub();
     else if (s === 'connections') html += renderConnections();
     else if (s === 'life-overview') html += renderLifeOverview();
@@ -5248,16 +5849,80 @@ function renderPage(key) {
 
 function renderLifeOverview() {
   const E = computeRelocationETA();
+  const F = computeFinancials();
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+
+  // Aggregate income across ALL business pages — not just AutoScale
+  const bizPages = [
+    { key: 'autoscale',    label: 'AutoScale' },
+    { key: 'wa-saas',      label: 'WhatsApp SaaS' },
+    { key: 'rsvp',         label: 'Ishur' },
+    { key: 'crm-saas',     label: 'CRM SaaS' },
+    { key: 'construction', label: 'Construction' }
+  ];
+  let totalIncome = 0;
+  const byBiz = bizPages.map(b => {
+    const inc = getMField(b.key, y, m, 'income', 0);
+    totalIncome += inc;
+    return { key: b.key, label: b.label, income: inc };
+  }).filter(b => b.income > 0).sort((a,b) => b.income - a.income);
+
+  // Aggregate today's calendar events
+  const todayStr = y + '-' + pad2(m+1) + '-' + pad2(now.getDate());
+  const todayEvents = [];
+  (Object.entries(_calData||{})).forEach(([d, e]) => {
+    if (d === todayStr || (e.end_date && e.end_date >= todayStr && d <= todayStr)) {
+      todayEvents.push(e);
+    }
+  });
+
+  // Trades today
+  const tradesToday = (_trades||[]).filter(t => t.trade_date === todayStr);
+  const todayPnl = tradesToday.reduce((s,t) => s + (t.pnl||0), 0);
+
+  // Hero
   let html = renderRelocationETA();
-  html += '<div class="section-h"><span><span class="num">01</span>Quick Access</span><div class="line"></div></div>';
-  html += '<div class="attention">' +
-    '<div class="att cyan" onclick="navigate(\'big-calendar\')" style="cursor:pointer"><div class="att-num">\u{1F4C5}</div><div class="att-label">Big A$ Calendar</div></div>' +
-    '<div class="att tech" onclick="navigate(\'health\')" style="cursor:pointer"><div class="att-num">\u2764</div><div class="att-label">Health</div></div>' +
-    '<div class="att good" onclick="navigate(\'skills\')" style="cursor:pointer"><div class="att-num">\u2691</div><div class="att-label">Skills</div></div>' +
-    '<div class="att warn" onclick="navigate(\'relocation\')" style="cursor:pointer"><div class="att-num">\u2708</div><div class="att-label">Relocation</div></div>' +
-    '</div>';
+
+  // Today snapshot
+  html += '<div class="section-h"><span><span class="num">01</span>Today</span><div class="line"></div><span class="meta">' + ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()] + ' ' + now.getDate() + ' ' + ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][m] + '</span></div>';
+  html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  html += '<div class="att good"><div class="att-num">+' + fmtK(Math.round(F.totalBizIncome)) + '<span class="cur">\u20AA</span></div><div class="att-label">Income MTD</div><div class="att-detail">' + byBiz.length + ' source' + (byBiz.length === 1 ? '' : 's') + '</div></div>';
+  html += '<div class="att ' + (todayPnl >= 0 ? 'good' : 'bad') + '"><div class="att-num">' + (todayPnl >= 0 ? '+' : '') + fmtK(Math.round(todayPnl)) + '<span class="cur">\u20AA</span></div><div class="att-label">Trades Today</div><div class="att-detail">' + tradesToday.length + ' trade' + (tradesToday.length === 1 ? '' : 's') + '</div></div>';
+  html += '<div class="att cyan" onclick="navigate(\'big-calendar\')" style="cursor:pointer"><div class="att-num">' + todayEvents.length + '</div><div class="att-label">Calendar</div><div class="att-detail">' + (todayEvents.length === 0 ? 'Nothing scheduled' : 'Events today') + '</div></div>';
+  html += '<div class="att tech"><div class="att-num">' + (F.monthlyNet >= 0 ? '+' : '') + fmtK(Math.round(F.monthlyNet)) + '<span class="cur">\u20AA</span></div><div class="att-label">Net This Month</div><div class="att-detail">After expenses</div></div>';
+  html += '</div>';
+
+  // Income breakdown by SaaS
+  if (byBiz.length > 0) {
+    html += '<div class="section-h"><span><span class="num">02</span>Income by Source</span><div class="line"></div><span class="meta">TOTAL ' + fmtK(Math.round(totalIncome)) + '\u20AA</span></div>';
+    html += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 18px;box-shadow:var(--hl-top),var(--shadow-1)">';
+    const maxInc = Math.max(...byBiz.map(b => b.income));
+    byBiz.forEach(b => {
+      const pct = totalIncome > 0 ? Math.round((b.income / totalIncome) * 100) : 0;
+      const w = Math.round((b.income / maxInc) * 100);
+      html += '<div style="display:grid;grid-template-columns:120px 1fr 70px 50px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--stroke-1);cursor:pointer" onclick="navigate(\'' + b.key + '\')">' +
+        '<div style="font-size:11.5px;color:var(--text-2);font-weight:600">' + escapeHtml(b.label) + '</div>' +
+        '<div style="height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + w + '%;background:linear-gradient(90deg,var(--good),var(--cap));border-radius:3px;box-shadow:0 0 6px rgba(74,222,128,0.30)"></div></div>' +
+        '<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--good);text-align:right">+' + fmtK(Math.round(b.income)) + '\u20AA</div>' +
+        '<div style="font-size:10px;font-family:var(--mono);color:var(--text-3);text-align:right">' + pct + '%</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Quick access tiles
+  html += '<div class="section-h"><span><span class="num">03</span>Quick Access</span><div class="line"></div></div>';
+  html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  html += '<div class="att cyan" onclick="navigate(\'finance\')" style="cursor:pointer"><div class="att-num">' + fmtK(Math.round(F.netWorth)) + '<span class="cur">\u20AA</span></div><div class="att-label">Net Worth</div><div class="att-detail">Finance Hub</div></div>';
+  html += '<div class="att good" onclick="navigate(\'health\')" style="cursor:pointer"><div class="att-num">\u2764</div><div class="att-label">Health</div><div class="att-detail">Sleep \u00B7 Workouts</div></div>';
+  html += '<div class="att tech" onclick="navigate(\'skills\')" style="cursor:pointer"><div class="att-num">\u2691</div><div class="att-label">Skills</div><div class="att-detail">Languages \u00B7 Licenses</div></div>';
+  html += '<div class="att warn" onclick="navigate(\'relocation\')" style="cursor:pointer"><div class="att-num">\u2708</div><div class="att-label">Relocation</div><div class="att-detail">Thailand prep</div></div>';
+  html += '</div>';
+
   return html;
 }
+
+
 
 function wireEditables() {
   mainEl.querySelectorAll('.editable').forEach(el => {
