@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Cockpit RTHQ</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0a0f1c">
@@ -1263,9 +1263,14 @@ textarea.modal-input { resize: vertical; min-height: 80px; line-height: 1.5; }
   backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid var(--stroke-2);
   border-radius: 18px;
-  padding: 14px 14px 16px;
+  padding: 0;
   box-shadow: var(--hl-top), var(--shadow-1);
-  overflow-x: auto;
+  overflow: auto;
+}
+.cal-grid-wrap > .cal-grid,
+.cal-grid-wrap > .cal-month-grid,
+.cal-grid-wrap > .cal-month-picker {
+  margin: 14px 14px 16px;
 }
 .cal-grid { display: grid; gap: 2px; }
 .cal-header-cell {
@@ -1463,10 +1468,10 @@ textarea.modal-input { resize: vertical; min-height: 80px; line-height: 1.5; }
 
 #cal-draw-canvas {
   position: absolute;
-  top: 14px; left: 14px; right: 14px; bottom: 16px;
+  top: 0; left: 0;
   pointer-events: none; touch-action: none;
-  border-radius: 8px;
-  z-index: 5;
+  /* Above stickers, labels, headers — true whiteboard layer */
+  z-index: 200;
 }
 #cal-draw-canvas.active { pointer-events: auto; cursor: crosshair; }
 
@@ -2028,6 +2033,443 @@ textarea.modal-input { resize: vertical; min-height: 80px; line-height: 1.5; }
 .stk-row .stk-name { font-size: 13px; color: var(--text-1); flex: 1; font-weight: 500; }
 .stk-row .stk-edit { background: transparent; border: none; color: var(--text-3); cursor: pointer; font-size: 13px; padding: 4px 8px; }
 .stk-row .stk-edit:hover { color: var(--text-1); }
+
+/* ── TRADING CALENDAR (Tradezella-style P&L heatmap) ── */
+.tcal-wrap {
+  background: var(--glass-1); backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--stroke-2); border-radius: 16px;
+  padding: 16px 18px; margin-bottom: 16px;
+  box-shadow: var(--hl-top), var(--shadow-1);
+}
+.tcal-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tcal-month-label {
+  font-size: 18px; font-weight: 800; color: var(--text-1);
+  letter-spacing: -0.02em; line-height: 1;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.tcal-month-label small {
+  font-size: 10px; color: var(--text-3); font-family: var(--mono);
+  letter-spacing: 0.10em; text-transform: uppercase; font-weight: 600;
+}
+.tcal-nav {
+  display: flex; gap: 4px;
+}
+.tcal-nav-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--glass-2); border: 1px solid var(--stroke-2);
+  color: var(--text-2); cursor: pointer;
+  font-size: 14px; line-height: 1;
+  transition: all 0.16s ease;
+  box-shadow: var(--hl-top);
+}
+.tcal-nav-btn:hover { border-color: rgba(56,189,248,0.40); color: var(--cyan); }
+.tcal-pnl-badge {
+  margin-left: auto;
+  padding: 9px 16px;
+  border-radius: 11px;
+  font-family: var(--mono);
+  font-weight: 800;
+  display: flex; flex-direction: column; align-items: flex-end;
+  line-height: 1.1;
+  box-shadow: var(--hl-top);
+}
+.tcal-pnl-badge.pos {
+  background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(74,222,128,0.06));
+  border: 1px solid rgba(74,222,128,0.40);
+  color: var(--good);
+}
+.tcal-pnl-badge.neg {
+  background: linear-gradient(135deg, rgba(248,113,113,0.18), rgba(248,113,113,0.06));
+  border: 1px solid rgba(248,113,113,0.40);
+  color: var(--bad);
+}
+.tcal-pnl-badge.flat {
+  background: var(--glass-2);
+  border: 1px solid var(--stroke-2);
+  color: var(--text-3);
+}
+.tcal-pnl-num { font-size: 19px; letter-spacing: -0.02em; }
+.tcal-pnl-sub { font-size: 9px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; opacity: 0.85; margin-top: 2px; }
+
+.tcal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.tcal-dow {
+  font-size: 9px; font-weight: 700; color: var(--text-3);
+  letter-spacing: 0.12em; text-transform: uppercase; font-family: var(--mono);
+  text-align: center; padding: 4px 2px 6px;
+}
+.tcal-cell {
+  min-height: 78px;
+  border-radius: 9px;
+  border: 1px dashed rgba(255,255,255,0.04);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 7px 8px;
+  transition: all 0.14s ease;
+}
+.tcal-cell:hover {
+  border: 1px solid rgba(56,189,248,0.40);
+  background: var(--glass-2);
+}
+.tcal-cell.inactive {
+  background: transparent; border: none;
+  cursor: default; pointer-events: none;
+}
+.tcal-cell.weekend { background: rgba(192,132,252,0.025); }
+.tcal-cell.today {
+  border: 1px solid var(--cyan) !important;
+  box-shadow: 0 0 0 1px var(--cyan), 0 0 14px rgba(56,189,248,0.24);
+}
+.tcal-cell.has-pnl { border-style: solid; }
+.tcal-cell.win {
+  background: linear-gradient(135deg, rgba(74,222,128,0.16), rgba(74,222,128,0.04));
+  border-color: rgba(74,222,128,0.35);
+  box-shadow: var(--hl-top);
+}
+.tcal-cell.loss {
+  background: linear-gradient(135deg, rgba(248,113,113,0.16), rgba(248,113,113,0.04));
+  border-color: rgba(248,113,113,0.35);
+  box-shadow: var(--hl-top);
+}
+.tcal-cell.scratch {
+  background: rgba(255,255,255,0.03);
+  border-color: var(--stroke-2);
+}
+.tcal-day-num {
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  font-family: var(--mono); line-height: 1; opacity: 0.55;
+}
+.tcal-cell.has-pnl .tcal-day-num { opacity: 0.85; color: var(--text-2); }
+.tcal-cell-pnl {
+  font-size: 14px; font-weight: 800;
+  font-family: var(--mono); letter-spacing: -0.02em;
+  margin-top: auto; line-height: 1;
+}
+.tcal-cell.win .tcal-cell-pnl { color: var(--good); }
+.tcal-cell.loss .tcal-cell-pnl { color: var(--bad); }
+.tcal-cell.scratch .tcal-cell-pnl { color: var(--text-3); }
+.tcal-trade-count {
+  font-size: 9px; color: var(--text-3); font-family: var(--mono);
+  margin-top: 3px; letter-spacing: 0.04em;
+}
+
+/* Week summary at right of each row */
+.tcal-week-summary {
+  font-size: 10px; font-family: var(--mono); color: var(--text-3);
+  text-align: right; padding: 8px 4px;
+  border-left: 1px dashed var(--stroke-1);
+}
+.tcal-week-summary .ws-pnl { font-size: 12px; font-weight: 700; }
+.tcal-week-summary .ws-pnl.pos { color: var(--good); }
+.tcal-week-summary .ws-pnl.neg { color: var(--bad); }
+
+
+/* ══════════════════════════════════════════════════
+   iPAD 11" LANDSCAPE FIT (1194×834) — NO SCROLL
+   ══════════════════════════════════════════════════ */
+@media (min-width: 1024px) and (max-width: 1300px) and (max-height: 900px),
+       (min-width: 800px) and (max-width: 1300px) and (orientation: landscape) {
+
+  :root {
+    --sidebar-w: 168px;
+    --hero-num:  clamp(22px,2.6vw,42px);
+    --kpi-num:   clamp(15px,1.4vw,22px);
+    --money-num: clamp(13px,1.2vw,19px);
+  }
+
+  html, body { height: 100vh; overflow: hidden; }
+
+  .app {
+    grid-template-rows: 48px 1fr;
+    gap: 8px;
+    padding: 8px 8px 8px 0;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .side { margin: 8px 0 8px 8px; border-radius: 16px; }
+  .side-logo { padding: 12px 12px 10px; }
+  .side-logo-mark { width: 28px; height: 28px; border-radius: 9px; font-size: 13px; }
+  .side-logo-name { font-size: 12px; }
+  .side-logo-sub { font-size: 8px; }
+  .side-tabs { padding: 8px 8px 6px; gap: 3px; }
+  .side-tab { height: 26px; font-size: 10px; }
+  .nav-pane { padding: 2px 7px 7px; gap: 1px; }
+  .nav-section-label { font-size: 8px; padding: 6px 9px 2px; }
+  .nav-item { padding: 6px 9px; font-size: 11px; gap: 7px; }
+  .side-bottom { padding: 7px; }
+  .side-settings-btn { padding: 7px 9px; font-size: 11px; }
+
+  /* Topbar */
+  .topbar { margin: 8px 8px 0 0; padding: 0 12px; gap: 8px; border-radius: 14px; }
+  .pill { height: 26px; padding: 0 9px; font-size: 10px; border-radius: 8px; }
+  .agent-open-btn { height: 26px; padding: 0 11px; font-size: 10.5px; border-radius: 8px; }
+  .review-btn { height: 26px; padding: 0 11px; font-size: 10px; border-radius: 8px; }
+
+  /* Main — limited height, scroll only inside if absolutely needed */
+  .main {
+    margin: 0 8px 8px 0;
+    padding: 12px 16px 14px;
+    border-radius: 16px;
+    overflow-y: auto;
+    height: calc(100vh - 64px);
+  }
+
+  /* Page head — much tighter */
+  .page-head {
+    padding-bottom: 9px;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  .page-arm-strip { width: 26px; height: 2px; }
+  .page-title { font-size: clamp(16px,1.5vw,20px); }
+  .page-sub { font-size: 10.5px; margin-top: 2px; }
+  .page-edit-hint { font-size: 9px; padding: 4px 8px; }
+
+  /* Section headers — very compact */
+  .section-h {
+    margin: 12px 0 8px;
+    font-size: 8.5px;
+    gap: 10px;
+  }
+  .section-h:first-of-type { margin-top: 0; }
+
+  /* Attention grid — tighter cards */
+  .attention { gap: 8px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .att { padding: 11px 13px; border-radius: 12px; }
+  .att-num { font-size: clamp(15px,1.5vw,22px); }
+  .att-label { font-size: 9px; margin-top: 7px; letter-spacing: 0.10em; }
+  .att-detail { font-size: 9.5px; margin-top: 2px; }
+
+  /* Sources */
+  .sources { gap: 7px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .src { padding: 10px 12px; border-radius: 11px; }
+  .src-label { font-size: 8.5px; margin-bottom: 5px; }
+  .src-num { font-size: 16px; }
+  .src-meta { font-size: 9.5px; margin-top: 4px; }
+
+  /* Money cards */
+  .money-grid { gap: 10px; }
+  .money-card { padding: 14px 16px; border-radius: 14px; }
+  .money-head { margin-bottom: 11px; }
+  .money-period { font-size: 12px; }
+  .money-tag { font-size: 8px; }
+  .money-rows { gap: 10px; padding-bottom: 10px; margin-bottom: 10px; }
+  .row-label { font-size: 8.5px; margin-bottom: 4px; }
+  .row-val { font-size: clamp(13px,1.3vw,19px); }
+  .net-num { font-size: clamp(22px,2.5vw,40px); }
+  .net-tag-label { font-size: 8.5px; }
+  .net-tag-val { font-size: 11px; }
+
+  /* Trading calendar — compact */
+  .tcal-wrap { padding: 11px 13px; margin-bottom: 10px; border-radius: 12px; }
+  .tcal-head { gap: 8px; margin-bottom: 9px; }
+  .tcal-month-label { font-size: 14px; }
+  .tcal-month-label small { font-size: 8.5px; }
+  .tcal-nav-btn { width: 26px; height: 26px; font-size: 12px; border-radius: 7px; }
+  .tcal-pnl-badge { padding: 6px 12px; border-radius: 9px; }
+  .tcal-pnl-num { font-size: 15px; }
+  .tcal-pnl-sub { font-size: 8px; }
+  .tcal-grid { gap: 3px; }
+  .tcal-dow { font-size: 8px; padding: 2px 1px 4px; }
+  .tcal-cell { min-height: 56px; padding: 5px 6px; border-radius: 7px; }
+  .tcal-day-num { font-size: 9.5px; }
+  .tcal-cell-pnl { font-size: 11.5px; }
+  .tcal-trade-count { font-size: 8px; margin-top: 2px; }
+
+  /* Trading dashboard KPIs */
+  .tz-grid { gap: 7px; margin-bottom: 11px; }
+  .tz-card { padding: 11px 13px; border-radius: 11px; }
+  .tz-val { font-size: 17px; margin-bottom: 3px; }
+  .tz-label { font-size: 8px; }
+  .tz-sub { font-size: 9px; margin-top: 2px; }
+  .eq-curve-big { height: 92px; border-radius: 11px; margin-bottom: 11px; }
+
+  /* Rules analytics + setup list */
+  .rules-analytics { border-radius: 11px; margin-bottom: 11px; }
+  .ra-head { padding: 10px 14px; }
+  .ra-title { font-size: 9.5px; }
+  .ra-row { padding: 7px 14px; font-size: 10.5px; gap: 5px; }
+  .ra-row.ra-header { font-size: 8px; padding: 6px 14px; }
+  .dow-grid { gap: 4px; margin-bottom: 11px; }
+  .dow-card { padding: 8px 6px; border-radius: 9px; }
+  .dow-label { font-size: 8px; margin-bottom: 4px; }
+  .dow-val { font-size: 11px; }
+  .dow-n { font-size: 8px; margin-top: 2px; }
+  .setup-list { gap: 5px; margin-bottom: 11px; }
+  .setup-row { padding: 7px 12px; border-radius: 9px; gap: 9px; }
+  .setup-name { font-size: 11px; }
+  .setup-stats { font-size: 9px; gap: 9px; }
+
+  /* Trade log */
+  .trade-log { border-radius: 11px; margin-bottom: 10px; }
+  .trade-log-head { padding: 10px 14px; }
+  .trade-log-title { font-size: 9.5px; }
+  .trade-table th { padding: 6px 11px; font-size: 8px; }
+  .trade-table td { padding: 7px 11px; font-size: 10.5px; }
+
+  /* Holdings */
+  .port-total { padding: 13px 16px; margin-bottom: 11px; border-radius: 14px; gap: 11px; }
+  .pt-pill { padding: 6px 9px; border-radius: 9px; }
+  .pt-pill-label { font-size: 8px; }
+  .pt-pill-val { font-size: 11.5px; }
+  .hld-sections { gap: 10px; }
+  .hld-block { border-radius: 11px; }
+  .hld-head { padding: 9px 14px; }
+  .hld-title { font-size: 9.5px; }
+  .hld-htotal { font-size: 10.5px; }
+  .hld-table th { padding: 6px 12px; font-size: 8px; }
+  .hld-table td { padding: 8px 12px; font-size: 10.5px; }
+  .hld-add { margin: 9px 12px; height: 28px; padding: 0 11px; font-size: 10px; }
+
+  /* Angel + Real Estate */
+  .angel-grid, .prop-grid { gap: 8px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .angel-card, .prop-card { padding: 13px 15px; border-radius: 12px; }
+  .angel-name, .prop-name { font-size: 12px; margin-bottom: 4px; }
+  .angel-row, .prop-row { font-size: 10.5px; margin-top: 5px; }
+
+  /* Modals + connections */
+  .modal-box { padding: 22px 24px; border-radius: 18px; }
+  .modal-title { font-size: 16px; margin-bottom: 18px; }
+  .modal-field { margin-bottom: 12px; }
+  .modal-label { font-size: 8.5px; margin-bottom: 5px; }
+  .modal-input { font-size: 12.5px; padding: 9px 12px; border-radius: 9px; }
+  .modal-actions { gap: 7px; margin-top: 18px; }
+  .modal-btn { height: 38px; font-size: 12px; border-radius: 9px; }
+
+  .conn-grid { gap: 9px; margin-bottom: 14px; grid-template-columns: 1fr 1fr; }
+  .conn-card { padding: 14px; border-radius: 13px; }
+  .conn-logo { width: 34px; height: 34px; font-size: 16px; border-radius: 9px; }
+  .conn-name { font-size: 12.5px; }
+  .conn-status { font-size: 9.5px; }
+  .conn-desc { font-size: 10.5px; margin-bottom: 11px; line-height: 1.5; }
+  .conn-input { font-size: 11px; padding: 7px 11px; }
+  .conn-btn { height: 30px; padding: 0 13px; font-size: 10.5px; }
+
+  /* Calendar tighter on iPad */
+  .cal-cell { min-height: 88px; padding: 5px 5px 6px; }
+  .cal-day-num { font-size: 9.5px; }
+  .cal-sticker-display { font-size: 18px; }
+  .cal-label-display { font-size: 9.5px; margin-top: 3px; }
+  .cal-mcell { min-height: 100px; padding: 6px 8px 8px; }
+  .cal-mday-num { font-size: 12px; }
+  .cal-mlabel { font-size: 11px; }
+  .cal-mnote { font-size: 9.5px; }
+
+  /* Insight card more compact */
+  .insight-card { padding: 13px 17px; margin-bottom: 14px; gap: 11px; }
+  .insight-avatar { width: 30px; height: 30px; font-size: 13px; }
+  .insight-label { font-size: 8.5px; margin-bottom: 5px; }
+  .insight-text { font-size: 12.5px; line-height: 1.55; }
+  .insight-actions { margin-top: 10px; }
+  .insight-ask { height: 28px; padding: 0 13px; font-size: 10.5px; }
+}
+
+/* iPad PORTRAIT (834×1194) — more vertical room, slightly less compaction */
+@media (min-width: 800px) and (max-width: 900px) and (orientation: portrait) {
+  :root { --sidebar-w: 0px; }
+  .side { display: none; }
+  .app { grid-template-columns: 1fr; grid-template-areas: "topbar" "main"; }
+}
+
+
+/* iPad / mobile: prevent double-tap zoom and rubber-band scrolling */
+html, body {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input, textarea, select, [contenteditable="true"], .editable {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
+}
+
+/* ── COLLAPSIBLE SIDEBAR ── */
+.side-collapse-btn {
+  position: absolute; top: 18px; right: 10px;
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  background: var(--glass-2); border: 1px solid var(--stroke-2);
+  color: var(--text-3); cursor: pointer;
+  font-size: 11px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.16s ease;
+  z-index: 10;
+  box-shadow: var(--hl-top);
+}
+.side-collapse-btn:hover { color: var(--cyan); border-color: rgba(56,189,248,0.40); }
+
+.app.sidebar-collapsed { grid-template-columns: 56px 1fr; }
+.app.sidebar-collapsed .side { padding: 0; }
+.app.sidebar-collapsed .side-logo { padding: 14px 0; justify-content: center; }
+.app.sidebar-collapsed .side-logo-name,
+.app.sidebar-collapsed .side-logo-sub,
+.app.sidebar-collapsed .side-tabs,
+.app.sidebar-collapsed .nav-pane,
+.app.sidebar-collapsed .side-bottom { display: none; }
+.app.sidebar-collapsed .side-collapse-btn { right: 50%; transform: translateX(50%); top: 60px; }
+.app.sidebar-collapsed .side-logo { cursor: pointer; }
+
+/* Mini icon-row for collapsed mode */
+.side-mini {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 8px;
+}
+.app.sidebar-collapsed .side-mini { display: flex; }
+.side-mini-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all 0.16s ease;
+}
+.side-mini-btn:hover { background: var(--glass-2); color: var(--text-1); border-color: var(--stroke-2); }
+.side-mini-btn.active { background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(56,189,248,0.06)); border-color: rgba(56,189,248,0.30); color: var(--cyan); }
+
+
+/* Day-of-week mini label inside each year-view cell */
+.cal-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  align-self: flex-start;
+  line-height: 1;
+}
+.cal-dow-mini {
+  font-size: 8.5px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  opacity: 0.50;
+}
+.cal-cell.has-sticker .cal-dow-mini { opacity: 0.75; }
+.cal-cell.weekend .cal-dow-mini { color: var(--violet); opacity: 0.55; }
+.cal-cell.today-cell .cal-dow-mini { color: var(--cyan); opacity: 0.95; }
+/* iPad scale */
+@media (min-width: 1024px) and (max-width: 1300px) and (max-height: 900px),
+       (min-width: 800px) and (max-width: 1300px) and (orientation: landscape) {
+  .cal-dow-mini { font-size: 7.5px; gap: 4px; }
+}
+
 </style>
 </head>
 <body>
@@ -2035,6 +2477,7 @@ textarea.modal-input { resize: vertical; min-height: 80px; line-height: 1.5; }
 <div class="app">
 
 <aside class="side" id="side">
+  <button class="side-collapse-btn" onclick="toggleSidebar(event)" title="Collapse / expand">‹</button>
   <div class="side-logo" onclick="navigate('cockpit-overview')">
     <div class="side-logo-mark">&#9711;</div>
     <div><div class="side-logo-name">Cockpit</div><div class="side-logo-sub">RTHQ</div></div>
@@ -2191,6 +2634,23 @@ async function sbGet(table, params) {
     return await r.json();
   } catch { return []; }
 }
+async function sbUpsertReturning(table, data) {
+  try {
+    const r = await fetch(SUPA_URL+'/rest/v1/'+table, {
+      method: 'POST',
+      headers: Object.assign({}, SUPA_HDR, { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(r.status + ': ' + txt.slice(0, 120));
+    }
+    return await r.json();
+  } catch(e) {
+    throw e;
+  }
+}
+
 async function sbUpsert(table, data) {
   try {
     await fetch(SUPA_URL+'/rest/v1/'+table, {
@@ -2778,11 +3238,11 @@ const PAGES = {
     }
   },
   'wa-saas':      { title:'WhatsApp SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'WhatsApp automation product', sections:['empty'], data:{} },
-  'rsvp':         { title:'Ishur RSVP', arm:'tech', armLabel:'Tech & SaaS', sub:'Wedding RSVP product', sections:['empty'], data:{} },
+  'rsvp':         { title:'Ishur RSVP', arm:'tech', armLabel:'Tech & SaaS', sub:'Wedding RSVP via WhatsApp', sections:['ishur'], data:{} },
   'crm-saas':     { title:'CRM SaaS', arm:'tech', armLabel:'Tech & SaaS', sub:'Simple CRM', sections:['empty'], data:{} },
   'construction': { title:'Construction', arm:'cap', armLabel:'Capital', sub:'Construction work', sections:['empty'], data:{} },
-  'trading':      { title:'Trading', arm:'cap', armLabel:'Capital', sub:'Funded accounts · IBKR · Apex', sections:['trading-overview'], data:{} },
-  'holdings':     { title:'Holdings', arm:'cap', armLabel:'Capital', sub:'Portfolio snapshot', sections:['empty'], data:{} },
+  'trading':      { title:'Trading', arm:'cap', armLabel:'Capital', sub:'Tradezella-style P&L · funded accounts', sections:['trading-overview'], data:{} },
+  'holdings':     { title:'Holdings', arm:'cap', armLabel:'Capital', sub:'Portfolio snapshot · live rates', sections:['holdings'], data:{crypto:[],stocks:[],cash:[]} },
   'angel':        { title:'Angel', arm:'cap', armLabel:'Capital', sub:'Early-stage investments', sections:['angel'], data:{investments:[]} },
   'real-estate':  { title:'Real Estate', arm:'cap', armLabel:'Capital', sub:'Portfolio', sections:['real-estate'], data:{properties:[]} },
   'finance':      { title:'Finance Hub', arm:'cap', armLabel:'Capital', sub:'Net worth · Accounts · Debt', sections:['finance'], data:{accounts:[],debt:[],recurringIncome:[],recurringExpenses:[],targetSavings:30000,currentSavings:0} },
@@ -2801,30 +3261,35 @@ function placeholderPage(title) { return {title, arm:'tech', armLabel:'', sub:'N
 async function loadAllData() {
   showLoadingOverlay(true);
   try {
+    // Resilient: each table failure returns [] instead of breaking the whole load
+    const safeGet = (table, q) => sbGet(table, q || '').catch(err => {
+      console.warn('Table missing or RLS denied:', table, err && err.message ? err.message : '');
+      return [];
+    });
     const [monthly, sources, trades, skills, notes, accounts, debt, recurring,
            holdings, investments, properties, config, clients, pipeline,
            tradeEntries, weeklyReviews, projectsData, tradeRulesData,
            calData, stickerData] = await Promise.all([
-      sbGet('cockpit_monthly'),
-      sbGet('cockpit_sources'),
-      sbGet('cockpit_trade_days'),
-      sbGet('cockpit_skills'),
-      sbGet('cockpit_notes'),
-      sbGet('cockpit_bank_accounts','?order=sort_order'),
-      sbGet('cockpit_debt'),
-      sbGet('cockpit_recurring','?order=sort_order'),
-      sbGet('cockpit_holdings','?order=asset_type,sort_order'),
-      sbGet('cockpit_investments','?order=created_at'),
-      sbGet('cockpit_properties','?order=created_at'),
-      sbGet('cockpit_config'),
-      sbGet('cockpit_clients','?order=created_at'),
-      sbGet('cockpit_pipeline','?order=created_at'),
-      sbGet('cockpit_trades','?order=trade_date.desc&limit=100'),
-      sbGet('cockpit_weekly_reviews','?order=week_start.desc&limit=12'),
-      sbGet('cockpit_projects','?order=page_key,sort_order'),
-      sbGet('cockpit_trade_rules','?order=sort_order'),
-      sbGet('cockpit_calendar','?order=cal_date&limit=500'),
-      sbGet('cockpit_stickers','?order=sort_order')
+      safeGet('cockpit_monthly'),
+      safeGet('cockpit_sources'),
+      safeGet('cockpit_trade_days'),
+      safeGet('cockpit_skills'),
+      safeGet('cockpit_notes'),
+      safeGet('cockpit_bank_accounts','?order=sort_order'),
+      safeGet('cockpit_debt'),
+      safeGet('cockpit_recurring','?order=sort_order'),
+      safeGet('cockpit_holdings','?order=asset_type,sort_order'),
+      safeGet('cockpit_investments','?order=created_at'),
+      safeGet('cockpit_properties','?order=created_at'),
+      safeGet('cockpit_config'),
+      safeGet('cockpit_clients','?order=created_at'),
+      safeGet('cockpit_pipeline','?order=created_at'),
+      safeGet('cockpit_trades','?order=trade_date.desc&limit=100'),
+      safeGet('cockpit_weekly_reviews','?order=week_start.desc&limit=12'),
+      safeGet('cockpit_projects','?order=page_key,sort_order'),
+      safeGet('cockpit_trade_rules','?order=sort_order'),
+      safeGet('cockpit_calendar','?order=cal_date&limit=500'),
+      safeGet('cockpit_stickers','?order=sort_order')
     ]);
 
     monthly.forEach(r => {
@@ -2843,6 +3308,10 @@ async function loadAllData() {
 
     if (accounts.length) PAGES.finance.data.accounts = accounts.map(a => ({id:a.id, bank:a.bank_name, balance:a.balance, savings:a.savings, creditLine:a.credit_line, cardLimit:a.card_limit}));
     if (debt.length) PAGES.finance.data.debt = debt.map(d => ({id:d.id, name:d.name, balance:d.balance, originalBalance:d.original_balance, monthly:d.monthly_payment, ratePercent:d.rate_percent, monthsRemaining:d.months_remaining, property:d.property_link||''}));
+    // Hydrate holdings into PAGES.holdings.data
+    PAGES.holdings.data.crypto = holdings.filter(h => h.asset_type==='crypto').map(h => ({id:h.id, symbol:h.symbol, name:h.name, amount:+h.amount||0, price:+h.price_usd||0, change:+h.change_pct||0, currency:h.currency||'USD'}));
+    PAGES.holdings.data.stocks = holdings.filter(h => h.asset_type==='stock').map(h => ({id:h.id, symbol:h.symbol, name:h.name, shares:+h.amount||0, price:+h.price_usd||0, change:+h.change_pct||0, currency:h.currency||'USD'}));
+    PAGES.holdings.data.cash   = holdings.filter(h => h.asset_type==='cash').map(h => ({id:h.id, currency:h.symbol, amount:+h.amount||0}));
     PAGES.finance.data.recurringIncome   = recurring.filter(r=>r.type==='income').map(r=>({id:r.id, name:r.name, amount:r.amount, frequency:r.frequency, active:r.active}));
     PAGES.finance.data.recurringExpenses = recurring.filter(r=>r.type==='expense').map(r=>({id:r.id, name:r.name, amount:r.amount, frequency:r.frequency, active:r.active, fromDebt:r.from_debt}));
     config.forEach(r => {
@@ -3108,8 +3577,7 @@ function renderYearGrid() {
   const multiDaySet = buildMultiDaySet();
 
   let h = '<div class="cal-grid" style="grid-template-columns:90px repeat(31,minmax(58px,1fr))">';
-  h += '<div></div>';
-  for (let d = 1; d <= 31; d++) h += '<div class="cal-header-cell">' + d + '</div>';
+  // No header row of numbers — day numbers are inside each cell
 
   for (let m = 0; m < 12; m++) {
     const maxDay = daysInMonth(year, m);
@@ -3147,8 +3615,12 @@ function renderYearCell(dateStr, day, year, month, todayStr, multiDaySet) {
     style = ' style="--tint-color:' + viewColor + '25;--tint-border:' + viewColor + '60;--strip-color:' + viewColor + '"';
   }
 
+  // 3-letter day-of-week (e.g. THU)
+  const _dowNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const _dow = _dowNames[new Date(year, month, day).getDay()];
+
   let h = '<div class="' + cls + '" data-date="' + dateStr + '"' + style + ' onclick="calCellClick(this.dataset.date)">';
-  h += '<div class="cal-day-num">' + day + '</div>';
+  h += '<div class="cal-day-head"><span class="cal-dow-mini">' + _dow + '</span><span class="cal-day-num">' + day + '</span></div>';
   const showEmoji = cellData.sticker_emoji || (partOf && partOf.sticker_emoji);
   if (showEmoji) h += '<div class="cal-sticker-display"' + (partOf ? ' style="opacity:0.45"' : '') + '>' + showEmoji + '</div>';
   // Show label on every day of a multi-day range
@@ -3488,9 +3960,21 @@ window.addNewSticker = async function() {
     gcal_color_id: r.gcal || '',
     sort_order: _stickers.length + 1
   };
-  await sbUpsert('cockpit_stickers', s);
-  _stickers = await sbGet('cockpit_stickers','?order=sort_order');
+  // Optimistic local update FIRST so the user sees it immediately
+  const tmpId = 'tmp-' + Date.now();
+  _stickers.push(Object.assign({}, s, { id: tmpId }));
   renderPage('big-calendar');
+  // Then sync to Supabase, refresh ID if successful
+  try {
+    const saved = await sbUpsertReturning('cockpit_stickers', s);
+    if (saved && saved[0] && saved[0].id) {
+      const idx = _stickers.findIndex(x => x.id === tmpId);
+      if (idx >= 0) _stickers[idx] = saved[0];
+      renderPage('big-calendar');
+    }
+  } catch(e) {
+    console.warn('Sticker save failed (kept locally):', e.message);
+  }
 };
 
 // Custom sticker modal with clear color labelling and visual swatch picker
@@ -3579,16 +4063,30 @@ window.editSticker = async function(id) {
   const r = await stickerModal(s, 'Edit Sticker', 'Update', true);
   if (!r) return;
   if (r._delete) {
-    await sbDelete('cockpit_stickers', 'id=eq.'+id);
+    // Optimistic local removal
     _stickers = _stickers.filter(x => x.id !== id);
     if (_activeSticker && _activeSticker.id === id) _activeSticker = null;
-    return renderPage('big-calendar');
+    renderPage('big-calendar');
+    try { await sbDelete('cockpit_stickers', 'id=eq.' + id); }
+    catch(e) { console.warn('Sticker delete failed (kept locally):', e.message); }
+    return;
   }
-  await sbPatch('cockpit_stickers', 'id=eq.'+id, {
-    name: r.name, emoji: r.emoji || '\u25C6', color: r.color || '#38bdf8', gcal_color_id: r.gcal || ''
-  });
-  _stickers = await sbGet('cockpit_stickers','?order=sort_order');
+  // Optimistic local update FIRST
+  const idx = _stickers.findIndex(x => x.id === id);
+  if (idx >= 0) {
+    _stickers[idx] = Object.assign({}, _stickers[idx], {
+      name: r.name, emoji: r.emoji || '\u25C6', color: r.color || '#38bdf8', gcal_color_id: r.gcal || ''
+    });
+  }
   renderPage('big-calendar');
+  // Then sync to Supabase
+  try {
+    await sbPatch('cockpit_stickers', 'id=eq.' + id, {
+      name: r.name, emoji: r.emoji || '\u25C6', color: r.color || '#38bdf8', gcal_color_id: r.gcal || ''
+    });
+  } catch(e) {
+    console.warn('Sticker update failed (kept locally):', e.message);
+  }
 };
 
 // Drawing
@@ -3605,29 +4103,55 @@ window.clearCalCanvas = function() {
 };
 function initCalCanvas() {
   const canvas = document.getElementById('cal-draw-canvas');
-  const grid = document.getElementById('cal-grid');
-  if (!canvas || !grid) return;
-  const rect = grid.getBoundingClientRect();
-  canvas.width = rect.width; canvas.height = rect.height;
-  canvas.style.width = rect.width+'px'; canvas.style.height = rect.height+'px';
+  if (!canvas) return;
+  // Size the canvas to the FULL scrollable extent of the calendar wrapper
+  // so drawing flows across all months/weeks like a whiteboard
+  const wrap = canvas.parentElement;
+  if (!wrap) return;
+  const w = Math.max(wrap.scrollWidth, wrap.clientWidth);
+  const h = Math.max(wrap.scrollHeight, wrap.clientHeight);
+  // Position the canvas absolutely over the wrap content
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
   canvas.classList.add('active');
+
   const ctx = canvas.getContext('2d');
   let drawing = false, lx = 0, ly = 0;
+
+  // Apple Pencil ONLY — finger and mouse are ignored.
+  // pointerType: 'pen' = Apple Pencil / stylus, 'touch' = finger, 'mouse' = mouse
   canvas.addEventListener('pointerdown', e => {
-    drawing = true; lx = e.offsetX; ly = e.offsetY;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    canvas.setPointerCapture(e.pointerId);
+    if (e.pointerType !== 'pen') return;  // ignore finger and mouse
+    e.preventDefault();
+    drawing = true;
+    lx = e.offsetX;
+    ly = e.offsetY;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
   });
   canvas.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'pen') return;
     if (!drawing) return;
+    e.preventDefault();
     ctx.beginPath();
     ctx.strokeStyle = _drawColor;
-    ctx.lineWidth = (e.pressure > 0 ? e.pressure * 5 : 2);
-    ctx.moveTo(lx, ly); ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();
-    lx = e.offsetX; ly = e.offsetY;
+    // Apple Pencil pressure ranges 0..1 — map to a smooth 1.5..6 px stroke
+    const press = e.pressure > 0 ? e.pressure : 0.5;
+    ctx.lineWidth = 1.5 + press * 4.5;
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    lx = e.offsetX;
+    ly = e.offsetY;
   });
-  canvas.addEventListener('pointerup', () => drawing = false);
-  canvas.addEventListener('pointercancel', () => drawing = false);
+  canvas.addEventListener('pointerup',     e => { if (e.pointerType === 'pen') drawing = false; });
+  canvas.addEventListener('pointercancel', e => { if (e.pointerType === 'pen') drawing = false; });
 }
 
 window.reauthGCal = function() {
@@ -3735,16 +4259,114 @@ function renderRelocationETA() {
 // ══════════════════════════════════════════════════
 function renderFinanceHub() {
   const F = computeFinancials();
-  let html = renderRelocationETA();
-  html += '<div class="section-h"><span><span class="num">01</span>Net Worth</span><div class="line"></div></div>';
-  html += '<div class="attention">' +
-    '<div class="att cyan"><div class="att-num">'+fmtK(F.netWorth)+'<span class="cur">\u20AA</span></div><div class="att-label">Net Worth</div></div>' +
-    '<div class="att good"><div class="att-num">'+fmtK(F.cashAvail)+'<span class="cur">\u20AA</span></div><div class="att-label">Cash Available</div></div>' +
-    '<div class="att bad"><div class="att-num">'+fmtK(F.totalDebt)+'<span class="cur">\u20AA</span></div><div class="att-label">Debt</div></div>' +
-    '<div class="att '+(F.monthlyNet>=0?'good':'bad')+'"><div class="att-num">'+(F.monthlyNet>=0?'+':'')+fmtK(F.monthlyNet)+'<span class="cur">\u20AA</span></div><div class="att-label">Monthly Net</div></div>' +
-    '</div>';
-  return html + renderEmptyState('Add accounts, debts, and recurring items via Supabase');
+
+  // Hero: Net Worth — the most important number, displayed huge
+  const nwColor = F.netWorth >= 0 ? 'var(--good)' : 'var(--bad)';
+  const monthlyColor = F.monthlyNet >= 0 ? 'var(--good)' : 'var(--bad)';
+  let html = '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(56,189,248,0.25);border-radius:22px;padding:28px 32px;margin-bottom:18px;box-shadow:var(--hl-top-strong),var(--shadow-1),0 0 60px rgba(56,189,248,0.10);position:relative;overflow:hidden">';
+  html += '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:10px">Net Worth</div>';
+  html += '<div style="font-size:clamp(40px,5.5vw,72px);font-weight:900;color:'+nwColor+';letter-spacing:-0.05em;line-height:0.95;text-shadow:0 0 36px '+(F.netWorth>=0?'rgba(74,222,128,0.30)':'rgba(248,113,113,0.30)')+'">' +
+    (F.netWorth>=0?'':'-') + fmt(Math.abs(Math.round(F.netWorth))) + '<span style="font-size:0.4em;color:var(--text-3);margin-left:6px;font-weight:600">\u20AA</span></div>';
+  html += '<div style="display:flex;gap:32px;margin-top:18px;flex-wrap:wrap">';
+  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Total Assets</div><div style="font-size:18px;font-weight:700;color:var(--cyan);font-family:var(--mono)">'+fmtK(Math.round(F.totalAssets))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Total Debt</div><div style="font-size:18px;font-weight:700;color:var(--bad);font-family:var(--mono)">'+fmtK(Math.round(F.totalDebt))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Monthly Net</div><div style="font-size:18px;font-weight:700;color:'+monthlyColor+';font-family:var(--mono)">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:10px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Cash Available</div><div style="font-size:18px;font-weight:700;color:var(--good);font-family:var(--mono)">'+fmtK(Math.round(F.cashAvail))+'\u20AA</div></div>';
+  html += '</div></div>';
+
+  // Relocation ETA (savings & MRR progress)
+  html += renderRelocationETA();
+
+  // Quick access to money sections — same pattern as Life Overview
+  html += '<div class="section-h"><span><span class="num">01</span>Quick Access</span><div class="line"></div></div>';
+  html += '<div class="attention">';
+  html += '<div class="att cyan" onclick="navigate(\'holdings\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.totalAssets - F.totalDebt - F.reValue - F.angelPaper))+'<span class="cur">\u20AA</span></div><div class="att-label">Holdings</div><div class="att-detail">Crypto · Stocks · Cash</div></div>';
+  html += '<div class="att good" onclick="navigate(\'real-estate\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.reValue))+'<span class="cur">\u20AA</span></div><div class="att-label">Real Estate</div><div class="att-detail">CF: '+(F.reCashflow>=0?'+':'')+fmtK(Math.round(F.reCashflow))+'\u20AA/mo</div></div>';
+  html += '<div class="att tech" onclick="navigate(\'angel\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(F.angelPaper))+'<span class="cur">\u20AA</span></div><div class="att-label">Angel</div><div class="att-detail">'+(_investments||[]).length+' positions</div></div>';
+  const tradeColor = F.tradePnl>=0 ? 'good' : 'bad';
+  html += '<div class="att '+tradeColor+'" onclick="navigate(\'trading\')" style="cursor:pointer"><div class="att-num">'+(F.tradePnl>=0?'+':'')+fmtK(Math.round(F.tradePnl))+'<span class="cur">\u20AA</span></div><div class="att-label">Trading</div><div class="att-detail">P&L this month</div></div>';
+  html += '</div>';
+
+  // Income & Expenses (this month)
+  html += '<div class="section-h"><span><span class="num">02</span>This Month</span><div class="line"></div></div>';
+  html += '<div class="attention">';
+  html += '<div class="att good"><div class="att-num">+'+fmtK(Math.round(F.totalBizIncome))+'<span class="cur">\u20AA</span></div><div class="att-label">Business Income</div><div class="att-detail">AutoScale + SaaS</div></div>';
+  html += '<div class="att tech"><div class="att-num">+'+fmtK(Math.round(F.totalRI))+'<span class="cur">\u20AA</span></div><div class="att-label">Recurring Income</div><div class="att-detail">'+F.ri.filter(r=>r.active).length+' active</div></div>';
+  html += '<div class="att bad"><div class="att-num">-'+fmtK(Math.round(F.totalBizExpense))+'<span class="cur">\u20AA</span></div><div class="att-label">Business Expense</div></div>';
+  html += '<div class="att bad"><div class="att-num">-'+fmtK(Math.round(F.totalRE))+'<span class="cur">\u20AA</span></div><div class="att-label">Recurring Expenses</div><div class="att-detail">'+F.re.filter(r=>r.active).length+' active</div></div>';
+  html += '</div>';
+
+  // Bank breakdown
+  if (F.accounts.length > 0) {
+    html += '<div class="section-h"><span><span class="num">03</span>Bank Accounts</span><div class="line"></div><span class="meta">'+F.accounts.length+' ACCOUNTS</span></div>';
+    html += '<div class="attention">';
+    F.accounts.forEach(a => {
+      const bal = +getEdited('fin.acct.'+a.id+'.balance', a.balance) || 0;
+      const sav = +getEdited('fin.acct.'+a.id+'.savings', a.savings) || 0;
+      html += '<div class="att cyan" onclick="navigate(\'finance\')" style="cursor:pointer">';
+      html += '<div class="att-num">'+fmtK(bal+sav)+'<span class="cur">\u20AA</span></div>';
+      html += '<div class="att-label">'+escapeHtml(a.bank)+'</div>';
+      html += '<div class="att-detail">Bal: '+fmtK(bal)+' · Sav: '+fmtK(sav)+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Debt breakdown
+  if (F.debts.length > 0) {
+    html += '<div class="section-h"><span><span class="num">04</span>Debt</span><div class="line"></div><span class="meta">'+F.debts.length+' OUTSTANDING</span></div>';
+    html += '<div class="attention">';
+    F.debts.forEach(d => {
+      const bal = +getEdited('fin.debt.'+d.id+'.balance', d.balance) || 0;
+      html += '<div class="att bad"><div class="att-num">'+fmtK(bal)+'<span class="cur">\u20AA</span></div>';
+      html += '<div class="att-label">'+escapeHtml(d.name)+'</div>';
+      html += '<div class="att-detail">'+fmtK(d.monthly)+'\u20AA/mo · '+(d.ratePercent||0)+'%</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (F.accounts.length === 0 && F.debts.length === 0 && F.totalRI === 0 && F.totalRE === 0) {
+    html += '<div class="empty-state" style="margin-top:24px"><div class="empty-state-icon">\u{1F4B0}</div><div class="empty-state-title">No bank accounts or debt yet</div><div class="empty-state-sub">Add accounts, debts, and recurring items in Supabase to see them aggregated here.</div></div>';
+  }
+
+  return html;
 }
+
+// ══════════════════════════════════════════════════
+// ISHUR RSVP PAGE
+// ══════════════════════════════════════════════════
+function renderIshurPage() {
+  let h = '<div class="section-h"><span><span class="num">01</span>Product Status</span><div class="line"></div><span class="meta">EARLY ARCHITECTURE</span></div>';
+  h += '<div class="attention">';
+  h += '<div class="att tech"><div class="att-num">2</div><div class="att-label">WABA Numbers</div><div class="att-detail">Strategy: dual-number</div></div>';
+  h += '<div class="att warn"><div class="att-num">0</div><div class="att-label">Pilot Customers</div><div class="att-detail">Pre-launch</div></div>';
+  h += '<div class="att cyan"><div class="att-num">0</div><div class="att-label">RSVPs Processed</div></div>';
+  h += '<div class="att good"><div class="att-num">ishur.io</div><div class="att-label">Domain</div><div class="att-detail">Cloudflare \u00B7 ready</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>Build Plan</span><div class="line"></div></div>';
+  h += '<div class="panel"><div class="panel-body" style="padding:18px 22px">';
+  h += '<div style="font-size:13px;color:var(--text-1);line-height:1.7">';
+  h += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--stroke-1)"><strong style="color:var(--cyan)">Stack:</strong> WhatsApp Business Cloud API + Make.com + Supabase + simple web confirmation page.</div>';
+  h += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--stroke-1)"><strong style="color:var(--cyan)">Two-number WABA:</strong> one official number for the couple (templates, day-of broadcast), one customer-service number for guest replies. Avoids template fatigue + lets you scale to multiple weddings without rate-limit collisions.</div>';
+  h += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--stroke-1)"><strong style="color:var(--cyan)">Flow:</strong> Couple uploads guest list (CSV) \u2192 Make scenario sends Hebrew template with name injection \u2192 Guest taps button (Yes / No / Maybe) \u2192 Webhook \u2192 Supabase row \u2192 Couple dashboard updates live.</div>';
+  h += '<div><strong style="color:var(--cyan)">Pricing model:</strong> per-event (one-time fee), not per-RSVP. Easier to sell, easier to forecast.</div>';
+  h += '</div>';
+  h += '</div></div>';
+
+  h += '<div class="section-h"><span><span class="num">03</span>Open Items</span><div class="line"></div></div>';
+  h += '<div class="panel"><div class="panel-body" style="padding:6px 22px 18px">';
+  h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot warn"></span>Decide Hebrew template wording</div></div></div>';
+  h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot idle"></span>Build couple admin dashboard</div></div></div>';
+  h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot idle"></span>Submit WABA verification</div></div></div>';
+  h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot idle"></span>Pilot with one wedding</div></div></div>';
+  h += '</div></div>';
+
+  return h;
+}
+
+
 
 // ══════════════════════════════════════════════════
 // HOLDINGS (full — crypto / stocks / cash with live rates)
@@ -4093,8 +4715,106 @@ function renderEquityCurveBig(trades, height) {
     '</svg>';
 }
 
+// ══════════════════════════════════════════════════
+// TRADING CALENDAR (Tradezella-style monthly P&L heatmap)
+// ══════════════════════════════════════════════════
+let _tcalYear = (new Date()).getFullYear();
+let _tcalMonth = (new Date()).getMonth();
+
+function renderTradingCalendar() {
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + pad2(today.getMonth()+1) + '-' + pad2(today.getDate());
+  const y = _tcalYear, m = _tcalMonth;
+  const monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'][m];
+  const maxDay = daysInMonth(y, m);
+
+  // Aggregate trades by date for this month
+  const byDate = {};
+  (_trades || []).forEach(t => {
+    if (!t.trade_date) return;
+    if (t.trade_date.indexOf(y + '-' + pad2(m+1)) !== 0) return;
+    if (!byDate[t.trade_date]) byDate[t.trade_date] = { pnl: 0, count: 0 };
+    byDate[t.trade_date].pnl += (t.pnl || 0);
+    byDate[t.trade_date].count++;
+  });
+
+  const monthTotal = Object.values(byDate).reduce((s, d) => s + d.pnl, 0);
+  const monthCount = Object.values(byDate).reduce((s, d) => s + d.count, 0);
+  const winDays = Object.values(byDate).filter(d => d.pnl > 0).length;
+  const lossDays = Object.values(byDate).filter(d => d.pnl < 0).length;
+
+  let h = '<div class="tcal-wrap"><div class="tcal-head">';
+  h += '<div class="tcal-month-label">' + monthName + ' ' + y + '<small>' + monthCount + ' trades · ' + winDays + 'W / ' + lossDays + 'L days</small></div>';
+  h += '<div class="tcal-nav">';
+  h += '<button class="tcal-nav-btn" onclick="tcalPrev()" title="Previous month">\u2039</button>';
+  h += '<button class="tcal-nav-btn" onclick="tcalToday()" title="This month" style="width:auto;padding:0 12px;font-size:10px;font-family:var(--mono);font-weight:600">Today</button>';
+  h += '<button class="tcal-nav-btn" onclick="tcalNext()" title="Next month">\u203A</button>';
+  h += '</div>';
+
+  // Month P&L badge in corner
+  const badgeCls = monthTotal > 0 ? 'pos' : monthTotal < 0 ? 'neg' : 'flat';
+  const sign = monthTotal > 0 ? '+' : '';
+  h += '<div class="tcal-pnl-badge ' + badgeCls + '">';
+  h += '<div class="tcal-pnl-num">' + sign + fmtK(Math.round(monthTotal)) + '\u20AA</div>';
+  h += '<div class="tcal-pnl-sub">' + (monthTotal >= 0 ? 'profit' : 'loss') + ' this month</div>';
+  h += '</div>';
+  h += '</div>';
+
+  // Day-of-week header
+  h += '<div class="tcal-grid">';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => { h += '<div class="tcal-dow">' + d + '</div>'; });
+
+  // Empty cells before first day
+  const startOffset = new Date(y, m, 1).getDay();
+  for (let i = 0; i < startOffset; i++) h += '<div class="tcal-cell inactive"></div>';
+
+  // Days of month
+  for (let day = 1; day <= maxDay; day++) {
+    const dStr = y + '-' + pad2(m+1) + '-' + pad2(day);
+    const isToday = dStr === todayStr;
+    const dow = new Date(y, m, day).getDay();
+    const isWknd = dow === 0 || dow === 6;
+    const data = byDate[dStr];
+    let cls = 'tcal-cell';
+    if (isToday) cls += ' today';
+    if (isWknd) cls += ' weekend';
+    if (data) {
+      cls += ' has-pnl';
+      if (data.pnl > 0) cls += ' win';
+      else if (data.pnl < 0) cls += ' loss';
+      else cls += ' scratch';
+    }
+    h += '<div class="' + cls + '" onclick="openTradeModal(null,\'' + dStr + '\')">';
+    h += '<div class="tcal-day-num">' + day + '</div>';
+    if (data) {
+      const ps = data.pnl > 0 ? '+' : '';
+      h += '<div class="tcal-cell-pnl">' + ps + fmtK(Math.round(data.pnl)) + '\u20AA</div>';
+      h += '<div class="tcal-trade-count">' + data.count + ' trade' + (data.count > 1 ? 's' : '') + '</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+window.tcalPrev = function() {
+  _tcalMonth--; if (_tcalMonth < 0) { _tcalMonth = 11; _tcalYear--; }
+  renderPage('trading');
+};
+window.tcalNext = function() {
+  _tcalMonth++; if (_tcalMonth > 11) { _tcalMonth = 0; _tcalYear++; }
+  renderPage('trading');
+};
+window.tcalToday = function() {
+  const now = new Date();
+  _tcalYear = now.getFullYear(); _tcalMonth = now.getMonth();
+  renderPage('trading');
+};
+
 function renderTradingOverview() {
   const allTrades = (_trades || []).slice().sort((a,b) => (a.trade_date||'').localeCompare(b.trade_date||''));
+  // Always show the trading calendar, even if there are no trades
+  let prefix = renderTradingCalendar();
   const wins = allTrades.filter(t => t.pnl > 0);
   const losses = allTrades.filter(t => t.pnl < 0);
   const totalPnl = allTrades.reduce((s,t) => s + (t.pnl||0), 0);
@@ -4108,7 +4828,7 @@ function renderTradingOverview() {
   const avgLoss = losses.length>0 ? Math.round(losses.reduce((s,t)=>s+t.pnl,0)/losses.length) : 0;
   const pnlColor = totalPnl >= 0 ? 'var(--good)' : 'var(--bad)';
 
-  let h = '<div class="section-h"><span><span class="num">01</span>Trading Dashboard</span><div class="line"></div>' +
+  let h = prefix + '<div class="section-h"><span><span class="num">01</span>Trading Dashboard</span><div class="line"></div>' +
     '<span class="meta">' + allTrades.length + ' TRADES \u00B7 ' + tradingDays + ' DAYS</span>' +
     '<div style="display:flex;gap:6px;margin-left:auto">' +
     '<button class="ibkr-btn" onclick="importFromIBKR()">IBKR Import</button>' +
@@ -4409,14 +5129,20 @@ async function sendToAgent() {
         'anthropic-dangerous-allow-browser': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: buildAgentSystemPrompt(),
         messages: agentHistory
       })
     });
-    if (res.status === 401) { safe.del('cockpit.agent.key'); throw new Error('Invalid API key. Cleared — try again.'); }
-    if (!res.ok) throw new Error('API error '+res.status);
+    if (res.status === 401) { safe.del('cockpit.agent.key'); throw new Error('Invalid API key (cleared). Re-enter in Settings → API Keys.'); }
+    if (res.status === 403) throw new Error('API key forbidden. Check Anthropic console.');
+    if (res.status === 429) throw new Error('Rate limit hit. Wait 60 seconds.');
+    if (!res.ok) {
+      let detail = '';
+      try { const err = await res.json(); detail = err.error && err.error.message ? ' — '+err.error.message : ''; } catch(e){}
+      throw new Error('API error ' + res.status + detail);
+    }
     const data = await res.json();
     const reply = (data.content && data.content[0] && data.content[0].text) || '(No response)';
     removeAgentMsg(thinkId);
@@ -4508,6 +5234,8 @@ function renderPage(key) {
     else if (s === 'angel')       html += renderAngel();
     else if (s === 'real-estate') html += renderRealEstate();
     else if (s === 'trading-overview') html += renderTradingOverview();
+    else if (s === 'ishur')       html += renderIshurPage();
+    else if (s === 'finance-hub') html += renderFinanceHub();
     else if (s === 'connections') html += renderConnections();
     else if (s === 'life-overview') html += renderLifeOverview();
     else if (s === 'empty')       html += renderEmptyState(page.title);
@@ -4682,7 +5410,7 @@ async function fetchDailyInsight() {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 140, messages: [{role:'user', content: prompt}] })
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 140, messages: [{role:'user', content: prompt}] })
     });
     if (!res.ok) throw new Error('API '+res.status);
     const data = await res.json();
@@ -4935,30 +5663,36 @@ let _tmGrade = '';
 let _tmChecked = [];
 
 window.openTradeModal = function(id, date) {
-  _tmCurrentId = id || null;
-  _tmCurrentDate = date || new Date().toISOString().slice(0,10);
-  const t = id ? (_trades || []).find(x => x.id === id) : null;
-  _tmGrade = t ? (t.trade_grade || '') : '';
-  _tmChecked = (t && Array.isArray(t.rules_checked)) ? t.rules_checked.slice() : [];
-  // Add hidden file input for screenshots if not present
-  if (!document.getElementById('ibkr-file-input')) {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = '.csv,text/csv';
-    inp.id = 'ibkr-file-input';
-    inp.style.display = 'none';
-    inp.onchange = window.handleIBKRFile;
-    document.body.appendChild(inp);
+  try {
+    _tmCurrentId = id || null;
+    _tmCurrentDate = date || new Date().toISOString().slice(0,10);
+    const t = id ? (_trades || []).find(x => x.id === id) : null;
+    _tmGrade = t ? (t.trade_grade || '') : '';
+    _tmChecked = (t && Array.isArray(t.rules_checked)) ? t.rules_checked.slice() : [];
+    if (!document.getElementById('ibkr-file-input')) {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.csv,text/csv';
+      inp.id = 'ibkr-file-input';
+      inp.style.display = 'none';
+      inp.onchange = window.handleIBKRFile;
+      document.body.appendChild(inp);
+    }
+    let ov = document.getElementById('trade-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'trade-overlay'; ov.id = 'trade-overlay';
+      ov.innerHTML = '<div class="modal-box trade-modal" id="trade-modal-box" onclick="event.stopPropagation()" style="width:min(640px,calc(100vw - 24px));max-height:88vh;overflow-y:auto"></div>';
+      ov.addEventListener('click', function(e) { if (e.target === ov) closeTradeModal(); });
+      document.body.appendChild(ov);
+    }
+    renderTradeModalBody(t);
+    ov.classList.add('open');
+    // Force a reflow so the open animation triggers
+    ov.offsetHeight;
+  } catch(err) {
+    console.error('openTradeModal failed:', err);
+    alert('Could not open trade modal: ' + err.message + '\n\nOpen the browser console for details.');
   }
-  let ov = document.getElementById('trade-overlay');
-  if (!ov) {
-    ov = document.createElement('div');
-    ov.className = 'trade-overlay'; ov.id = 'trade-overlay';
-    ov.innerHTML = '<div class="modal-box trade-modal" id="trade-modal-box" onclick="event.stopPropagation()" style="width:600px;max-height:90vh;overflow-y:auto"></div>';
-    ov.addEventListener('click', closeTradeModal);
-    document.body.appendChild(ov);
-  }
-  renderTradeModalBody(t);
-  ov.classList.add('open');
 };
 
 window.closeTradeModal = function() {
@@ -5229,6 +5963,37 @@ AUTH.init().then(bootApp);
 // ══════════════════════════════════════════════════
 // REQUIRED WINDOW EXPORTS — at the bottom, after everything is defined
 // ══════════════════════════════════════════════════
+
+window.toggleSidebar = function(ev) {
+  if (ev) ev.stopPropagation();
+  const app = document.querySelector('.app');
+  if (!app) return;
+  app.classList.toggle('sidebar-collapsed');
+  safe.set('cockpit.sidebar.collapsed', app.classList.contains('sidebar-collapsed') ? '1' : '0');
+  // Update arrow direction
+  const btn = app.querySelector('.side-collapse-btn');
+  if (btn) btn.textContent = app.classList.contains('sidebar-collapsed') ? '›' : '‹';
+};
+
+// Restore collapsed state on load
+(function() {
+  const restore = () => {
+    if (safe.get('cockpit.sidebar.collapsed') === '1') {
+      const app = document.querySelector('.app');
+      if (app) {
+        app.classList.add('sidebar-collapsed');
+        const btn = app.querySelector('.side-collapse-btn');
+        if (btn) btn.textContent = '›';
+      }
+    }
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restore);
+  } else {
+    setTimeout(restore, 0);
+  }
+})();
+
 window.navigate = navigate;
 window.switchPane = switchPane;
 window.toggleNavGroup = function(){};
