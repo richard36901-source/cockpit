@@ -2549,6 +2549,81 @@ input, textarea, select, [contenteditable="true"], .editable {
 }
 .cal-save-toast.show { opacity: 1; transform: translateY(0); }
 
+
+/* ── Stacked event pills (multi-entry calendar style, like Google/Yearful) ── */
+.cal-evt-stack {
+  display: flex; flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+  width: 100%;
+  pointer-events: auto;
+}
+.cal-evt-pill {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.30);
+  transition: filter 0.15s ease;
+  display: flex; align-items: center; gap: 4px;
+}
+.cal-evt-pill:hover { filter: brightness(1.15); }
+.cal-evt-pill.continuation { opacity: 0.65; font-style: italic; }
+.cal-evt-pill .ep-emoji { font-size: 11px; flex-shrink: 0; }
+.cal-evt-pill .ep-text { overflow: hidden; text-overflow: ellipsis; }
+.cal-evt-more {
+  font-size: 9px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.cal-evt-more:hover { color: var(--cyan); }
+
+/* Drag-to-select highlight */
+.cal-cell.drag-highlight,
+.cal-mcell.drag-highlight {
+  background: rgba(56,189,248,0.16) !important;
+  border-color: rgba(56,189,248,0.55) !important;
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.35);
+}
+
+/* Sticker counts footer */
+.sticker-counts-bar {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  background: var(--glass-1);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--stroke-2);
+  border-radius: 12px;
+  box-shadow: var(--hl-top);
+}
+.sc-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  background: var(--glass-2);
+  border: 1px solid var(--stroke-2);
+  border-radius: 9px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  font-family: var(--mono);
+}
+.sc-pill:hover { background: var(--glass-3); }
+.sc-pill.hidden { opacity: 0.40; text-decoration: line-through; }
+.sc-pill .sc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sc-pill .sc-name { color: var(--text-2); }
+.sc-pill .sc-count { color: var(--text-1); font-weight: 700; margin-left: 2px; }
+
 </style>
 </head>
 <body>
@@ -2835,7 +2910,7 @@ function openModal(cfg) {
         inp = '<textarea class="modal-input" id="mf-'+f.id+'" rows="'+(f.rows||3)+'" placeholder="'+(f.placeholder||'')+'">'+v+'</textarea>';
       } else {
         const v = String(f.value==null?'':f.value).replace(/"/g,'&quot;');
-        inp = '<input class="modal-input" id="mf-'+f.id+'" type="'+(f.type||'text')+'" value="'+v+'" placeholder="'+(f.placeholder||'')+'"'+(f.step?' step="'+f.step+'"':'')+'>';
+        inp = '<input class="modal-input" id="mf-'+f.id+'" type="'+(f.type||'text')+'" value="'+v+'" placeholder="'+(f.placeholder||'')+'"'+(f.step?' step="'+f.step+'"':'')+(f.datalist?' list="'+f.datalist+'"':'')+'>';
       }
       return '<div class="modal-field"><label class="modal-label" for="mf-'+f.id+'">'+f.label+'</label>'+inp+'</div>';
     }).join('');
@@ -2890,6 +2965,7 @@ let _stickers     = [];
 let _calYear      = new Date().getFullYear();
 let _activeSticker = null;
 let _drawMode     = false;
+let _constructionJobs = [];
 let _calMonthView = (safe.get('cockpit.cal.view') === 'month');
 let _calViewMonth = new Date().getMonth();
 
@@ -3310,7 +3386,7 @@ const PAGES = {
   'connections':      { title:'Connections', arm:'tech', armLabel:'Settings', sub:'Integrations', sections:['connections'], data:{} },
   'autoscale': {
     title:'AutoScale', arm:'tech', armLabel:'Tech & SaaS', sub:'Marketing automation agency',
-    sections:['attention','money','sources','projects'],
+    sections:['attention','money','sources','clients','projects'],
     data:{
       attention:[
         {kind:'warn', num:2,       label:'Invoices',    detail:'Awaiting approval'},
@@ -3363,7 +3439,7 @@ async function loadAllData() {
     const [monthly, sources, trades, skills, notes, accounts, debt, recurring,
            holdings, investments, properties, config, clients, pipeline,
            tradeEntries, weeklyReviews, projectsData, tradeRulesData,
-           calData, stickerData] = await Promise.all([
+           calData, stickerData, constructionJobs] = await Promise.all([
       safeGet('cockpit_monthly'),
       safeGet('cockpit_sources'),
       safeGet('cockpit_trade_days'),
@@ -3383,7 +3459,8 @@ async function loadAllData() {
       safeGet('cockpit_projects','?order=page_key,sort_order'),
       safeGet('cockpit_trade_rules','?order=sort_order'),
       safeGet('cockpit_calendar','?order=cal_date&limit=500'),
-      safeGet('cockpit_stickers','?order=sort_order')
+      safeGet('cockpit_stickers','?order=sort_order'),
+      safeGet('cockpit_construction_jobs','?order=created_at')
     ]);
 
     monthly.forEach(r => {
@@ -3423,8 +3500,12 @@ async function loadAllData() {
     _trades       = tradeEntries;
     _weeklyReviews= weeklyReviews;
 
+    _constructionJobs = constructionJobs || [];
     _calData = {};
-    (calData||[]).forEach(r => { _calData[r.cal_date] = r; });
+    (calData||[]).forEach(r => {
+      if (!_calData[r.cal_date]) _calData[r.cal_date] = [];
+      _calData[r.cal_date].push(r);
+    });
 
   } catch(e) { console.error('loadAllData:', e); }
   showLoadingOverlay(false);
@@ -3663,6 +3744,9 @@ function renderBigCalendar() {
   h += '<canvas id="cal-draw-canvas" width="1" height="1"></canvas>';
   h += '</div>';
 
+  // Sticker counts footer
+  h += renderStickerCountsBar();
+
   return h;
 }
 
@@ -3694,37 +3778,42 @@ function renderYearGrid() {
 function renderYearCell(dateStr, day, year, month, todayStr, multiDaySet) {
   const isWknd = isWeekend(year, month, day);
   const isToday = dateStr === todayStr;
-  const cellData = _calData[dateStr] || {};
-  const isMultiDayPart = multiDaySet[dateStr];
-  const partOf = isMultiDayPart ? _calData[isMultiDayPart] : null;
-  const hasContent = !!(cellData.sticker_emoji || cellData.label || partOf);
+  const ownEntries = getDayEntries(dateStr).filter(e => isStickerVisible(e.sticker_id));
+  const continuations = (multiDaySet[dateStr] || [])
+    .map(p => getDayEntries(p.ownerDate).find(e => (e.id || e.cal_date) === p.entryId))
+    .filter(e => e && isStickerVisible(e.sticker_id));
+  const allEntries = [...ownEntries, ...continuations.map(c => Object.assign({}, c, { _cont: true }))];
 
   let cls = 'cal-cell';
   if (isToday) cls += ' today-cell';
   else if (isWknd) cls += ' weekend';
-  if (hasContent) cls += ' has-sticker';
-  if (cellData.end_date && cellData.end_date !== dateStr) cls += ' multi-day';
+  if (allEntries.length > 0) cls += ' has-sticker';
 
-  const viewColor = cellData.sticker_color || (partOf && partOf.sticker_color) || '';
-  let style = '';
-  if (viewColor) {
-    cls += ' tint-color';
-    style = ' style="--tint-color:' + viewColor + '25;--tint-border:' + viewColor + '60;--strip-color:' + viewColor + '"';
-  }
-
-  // 3-letter day-of-week (e.g. THU)
+  // 3-letter day-of-week
   const _dowNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
   const _dow = _dowNames[new Date(year, month, day).getDay()];
 
-  let h = '<div class="' + cls + '" data-date="' + dateStr + '"' + style + ' onclick="calCellClick(this.dataset.date)">';
+  let h = '<div class="' + cls + '" data-date="' + dateStr + '" onclick="calCellClick(this.dataset.date)" onpointerdown="calDragStart(event,\'' + dateStr + '\')">';
   h += '<div class="cal-day-head"><span class="cal-dow-mini">' + _dow + '</span><span class="cal-day-num">' + day + '</span></div>';
-  const showEmoji = cellData.sticker_emoji || (partOf && partOf.sticker_emoji);
-  if (showEmoji) h += '<div class="cal-sticker-display"' + (partOf ? ' style="opacity:0.45"' : '') + '>' + showEmoji + '</div>';
-  // Show label on every day of a multi-day range
-  const showLabel = cellData.label || (partOf && partOf.label);
-  if (showLabel) h += '<div class="cal-label-display"' + (partOf ? ' style="opacity:0.65;font-style:italic"' : '') + '>' + escapeHtml(showLabel) + '</div>';
-  if (cellData.location) h += '<div class="cal-loc-icon">\u{1F4CD}</div>';
-  if (viewColor) h += '<div class="cal-color-strip"></div>';
+
+  // Stack entries as colored pills (max 2 in year view)
+  if (allEntries.length > 0) {
+    h += '<div class="cal-evt-stack">';
+    const maxShow = 2;
+    allEntries.slice(0, maxShow).forEach(e => {
+      const c = e.sticker_color || '#38bdf8';
+      const label = e.label || (e.sticker_emoji ? '' : 'event');
+      const emoji = e.sticker_emoji || '';
+      h += '<div class="cal-evt-pill' + (e._cont ? ' continuation' : '') + '" style="background:' + c + 'CC" onclick="event.stopPropagation();calEditEntry(\'' + (e.id || e.cal_date) + '\')">';
+      if (emoji) h += '<span class="ep-emoji">' + emoji + '</span>';
+      if (label) h += '<span class="ep-text">' + escapeHtml(label) + '</span>';
+      h += '</div>';
+    });
+    if (allEntries.length > maxShow) {
+      h += '<div class="cal-evt-more" onclick="event.stopPropagation();calCellClick(\'' + dateStr + '\')">+' + (allEntries.length - maxShow) + ' more</div>';
+    }
+    h += '</div>';
+  }
   h += '</div>';
   return h;
 }
@@ -3763,37 +3852,38 @@ function renderMonthGrid() {
     const dateStr = year + '-' + pad2(month + 1) + '-' + pad2(day);
     const isWknd = isWeekend(year, month, day);
     const isToday = dateStr === todayStr;
-    const cellData = _calData[dateStr] || {};
-    const isMultiDayPart = multiDaySet[dateStr];
-    const partOf = isMultiDayPart ? _calData[isMultiDayPart] : null;
-    const hasContent = !!(cellData.sticker_emoji || cellData.label || cellData.note || partOf);
+    const ownEntries = getDayEntries(dateStr).filter(e => isStickerVisible(e.sticker_id));
+    const continuations = (multiDaySet[dateStr] || [])
+      .map(p => getDayEntries(p.ownerDate).find(e => (e.id || e.cal_date) === p.entryId))
+      .filter(e => e && isStickerVisible(e.sticker_id));
+    const allEntries = [...ownEntries, ...continuations.map(c => Object.assign({}, c, { _cont: true }))];
 
     let cls = 'cal-mcell';
     if (isToday) cls += ' today-cell';
     else if (isWknd) cls += ' weekend';
-    if (hasContent) cls += ' has-content';
-    if (cellData.end_date && cellData.end_date !== dateStr) cls += ' multi-day';
+    if (allEntries.length > 0) cls += ' has-content';
 
-    const viewColor = cellData.sticker_color || (partOf && partOf.sticker_color) || '';
-    let style = '';
-    if (viewColor) {
-      cls += ' tint-color';
-      style = ' style="--tint-color:' + viewColor + '25;--tint-border:' + viewColor + '60;--strip-color:' + viewColor + '"';
+    h += '<div class="' + cls + '" data-date="' + dateStr + '" onclick="calCellClick(this.dataset.date)" onpointerdown="calDragStart(event,\'' + dateStr + '\')">';
+    h += '<div class="cal-mday-row"><div class="cal-mday-num">' + day + (isToday ? '<span style="font-size:8px;color:var(--cyan);font-family:var(--mono);margin-left:5px;letter-spacing:0.10em">today</span>' : '') + '</div></div>';
+
+    // Stack entry pills (max 3 visible)
+    if (allEntries.length > 0) {
+      h += '<div class="cal-evt-stack">';
+      const maxShow = 3;
+      allEntries.slice(0, maxShow).forEach(e => {
+        const c = e.sticker_color || '#38bdf8';
+        const label = e.label || (e.sticker_emoji ? '' : 'event');
+        const emoji = e.sticker_emoji || '';
+        h += '<div class="cal-evt-pill' + (e._cont ? ' continuation' : '') + '" style="background:' + c + 'CC" onclick="event.stopPropagation();calEditEntry(\'' + (e.id || e.cal_date) + '\')">';
+        if (emoji) h += '<span class="ep-emoji">' + emoji + '</span>';
+        if (label) h += '<span class="ep-text">' + escapeHtml(label) + '</span>';
+        h += '</div>';
+      });
+      if (allEntries.length > maxShow) {
+        h += '<div class="cal-evt-more" onclick="event.stopPropagation();calCellClick(\'' + dateStr + '\')">+' + (allEntries.length - maxShow) + ' more</div>';
+      }
+      h += '</div>';
     }
-
-    h += '<div class="' + cls + '" data-date="' + dateStr + '"' + style + ' onclick="calCellClick(this.dataset.date)">';
-    h += '<div class="cal-mday-row">';
-    h += '<div class="cal-mday-num">' + day + '</div>';
-    const emoji = cellData.sticker_emoji || (partOf && partOf.sticker_emoji);
-    if (emoji) h += '<div class="cal-msticker"' + (partOf ? ' style="opacity:0.5"' : '') + '>' + emoji + '</div>';
-    h += '</div>';
-
-    const label = cellData.label || (partOf && partOf.label);
-    if (label) h += '<div class="cal-mlabel">' + escapeHtml(label) + '</div>';
-
-    if (cellData.note) h += '<div class="cal-mnote">' + escapeHtml(cellData.note) + '</div>';
-    if (cellData.location) h += '<div class="cal-mloc">📍 ' + escapeHtml(cellData.location) + '</div>';
-    if (viewColor) h += '<div class="cal-color-strip"></div>';
     h += '</div>';
   }
 
@@ -3801,18 +3891,63 @@ function renderMonthGrid() {
   return h;
 }
 
+
+// ──────────────────────────────────────────────
+// Multi-entry calendar helpers
+// ──────────────────────────────────────────────
+function getDayEntries(dateStr) {
+  const v = _calData[dateStr];
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  // legacy single-object format — coerce to array
+  return [v];
+}
+
+function getEntryById(entryId) {
+  for (const date in _calData) {
+    const arr = getDayEntries(date);
+    const found = arr.find(e => (e.id || e.cal_date) === entryId);
+    if (found) return { entry: found, date };
+  }
+  return null;
+}
+
+function genTempId() {
+  return 'tmp-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+}
+
+// Layer visibility — which sticker IDs are hidden from calendar
+let _hiddenStickers = JSON.parse(safe.get('cockpit.cal.hidden') || '[]');
+function isStickerVisible(stickerId) {
+  return !stickerId || _hiddenStickers.indexOf(stickerId) < 0;
+}
+window.toggleStickerLayer = function(stickerId) {
+  const idx = _hiddenStickers.indexOf(stickerId);
+  if (idx >= 0) _hiddenStickers.splice(idx, 1);
+  else _hiddenStickers.push(stickerId);
+  safe.set('cockpit.cal.hidden', JSON.stringify(_hiddenStickers));
+  renderPage('big-calendar');
+};
+
 function buildMultiDaySet() {
+  // Returns map of dateStr → list of {ownerDate, entryId} for days that are part of a multi-day range
   const out = {};
   Object.entries(_calData).forEach(([dateStr, data]) => {
-    if (data.end_date && data.end_date !== dateStr) {
-      let d = new Date(dateStr + 'T12:00:00');
-      const end = new Date(data.end_date + 'T12:00:00');
-      while (d <= end) {
-        const key = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-        if (key !== dateStr) out[key] = dateStr;
-        d.setDate(d.getDate() + 1);
+    const entries = Array.isArray(data) ? data : [data];
+    entries.forEach(entry => {
+      if (entry.end_date && entry.end_date !== dateStr) {
+        let d = new Date(dateStr + 'T12:00:00');
+        const end = new Date(entry.end_date + 'T12:00:00');
+        while (d <= end) {
+          const key = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+          if (key !== dateStr) {
+            if (!out[key]) out[key] = [];
+            out[key].push({ ownerDate: dateStr, entryId: entry.id || dateStr });
+          }
+          d.setDate(d.getDate() + 1);
+        }
       }
-    }
+    });
   });
   return out;
 }
@@ -3853,69 +3988,274 @@ window.calPrevYear = function() { if (_calYear > 2026) _calYear--; renderPage('b
 // ── Day click → custom popup with start/end dates ─────
 window.calCellClick = async function(dateStr) {
   if (_drawMode) return;
-  openCalendarDayModal(dateStr);
+  // If we just finished a drag, the dragend handler already opened a modal — skip
+  if (_calDragJustEnded) { _calDragJustEnded = false; return; }
+  const entries = getDayEntries(dateStr);
+  const conts = (buildMultiDaySet()[dateStr] || []).length;
+  // If no entries and no continuations: open new entry directly (1 click)
+  if (entries.length === 0 && conts === 0) {
+    calNewEntry(dateStr);
+  } else {
+    openCalendarDayModal(dateStr);
+  }
 };
 
 let _calModalDate = null;
-window.openCalendarDayModal = function(dateStr) {
+window.openCalendarDayModal = function(dateStr, prefillEnd) {
   _calModalDate = dateStr;
-  const cellData = _calData[dateStr] || {};
+  const entries = getDayEntries(dateStr);
 
-  // If the clicked date is part of a multi-day range, edit the original start date
+  // Continuations from multi-day events that started earlier
   const multiDaySet = buildMultiDaySet();
-  const ownerStart = multiDaySet[dateStr];
-  if (ownerStart) {
-    _calModalDate = ownerStart;
-    return openCalendarDayModal(ownerStart);
-  }
-
-  const v = _calData[_calModalDate] || {};
-  const stickerOpts = '<option value="">— No sticker —</option>' + (_stickers || []).map(s =>
-    '<option value="' + s.id + '"' + (v.sticker_id === s.id ? ' selected' : '') + '>' + (s.emoji || '•') + '  ' + escapeHtml(s.name || '') + '</option>'
-  ).join('');
+  const conts = (multiDaySet[dateStr] || [])
+    .map(p => ({ owner: p.ownerDate, entry: getDayEntries(p.ownerDate).find(e => (e.id || e.cal_date) === p.entryId) }))
+    .filter(c => c.entry);
 
   // Build modal
   let ov = document.getElementById('cal-day-modal');
   if (ov) ov.remove();
   ov = document.createElement('div');
   ov.className = 'modal-overlay'; ov.id = 'cal-day-modal';
-  const hasContent = !!(v.label || v.sticker_emoji || v.note || v.location);
+
+  const dateObj = new Date(dateStr + 'T12:00:00');
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dateObj.getDay()];
+  const MO  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dateObj.getMonth()];
+  const dateLabel = DOW + ' ' + dateObj.getDate() + ' ' + MO + ' ' + dateObj.getFullYear();
+
+  let entriesHtml = '';
+  if (entries.length > 0 || conts.length > 0) {
+    entriesHtml = '<div style="margin-bottom:14px"><div class="modal-label" style="margin-bottom:8px">' + (entries.length + conts.length) + ' entr' + ((entries.length + conts.length) === 1 ? 'y' : 'ies') + ' on this day</div>';
+    entries.forEach(e => {
+      const c = e.sticker_color || '#38bdf8';
+      const lbl = e.label || (e.sticker_emoji ? '' : '(no label)');
+      const emoji = e.sticker_emoji || '';
+      entriesHtml += '<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--glass-1);border:1px solid var(--stroke-2);border-radius:9px;margin-bottom:5px;cursor:pointer" onclick="calEditEntry(\'' + (e.id || e.cal_date) + '\')">';
+      entriesHtml += '<div style="width:14px;height:14px;border-radius:4px;background:' + c + ';flex-shrink:0;box-shadow:var(--hl-top)"></div>';
+      entriesHtml += '<span style="font-size:14px">' + emoji + '</span>';
+      entriesHtml += '<span style="font-size:12.5px;color:var(--text-1);flex:1">' + escapeHtml(lbl) + '</span>';
+      if (e.end_date && e.end_date !== dateStr) entriesHtml += '<span style="font-size:9.5px;color:var(--text-3);font-family:var(--mono)">\u2192 ' + e.end_date.slice(5) + '</span>';
+      entriesHtml += '<span style="color:var(--text-3);font-size:14px">\u203A</span></div>';
+    });
+    conts.forEach(c => {
+      const e = c.entry;
+      const col = e.sticker_color || '#38bdf8';
+      entriesHtml += '<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;background:rgba(255,255,255,0.02);border:1px dashed var(--stroke-2);border-radius:9px;margin-bottom:5px;opacity:0.7;cursor:pointer" onclick="calEditEntry(\'' + (e.id || e.cal_date) + '\')">';
+      entriesHtml += '<div style="width:14px;height:14px;border-radius:4px;background:' + col + ';flex-shrink:0"></div>';
+      entriesHtml += '<span style="font-size:14px">' + (e.sticker_emoji || '') + '</span>';
+      entriesHtml += '<span style="font-size:12.5px;color:var(--text-3);flex:1;font-style:italic">' + escapeHtml(e.label || '') + '</span>';
+      entriesHtml += '<span style="font-size:9.5px;color:var(--text-3);font-family:var(--mono)">from ' + c.owner.slice(5) + '</span></div>';
+    });
+    entriesHtml += '</div>';
+  }
 
   ov.innerHTML = '<div class="modal-box" onclick="event.stopPropagation()" style="width:520px">' +
-    '<div class="modal-title"><span class="mi">📅</span>' + (hasContent ? 'Edit Day' : 'Add to Day') + '</div>' +
-
-    '<div class="tm-row cols2">' +
-      '<div class="tm-field"><label class="modal-label">Start Date</label><input class="modal-input" id="cd-start" type="date" value="' + _calModalDate + '"></div>' +
-      '<div class="tm-field"><label class="modal-label">End Date <span style="text-transform:none;color:var(--text-3);font-weight:400;letter-spacing:0;font-family:var(--sans)">(same as start for single day)</span></label><input class="modal-input" id="cd-end" type="date" value="' + (v.end_date || _calModalDate) + '"></div>' +
-    '</div>' +
-
-    '<div class="modal-field"><label class="modal-label">Label / Title <span style="text-transform:none;color:var(--text-3);font-weight:400;letter-spacing:0;font-family:var(--sans)">(shown on the calendar)</span></label>' +
-      '<input class="modal-input" id="cd-label" placeholder="Mom\'s birthday, Dentist, NQ trade…" value="' + escapeHtml(v.label || '') + '">' +
-    '</div>' +
-
-    '<div class="modal-field"><label class="modal-label">Sticker</label>' +
-      '<select class="modal-input tm-select" id="cd-sticker">' + stickerOpts + '</select>' +
-    '</div>' +
-
-    '<div class="modal-field"><label class="modal-label">Location</label>' +
-      '<input class="modal-input" id="cd-loc" placeholder="Tel Aviv, Zoom…" value="' + escapeHtml(v.location || '') + '">' +
-    '</div>' +
-
-    '<div class="modal-field"><label class="modal-label">Note</label>' +
-      '<textarea class="modal-input" id="cd-note" rows="4" placeholder="Anything you want to remember…">' + escapeHtml(v.note || '') + '</textarea>' +
-    '</div>' +
-
-    '<div class="modal-actions">' +
-      (hasContent ? '<button class="modal-btn danger" onclick="calDayClear()">Clear day</button>' : '') +
-      '<button class="modal-btn secondary" onclick="calDayCancel()">Cancel</button>' +
-      '<button class="modal-btn primary" onclick="calDaySave()">Save</button>' +
+    '<div class="modal-title"><span class="mi">\u{1F4C5}</span>' + dateLabel + '</div>' +
+    entriesHtml +
+    '<div class="modal-actions" style="margin-top:6px">' +
+      '<button class="modal-btn secondary" onclick="calDayCancel()">Close</button>' +
+      '<button class="modal-btn primary" onclick="calDayCancel();calNewEntry(\'' + dateStr + '\'' + (prefillEnd ? ',\'' + prefillEnd + '\'' : '') + ')">+ Add ' + (entries.length > 0 ? 'another' : 'entry') + '</button>' +
     '</div>' +
     '</div>';
 
   ov.addEventListener('click', () => calDayCancel());
   document.body.appendChild(ov);
-  setTimeout(() => { const el = document.getElementById('cd-label'); if (el) el.focus(); }, 50);
 };
+
+// New entry — fresh form (used by + Add button or empty-day click)
+window.calNewEntry = function(dateStr, prefillEnd) {
+  _calEditingId = null;
+  _calModalDate = dateStr;
+  showEntryForm({ cal_date: dateStr, end_date: prefillEnd || dateStr });
+};
+
+window.calEditEntry = function(entryId) {
+  const found = getEntryById(entryId);
+  if (!found) return;
+  _calEditingId = entryId;
+  _calModalDate = found.date;
+  showEntryForm(found.entry);
+};
+
+let _calEditingId = null;
+
+function showEntryForm(v) {
+  v = v || {};
+  const stickerOpts = '<option value="">\u2014 No sticker \u2014</option>' + (_stickers || []).map(s =>
+    '<option value="' + s.id + '"' + (v.sticker_id === s.id ? ' selected' : '') + '>' + (s.emoji || '\u2022') + '  ' + escapeHtml(s.name || '') + '</option>'
+  ).join('');
+
+  let ov = document.getElementById('cal-day-modal');
+  if (ov) ov.remove();
+  ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'cal-day-modal';
+
+  const isEdit = !!_calEditingId;
+
+  ov.innerHTML = '<div class="modal-box" onclick="event.stopPropagation()" style="width:520px">' +
+    '<div class="modal-title"><span class="mi">\u{1F4C5}</span>' + (isEdit ? 'Edit Entry' : 'New Entry') + '</div>' +
+    '<div class="tm-row cols2">' +
+      '<div class="tm-field"><label class="modal-label">Start Date</label><input class="modal-input" id="cd-start" type="date" value="' + (v.cal_date || _calModalDate) + '"></div>' +
+      '<div class="tm-field"><label class="modal-label">End Date <span style="text-transform:none;color:var(--text-3);font-weight:400;letter-spacing:0;font-family:var(--sans)">(same as start for single day)</span></label><input class="modal-input" id="cd-end" type="date" value="' + (v.end_date || v.cal_date || _calModalDate) + '"></div>' +
+    '</div>' +
+    '<div class="modal-field"><label class="modal-label">Label / Title <span style="text-transform:none;color:var(--text-3);font-weight:400;letter-spacing:0;font-family:var(--sans)">(shown on the calendar)</span></label>' +
+      '<input class="modal-input" id="cd-label" placeholder="Mom\u2019s birthday, Dentist, NQ trade\u2026" value="' + escapeHtml(v.label || '') + '"></div>' +
+    '<div class="modal-field"><label class="modal-label">Sticker</label>' +
+      '<select class="modal-input tm-select" id="cd-sticker">' + stickerOpts + '</select></div>' +
+    '<div class="modal-field"><label class="modal-label">Location</label>' +
+      '<input class="modal-input" id="cd-loc" placeholder="Tel Aviv, Zoom\u2026" value="' + escapeHtml(v.location || '') + '"></div>' +
+    '<div class="modal-field"><label class="modal-label">Note</label>' +
+      '<textarea class="modal-input" id="cd-note" rows="3" placeholder="Anything you want to remember\u2026">' + escapeHtml(v.note || '') + '</textarea></div>' +
+    '<div class="modal-actions">' +
+      (isEdit ? '<button class="modal-btn danger" onclick="calEntryDelete()">Delete</button>' : '') +
+      '<button class="modal-btn secondary" onclick="calDayCancel()">Cancel</button>' +
+      '<button class="modal-btn primary" onclick="calEntrySave()">Save</button>' +
+    '</div></div>';
+
+  ov.addEventListener('click', () => calDayCancel());
+  document.body.appendChild(ov);
+  setTimeout(() => { const el = document.getElementById('cd-label'); if (el) el.focus(); }, 50);
+}
+
+window.calDayCancel = function() {
+  const ov = document.getElementById('cal-day-modal');
+  if (ov) ov.remove();
+  _calEditingId = null;
+};
+
+window.calEntryDelete = async function() {
+  if (!_calEditingId) return;
+  if (!confirm('Delete this entry?')) return;
+  const found = getEntryById(_calEditingId);
+  if (!found) return;
+  // Delete from GCal if linked
+  if (found.entry.gcal_event_id) {
+    try { await GCAL.deleteEvent(found.entry.gcal_event_id); } catch(_) {}
+  }
+  // Remove from local data
+  const arr = getDayEntries(found.date);
+  const idx = arr.findIndex(e => (e.id || e.cal_date) === _calEditingId);
+  if (idx >= 0) arr.splice(idx, 1);
+  if (arr.length === 0) delete _calData[found.date];
+  // Delete from Supabase
+  try {
+    if (found.entry.id) await sbDelete('cockpit_calendar', 'id=eq.' + found.entry.id);
+    else await sbDelete('cockpit_calendar', 'cal_date=eq.' + found.date);
+  } catch(_) {}
+  calDayCancel();
+  renderPage('big-calendar');
+};
+
+window.calEntrySave = async function() {
+  const $ = id => document.getElementById(id);
+  const start = $('cd-start').value;
+  const end = $('cd-end').value || start;
+  const label = $('cd-label').value.trim();
+  const stickerId = $('cd-sticker').value;
+  const location = $('cd-loc').value.trim();
+  const note = $('cd-note').value;
+
+  if (!start) { alert('Start date is required'); return; }
+  if (end && end < start) { alert('End date must be on or after start date'); return; }
+
+  const sticker = stickerId ? _stickers.find(s => s.id === stickerId) : null;
+  const isEmpty = !label && !stickerId && !note && !location;
+  if (isEmpty) {
+    calDayCancel();
+    return;
+  }
+
+  const wasEditing = _calEditingId;
+  let oldEntry = null;
+  if (wasEditing) {
+    const found = getEntryById(wasEditing);
+    if (found) oldEntry = found.entry;
+  }
+
+  const updated = {
+    id: oldEntry && oldEntry.id ? oldEntry.id : genTempId(),
+    cal_date: start,
+    label: label,
+    sticker_id: stickerId,
+    sticker_emoji: sticker ? (sticker.emoji || '') : '',
+    sticker_color: sticker ? (sticker.color || '') : '',
+    location: location,
+    end_date: (end && end !== start) ? end : null,
+    note: note,
+    gcal_event_id: oldEntry ? oldEntry.gcal_event_id : null
+  };
+
+  // If editing and date changed, remove from old date's array
+  if (wasEditing && oldEntry) {
+    const oldFound = getEntryById(wasEditing);
+    if (oldFound && oldFound.date !== start) {
+      const oldArr = getDayEntries(oldFound.date);
+      const ix = oldArr.findIndex(e => (e.id || e.cal_date) === wasEditing);
+      if (ix >= 0) oldArr.splice(ix, 1);
+      if (oldArr.length === 0) delete _calData[oldFound.date];
+    } else if (oldFound) {
+      // Same date — remove old version, will push new
+      const oldArr = getDayEntries(oldFound.date);
+      const ix = oldArr.findIndex(e => (e.id || e.cal_date) === wasEditing);
+      if (ix >= 0) oldArr.splice(ix, 1);
+    }
+  }
+
+  // Add to new date's array
+  if (!_calData[start]) _calData[start] = [];
+  if (!Array.isArray(_calData[start])) _calData[start] = [_calData[start]];
+  _calData[start].push(updated);
+
+  // GCal: delete old event if existed (we'll recreate)
+  if (oldEntry && oldEntry.gcal_event_id) {
+    try { await GCAL.deleteEvent(oldEntry.gcal_event_id); } catch(_) {}
+    updated.gcal_event_id = null;
+  }
+
+  // Save to Supabase
+  try {
+    const row = {
+      id: updated.id,
+      cal_date: start,
+      year: parseInt(start.slice(0, 4), 10),
+      label: updated.label,
+      sticker_id: updated.sticker_id,
+      sticker_emoji: updated.sticker_emoji,
+      sticker_color: updated.sticker_color,
+      note: updated.note,
+      location: updated.location,
+      end_date: updated.end_date,
+      gcal_event_id: null,
+      last_synced_at: new Date().toISOString()
+    };
+    await sbUpsert('cockpit_calendar', row);
+  } catch(e) { console.warn('Calendar save failed (kept locally):', e.message); }
+
+  // Sync to GCal
+  if (GCAL.isValid()) {
+    const summary = (updated.sticker_emoji ? updated.sticker_emoji + ' ' : '') + (updated.label || (sticker && sticker.name) || 'Cockpit');
+    try {
+      const eventId = await GCAL.createEvent(start, {
+        summary: summary,
+        note: updated.note,
+        location: updated.location,
+        endDate: updated.end_date,
+        colorId: sticker ? (sticker.gcal_color_id || '') : ''
+      });
+      if (eventId) {
+        updated.gcal_event_id = eventId;
+        try { await sbUpsert('cockpit_calendar', { id: updated.id, cal_date: start, year: parseInt(start.slice(0, 4), 10), gcal_event_id: eventId }); } catch(_) {}
+      }
+    } catch(_) {}
+  }
+
+  calDayCancel();
+  renderPage('big-calendar');
+};
+
+// Legacy save handler — re-route to new flow
+window.calDaySave = window.calEntrySave;
+window.calDayClear = function() { /* deprecated; use per-entry delete */ };
+
 
 window.calDayCancel = function() {
   const ov = document.getElementById('cal-day-modal');
@@ -4452,6 +4792,100 @@ window.toggleCalFullscreen = function() {
   });
 });
 
+
+// ──────────────────────────────────────────────
+// Drag-to-select date range (Yearful-style)
+// ──────────────────────────────────────────────
+let _calDragStart = null;
+let _calDragLast  = null;
+let _calDragMoved = false;
+let _calDragJustEnded = false;
+
+window.calDragStart = function(e, dateStr) {
+  if (_drawMode) return;
+  // Only left mouse / touch / pen
+  if (e.button !== undefined && e.button !== 0) return;
+  _calDragStart = dateStr;
+  _calDragLast = dateStr;
+  _calDragMoved = false;
+  document.addEventListener('pointermove', calDragMove);
+  document.addEventListener('pointerup', calDragEnd, { once: true });
+};
+
+function calDragMove(e) {
+  if (!_calDragStart) return;
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+  if (!target) return;
+  const cell = target.closest('.cal-cell, .cal-mcell');
+  if (!cell || !cell.dataset.date) return;
+  const d = cell.dataset.date;
+  if (d === _calDragLast) return;
+  _calDragLast = d;
+  _calDragMoved = true;
+  // Highlight cells in range
+  const [from, to] = [_calDragStart, _calDragLast].sort();
+  document.querySelectorAll('.cal-cell, .cal-mcell').forEach(c => {
+    const cd = c.dataset.date;
+    if (cd && cd >= from && cd <= to) c.classList.add('drag-highlight');
+    else c.classList.remove('drag-highlight');
+  });
+}
+
+function calDragEnd(e) {
+  document.removeEventListener('pointermove', calDragMove);
+  document.querySelectorAll('.drag-highlight').forEach(c => c.classList.remove('drag-highlight'));
+  if (_calDragStart && _calDragMoved && _calDragLast && _calDragLast !== _calDragStart) {
+    const [from, to] = [_calDragStart, _calDragLast].sort();
+    _calDragJustEnded = true;
+    setTimeout(() => { _calDragJustEnded = false; }, 50);
+    calNewEntry(from, to);
+  }
+  _calDragStart = null;
+  _calDragLast = null;
+  _calDragMoved = false;
+}
+
+// ──────────────────────────────────────────────
+// Sticker counts footer (retrospective tracking)
+// ──────────────────────────────────────────────
+function renderStickerCountsBar() {
+  const counts = {};  // sticker_id → { sticker, days }
+  Object.entries(_calData).forEach(([dateStr, data]) => {
+    const entries = Array.isArray(data) ? data : [data];
+    entries.forEach(e => {
+      if (!e.sticker_id) return;
+      // Year filter
+      const year = +dateStr.slice(0, 4);
+      if (year !== _calYear) return;
+      // Count days (handles multi-day)
+      let days = 1;
+      if (e.end_date && e.end_date !== dateStr) {
+        const start = new Date(dateStr + 'T12:00:00');
+        const end   = new Date(e.end_date + 'T12:00:00');
+        days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      }
+      if (!counts[e.sticker_id]) counts[e.sticker_id] = { sticker: _stickers.find(s => s.id === e.sticker_id), days: 0 };
+      if (counts[e.sticker_id].sticker) counts[e.sticker_id].days += days;
+    });
+  });
+  const items = Object.values(counts).filter(c => c.sticker).sort((a, b) => b.days - a.days);
+  if (items.length === 0) return '';
+  let h = '<div class="sticker-counts-bar">';
+  h += '<span style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.14em;font-weight:700;align-self:center;margin-right:4px">' + _calYear + ' TOTALS</span>';
+  items.forEach(c => {
+    const hidden = !isStickerVisible(c.sticker.id);
+    h += '<div class="sc-pill' + (hidden ? ' hidden' : '') + '" onclick="toggleStickerLayer(\'' + c.sticker.id + '\')" title="' + (hidden ? 'Show' : 'Hide') + ' on calendar">';
+    h += '<div class="sc-dot" style="background:' + (c.sticker.color || '#38bdf8') + '"></div>';
+    h += '<span style="font-size:13px">' + (c.sticker.emoji || '') + '</span>';
+    h += '<span class="sc-name">' + escapeHtml(c.sticker.name || '') + '</span>';
+    h += '<span class="sc-count">' + c.days + 'd</span>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+
 // ══════════════════════════════════════════════════
 // FINANCIAL COMPUTATION
 // ══════════════════════════════════════════════════
@@ -4607,8 +5041,136 @@ function renderFinanceHub() {
   html += '<div class="section-h"><span><span class="num">02</span>Cash Flow This Month</span><div class="line"></div></div>';
   html += renderCashFlowChart(F);
 
+  // ─── Bank Accounts ───
+  html += '<div class="section-h"><span><span class="num">03</span>Bank Accounts</span><div class="line"></div><button class="ap-add" onclick="editBankAccount(null)">+ Add Bank</button></div>';
+  if (!F.accounts || F.accounts.length === 0) {
+    html += '<div class="empty-state" style="margin:0 0 14px"><div class="empty-state-icon" style="font-size:28px;margin-bottom:6px">\u{1F3E6}</div><div class="empty-state-title" style="font-size:13px">No bank accounts yet</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Click + Add Bank to log your first account</div></div>';
+  } else {
+    html += '<div class="attention" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:14px">';
+    F.accounts.forEach(a => {
+      html += '<div class="att cyan" onclick="editBankAccount(\'' + a.id + '\')" style="cursor:pointer">';
+      html += '<div class="att-num">' + fmtK((a.balance || 0) + (a.savings || 0)) + '<span class="cur">\u20AA</span></div>';
+      html += '<div class="att-label">' + escapeHtml(a.bank || 'Account') + '</div>';
+      html += '<div class="att-detail" style="font-family:var(--mono);font-size:9.5px;line-height:1.6">' +
+        'Balance ' + fmtK(a.balance || 0) + '\u20AA<br>' +
+        'Savings ' + fmtK(a.savings || 0) + '\u20AA' +
+        ((a.creditLine||0) > 0 ? '<br>Credit line ' + fmtK(a.creditLine) + '\u20AA' : '') +
+        ((a.cardLimit||0) > 0 ? '<br>Card limit ' + fmtK(a.cardLimit) + '\u20AA' : '') +
+        '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // ─── Debt ───
+  html += '<div class="section-h"><span><span class="num">04</span>Debt</span><div class="line"></div><button class="ap-add" onclick="editDebt(null)">+ Add Debt</button></div>';
+  if (!F.debts || F.debts.length === 0) {
+    html += '<div class="empty-state" style="margin:0"><div class="empty-state-icon" style="font-size:28px;margin-bottom:6px">\u{1F4DD}</div><div class="empty-state-title" style="font-size:13px">No debt logged</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Click + Add Debt to track loans, mortgages, or balances</div></div>';
+  } else {
+    html += '<div class="attention" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">';
+    F.debts.forEach(d => {
+      html += '<div class="att bad" onclick="editDebt(\'' + d.id + '\')" style="cursor:pointer">';
+      html += '<div class="att-num">' + fmtK(d.balance || 0) + '<span class="cur">\u20AA</span></div>';
+      html += '<div class="att-label">' + escapeHtml(d.name || 'Debt') + '</div>';
+      html += '<div class="att-detail" style="font-family:var(--mono);font-size:9.5px">' +
+        fmtK(d.monthly || 0) + '\u20AA/mo \u00B7 ' + (d.ratePercent || 0) + '%' +
+        ((d.monthsRemaining||0) ? ' \u00B7 ' + d.monthsRemaining + 'mo left' : '') +
+        '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
   return html;
 }
+
+window.editBankAccount = async function(id) {
+  const acct = id ? PAGES.finance.data.accounts.find(a => a.id === id) : null;
+  const r = await openModal({
+    title: id ? 'Edit Bank Account' : 'Add Bank Account', icon:'\u{1F3E6}',
+    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
+    fields: [
+      {id:'bank',       label:'Bank Name',                 value: acct ? acct.bank : ''},
+      {id:'balance',    label:'Checking Balance (\u20AA)', type:'number', value: acct ? acct.balance : ''},
+      {id:'savings',    label:'Savings (\u20AA)',          type:'number', value: acct ? acct.savings : ''},
+      {id:'creditLine', label:'Credit Line (\u20AA)',      type:'number', value: acct ? acct.creditLine : ''},
+      {id:'cardLimit',  label:'Card Limit (\u20AA)',       type:'number', value: acct ? acct.cardLimit : ''}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (r.action === 'delete' && id) {
+    PAGES.finance.data.accounts = PAGES.finance.data.accounts.filter(a => a.id !== id);
+    sbDelete('cockpit_bank_accounts', 'id=eq.' + id);
+    return renderPage('finance');
+  }
+  const v = r.values;
+  const row = {
+    bank_name: v.bank, balance: +v.balance || 0, savings: +v.savings || 0,
+    credit_line: +v.creditLine || 0, card_limit: +v.cardLimit || 0,
+    sort_order: (PAGES.finance.data.accounts.length || 0) + 1
+  };
+  if (id) {
+    PAGES.finance.data.accounts = PAGES.finance.data.accounts.map(a =>
+      a.id === id ? Object.assign({}, a, {bank:row.bank_name, balance:row.balance, savings:row.savings, creditLine:row.credit_line, cardLimit:row.card_limit}) : a
+    );
+    sbPatch('cockpit_bank_accounts', 'id=eq.' + id, row);
+  } else {
+    const tmpId = 'tmp-' + Date.now();
+    PAGES.finance.data.accounts.push({id:tmpId, bank:row.bank_name, balance:row.balance, savings:row.savings, creditLine:row.credit_line, cardLimit:row.card_limit});
+    sbUpsertReturning('cockpit_bank_accounts', row).then(saved => {
+      if (saved && saved[0] && saved[0].id) {
+        const idx = PAGES.finance.data.accounts.findIndex(a => a.id === tmpId);
+        if (idx >= 0) PAGES.finance.data.accounts[idx].id = saved[0].id;
+      }
+    }).catch(e => console.warn('Bank save failed (kept locally):', e.message));
+  }
+  renderPage('finance');
+};
+
+window.editDebt = async function(id) {
+  const debt = id ? PAGES.finance.data.debt.find(d => d.id === id) : null;
+  const r = await openModal({
+    title: id ? 'Edit Debt' : 'Add Debt', icon:'\u{1F4DD}',
+    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
+    fields: [
+      {id:'name',            label:'Name',                          value: debt ? debt.name : ''},
+      {id:'balance',         label:'Current Balance (\u20AA)', type:'number', value: debt ? debt.balance : ''},
+      {id:'originalBalance', label:'Original Balance (\u20AA)', type:'number', value: debt ? debt.originalBalance : ''},
+      {id:'monthly',         label:'Monthly Payment (\u20AA)', type:'number', value: debt ? debt.monthly : ''},
+      {id:'ratePercent',     label:'Interest Rate (%)',        type:'number', step:'0.01', value: debt ? debt.ratePercent : ''},
+      {id:'monthsRemaining', label:'Months Remaining',         type:'number', value: debt ? debt.monthsRemaining : ''}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (r.action === 'delete' && id) {
+    PAGES.finance.data.debt = PAGES.finance.data.debt.filter(d => d.id !== id);
+    sbDelete('cockpit_debt', 'id=eq.' + id);
+    return renderPage('finance');
+  }
+  const v = r.values;
+  const row = {
+    name: v.name, balance: +v.balance || 0, original_balance: +v.originalBalance || 0,
+    monthly_payment: +v.monthly || 0, rate_percent: +v.ratePercent || 0,
+    months_remaining: +v.monthsRemaining || 0
+  };
+  if (id) {
+    PAGES.finance.data.debt = PAGES.finance.data.debt.map(d =>
+      d.id === id ? Object.assign({}, d, {name:row.name, balance:row.balance, originalBalance:row.original_balance, monthly:row.monthly_payment, ratePercent:row.rate_percent, monthsRemaining:row.months_remaining}) : d
+    );
+    sbPatch('cockpit_debt', 'id=eq.' + id, row);
+  } else {
+    const tmpId = 'tmp-' + Date.now();
+    PAGES.finance.data.debt.push({id:tmpId, name:row.name, balance:row.balance, originalBalance:row.original_balance, monthly:row.monthly_payment, ratePercent:row.rate_percent, monthsRemaining:row.months_remaining});
+    sbUpsertReturning('cockpit_debt', row).then(saved => {
+      if (saved && saved[0] && saved[0].id) {
+        const idx = PAGES.finance.data.debt.findIndex(d => d.id === tmpId);
+        if (idx >= 0) PAGES.finance.data.debt[idx].id = saved[0].id;
+      }
+    }).catch(e => console.warn('Debt save failed (kept locally):', e.message));
+  }
+  renderPage('finance');
+};
+
 
 // Helper: total holdings value in ILS
 function computeHoldingsTotal() {
@@ -4679,35 +5241,64 @@ function renderProgressCard(label, current, target, suffix, color, sub) {
 
 // Helper: cash flow waterfall (Apple-style)
 function renderCashFlowChart(F) {
-  const rows = [
-    { label: 'Business income',    value: F.totalBizIncome,         color: 'var(--good)' },
-    { label: 'Recurring income',   value: F.totalRI,                color: 'var(--good)' },
-    { label: 'Trading P&L',        value: F.tradePnl,               color: F.tradePnl >= 0 ? 'var(--good)' : 'var(--bad)' },
-    { label: 'Real estate CF',     value: F.reCashflow,             color: F.reCashflow >= 0 ? 'var(--good)' : 'var(--bad)' },
-    { label: 'Business expenses',  value: -Math.abs(F.totalBizExpense), color: 'var(--bad)' },
-    { label: 'Recurring expenses', value: -Math.abs(F.totalRE),     color: 'var(--bad)' }
-  ];
-  const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.value)));
-  let h = '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 18px;box-shadow:var(--hl-top),var(--shadow-1)">';
-  rows.forEach(r => {
-    const w = Math.round((Math.abs(r.value) / maxAbs) * 100);
-    const sign = r.value > 0 ? '+' : (r.value < 0 ? '-' : '');
-    h += '<div style="display:grid;grid-template-columns:140px 1fr 90px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--stroke-1)">' +
-      '<div style="font-size:11px;color:var(--text-2)">'+r.label+'</div>' +
-      '<div style="height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;position:relative">' +
-        '<div style="height:100%;width:'+w+'%;background:'+r.color+';border-radius:3px;'+(r.value<0?'margin-left:auto':'')+'"></div>' +
-      '</div>' +
-      '<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:'+r.color+';text-align:right">'+sign+fmtK(Math.round(Math.abs(r.value)))+'\u20AA</div>' +
-    '</div>';
-  });
-  // Net total
+  // Two-column income vs expense layout — clean, scannable
+  const income = [
+    { label: 'Business income',    value: F.totalBizIncome },
+    { label: 'Trading P&L',        value: Math.max(0, F.tradePnl) },
+    { label: 'Real estate CF',     value: Math.max(0, F.reCashflow) },
+    { label: 'Recurring income',   value: F.totalRI }
+  ].filter(r => r.value > 0);
+
+  const expenses = [
+    { label: 'Business costs',     value: F.totalBizExpense },
+    { label: 'Recurring expenses', value: F.totalRE },
+    { label: 'Trading P&L',        value: F.tradePnl < 0 ? Math.abs(F.tradePnl) : 0 },
+    { label: 'Real estate CF',     value: F.reCashflow < 0 ? Math.abs(F.reCashflow) : 0 }
+  ].filter(r => r.value > 0);
+
+  const totalIn = income.reduce((s, r) => s + r.value, 0);
+  const totalOut = expenses.reduce((s, r) => s + r.value, 0);
   const netColor = F.monthlyNet >= 0 ? 'var(--good)' : 'var(--bad)';
-  h += '<div style="display:grid;grid-template-columns:140px 1fr 90px;gap:12px;align-items:center;padding:10px 0 0;margin-top:6px;border-top:1px solid var(--stroke-2)">' +
-    '<div style="font-size:11px;font-weight:700;color:var(--text-1);letter-spacing:0.06em;text-transform:uppercase">Net this month</div>' +
-    '<div></div>' +
-    '<div style="font-size:15px;font-weight:800;font-family:var(--mono);color:'+netColor+';text-align:right;letter-spacing:-0.02em">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div>' +
-    '</div>';
+
+  let h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+
+  // INCOME column
+  h += '<div style="background:linear-gradient(135deg,rgba(74,222,128,0.06),var(--glass-1));backdrop-filter:blur(20px);border:1px solid rgba(74,222,128,0.30);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;padding-bottom:9px;border-bottom:1px dashed rgba(74,222,128,0.20)">';
+  h += '<span style="font-size:9.5px;font-weight:700;color:var(--good);letter-spacing:0.18em;font-family:var(--mono);text-transform:uppercase">\u25B2 Income</span>';
+  h += '<span style="font-size:16px;font-weight:800;color:var(--good);font-family:var(--mono);letter-spacing:-0.02em">+' + fmtK(Math.round(totalIn)) + '\u20AA</span>';
   h += '</div>';
+  if (income.length === 0) {
+    h += '<div style="font-size:11px;color:var(--text-3);font-style:italic;padding:6px 0">No income logged this month</div>';
+  } else {
+    income.forEach(r => {
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:12px"><span style="color:var(--text-2)">' + r.label + '</span><span style="font-family:var(--mono);font-weight:600;color:var(--good)">+' + fmtK(Math.round(r.value)) + '\u20AA</span></div>';
+    });
+  }
+  h += '</div>';
+
+  // EXPENSES column
+  h += '<div style="background:linear-gradient(135deg,rgba(248,113,113,0.06),var(--glass-1));backdrop-filter:blur(20px);border:1px solid rgba(248,113,113,0.30);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;padding-bottom:9px;border-bottom:1px dashed rgba(248,113,113,0.20)">';
+  h += '<span style="font-size:9.5px;font-weight:700;color:var(--bad);letter-spacing:0.18em;font-family:var(--mono);text-transform:uppercase">\u25BC Expenses</span>';
+  h += '<span style="font-size:16px;font-weight:800;color:var(--bad);font-family:var(--mono);letter-spacing:-0.02em">-' + fmtK(Math.round(totalOut)) + '\u20AA</span>';
+  h += '</div>';
+  if (expenses.length === 0) {
+    h += '<div style="font-size:11px;color:var(--text-3);font-style:italic;padding:6px 0">No expenses logged this month</div>';
+  } else {
+    expenses.forEach(r => {
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:12px"><span style="color:var(--text-2)">' + r.label + '</span><span style="font-family:var(--mono);font-weight:600;color:var(--bad)">-' + fmtK(Math.round(r.value)) + '\u20AA</span></div>';
+    });
+  }
+  h += '</div>';
+  h += '</div>';
+
+  // NET TOTAL bar
+  h += '<div style="background:var(--glass-2);backdrop-filter:blur(24px);border:1px solid var(--stroke-3);border-radius:13px;padding:13px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<span style="font-size:11px;font-weight:700;color:var(--text-1);letter-spacing:0.10em;text-transform:uppercase">Net This Month</span>';
+  h += '<span style="font-size:22px;font-weight:900;color:' + netColor + ';font-family:var(--mono);letter-spacing:-0.03em">' + (F.monthlyNet >= 0 ? '+' : '') + fmtK(Math.round(F.monthlyNet)) + '\u20AA</span>';
+  h += '</div>';
+
   return h;
 }
 
@@ -4861,13 +5452,13 @@ window.addHolding = async function(typeIdx, id) {
     ];
   } else if (t === 'crypto') {
     fields = [
-      {id:'symbol', label:'Symbol (BTC, ETH, SOL...)', value: ex ? ex.symbol : ''},
-      {id:'name',   label:'Name',                       value: ex ? ex.name : ''},
+      {id:'symbol', label:'Symbol \u2014 type to search (BTC, ETH, SOL\u2026)', value: ex ? ex.symbol : '', datalist:'crypto-symbols-list'},
+      {id:'name',   label:'Name (auto-fills if known)',                       value: ex ? ex.name : ''},
       {id:'amount', label:'Amount',  type:'number', step:'0.00001', value: ex ? ex.amount : ''}
     ];
   } else {
     fields = [
-      {id:'symbol', label:'Ticker', value: ex ? ex.symbol : ''},
+      {id:'symbol', label:'Ticker \u2014 type to search (AAPL, NVDA, SPY\u2026)', value: ex ? ex.symbol : '', datalist:'stock-symbols-list'},
       {id:'name',   label:'Name',   value: ex ? ex.name : ''},
       {id:'shares', label:'Shares', type:'number', value: ex ? (ex.shares||ex.amount) : ''},
       {id:'price',  label:'Last Price USD', type:'number', step:'0.01', value: ex ? ex.price : ''}
@@ -5590,8 +6181,7 @@ function renderSaasPage(data, pageKey) {
   h += '<div style="font-size:12px;color:var(--text-3);line-height:1.6">' + escapeHtml(data.tagline || 'No description yet.') + '</div>';
   h += '</div></div>';
 
-  h += '<div class="section-h"><span><span class="num">03</span>Status</span><div class="line"></div></div>';
-  h += '<div class="empty-state" style="margin:0;padding:24px 18px"><div class="empty-state-icon" style="font-size:24px;margin-bottom:8px">' + (data.stage === 'launched' ? '\u{1F680}' : '\u{1F6E0}\uFE0F') + '</div><div class="empty-state-title" style="font-size:13px">Add tasks, customers, and pipeline here</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Wire to Supabase tables for live tracking. For now, log monthly income on this page (tap any number to edit).</div></div>';
+  h += renderClientsSection(pageKey);
 
   return h;
 }
@@ -5603,19 +6193,85 @@ function renderConstructionPage() {
   const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
   const income = getMField('construction', y, m, 'income', 0);
   const expense = getMField('construction', y, m, 'expense', 0);
+  const jobs = _constructionJobs || [];
+  const active = jobs.filter(j => j.status === 'active').length;
+  const bids = jobs.filter(j => j.status === 'bid').length;
 
-  let h = '<div class="section-h"><span><span class="num">01</span>Job Status</span><div class="line"></div></div>';
+  let h = '<div class="section-h"><span><span class="num">01</span>Job Status</span><div class="line"></div><button class="ap-add" onclick="editConstructionJob(null)">+ Add Job</button></div>';
   h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  h += '<div class="att cyan"><div class="att-num">0</div><div class="att-label">Active Jobs</div><div class="att-detail">Currently running</div></div>';
-  h += '<div class="att warn"><div class="att-num">0</div><div class="att-label">Bids Out</div><div class="att-detail">Awaiting decision</div></div>';
+  h += '<div class="att cyan"><div class="att-num">' + active + '</div><div class="att-label">Active Jobs</div></div>';
+  h += '<div class="att warn"><div class="att-num">' + bids + '</div><div class="att-label">Bids Out</div></div>';
   h += '<div class="att good"><div class="att-num">+' + fmtK(income) + '<span class="cur">\u20AA</span></div><div class="att-label">Revenue MTD</div></div>';
   h += '<div class="att bad"><div class="att-num">-' + fmtK(expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Costs MTD</div></div>';
   h += '</div>';
 
-  h += '<div class="section-h"><span><span class="num">02</span>Pipeline</span><div class="line"></div></div>';
-  h += '<div class="empty-state" style="margin:0"><div class="empty-state-icon">\u{1F3D7}\uFE0F</div><div class="empty-state-title">No active construction jobs</div><div class="empty-state-sub">When you have an active job, log its progress, costs, and revenue here. Tap the income/expense numbers above to set monthly totals manually.</div></div>';
+  h += '<div class="section-h"><span><span class="num">02</span>Jobs</span><div class="line"></div></div>';
+  if (jobs.length === 0) {
+    h += '<div class="empty-state" style="margin:0"><div class="empty-state-icon">\u{1F3D7}\uFE0F</div><div class="empty-state-title">No jobs yet</div><div class="empty-state-sub">Click + Add Job to log your first construction project.</div></div>';
+  } else {
+    h += '<div class="prop-grid">';
+    jobs.forEach(j => {
+      const value = j.value || 0;
+      const cost = j.cost || 0;
+      const profit = value - cost;
+      const profCol = profit >= 0 ? 'var(--good)' : 'var(--bad)';
+      const statusColor = j.status === 'active' ? 'var(--good)' : j.status === 'bid' ? 'var(--warn)' : j.status === 'done' ? 'var(--cyan)' : 'var(--text-3)';
+      h += '<div class="prop-card" onclick="editConstructionJob(\'' + (j.id || '') + '\')">';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+      h += '<div class="prop-name">' + escapeHtml(j.name || '') + '</div>';
+      h += '<span style="font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:5px;background:rgba(255,255,255,0.04);color:' + statusColor + ';border:1px solid ' + statusColor + '40;letter-spacing:0.06em;text-transform:uppercase">' + (j.status || 'pending') + '</span>';
+      h += '</div>';
+      if (j.client) h += '<div style="font-size:11px;color:var(--text-3);margin-bottom:8px">Client: ' + escapeHtml(j.client) + '</div>';
+      h += '<div class="prop-row"><span style="color:var(--text-3)">Value</span><span style="color:var(--cyan)">' + fmtK(value) + '\u20AA</span></div>';
+      h += '<div class="prop-row"><span style="color:var(--text-3)">Costs</span><span style="color:var(--bad)">' + fmtK(cost) + '\u20AA</span></div>';
+      h += '<div class="prop-row"><span style="color:var(--text-3)">Profit</span><span style="color:' + profCol + ';font-weight:700">' + (profit >= 0 ? '+' : '') + fmtK(profit) + '\u20AA</span></div>';
+      if (j.notes) h += '<div style="font-size:10.5px;color:var(--text-3);margin-top:9px;line-height:1.5">' + escapeHtml(j.notes) + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
   return h;
 }
+
+window.editConstructionJob = async function(id) {
+  const job = id ? (_constructionJobs || []).find(j => j.id === id) : null;
+  const r = await openModal({
+    title: id ? 'Edit Job' : 'Add Job', icon:'\u{1F3D7}\uFE0F',
+    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
+    fields: [
+      {id:'name',   label:'Job Name',          value: job ? job.name : ''},
+      {id:'client', label:'Client',            value: job ? job.client : ''},
+      {id:'status', label:'Status', type:'select', options:['bid','active','done','cancelled'], value: job ? job.status : 'bid'},
+      {id:'value',  label:'Job Value (\u20AA)', type:'number', value: job ? job.value : ''},
+      {id:'cost',   label:'Costs to Date (\u20AA)', type:'number', value: job ? job.cost : ''},
+      {id:'notes',  label:'Notes', type:'textarea', value: job ? (job.notes || '') : ''}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (!_constructionJobs) _constructionJobs = [];
+  if (r.action === 'delete' && id) {
+    _constructionJobs = _constructionJobs.filter(j => j.id !== id);
+    sbDelete('cockpit_construction_jobs', 'id=eq.' + id);
+    return renderPage('construction');
+  }
+  const v = r.values;
+  const row = { name: v.name, client: v.client, status: v.status, value: +v.value || 0, cost: +v.cost || 0, notes: v.notes };
+  if (id) {
+    _constructionJobs = _constructionJobs.map(j => j.id === id ? Object.assign({}, j, row, {id}) : j);
+    sbPatch('cockpit_construction_jobs', 'id=eq.' + id, row);
+  } else {
+    const tmpId = 'tmp-' + Date.now();
+    _constructionJobs.push(Object.assign({}, row, {id: tmpId}));
+    sbUpsertReturning('cockpit_construction_jobs', row).then(saved => {
+      if (saved && saved[0] && saved[0].id) {
+        const idx = _constructionJobs.findIndex(j => j.id === tmpId);
+        if (idx >= 0) _constructionJobs[idx].id = saved[0].id;
+      }
+    }).catch(e => console.warn('Job save failed (kept locally):', e.message));
+  }
+  renderPage('construction');
+};
+
 
 // ══════════════════════════════════════════════════
 // HEALTH PAGE
@@ -5778,6 +6434,78 @@ window.toggleRelocItem = function(key) {
   renderPage('relocation');
 };
 
+
+// ══════════════════════════════════════════════════
+// CLIENTS SECTION (per-client MRR tracking)
+// ══════════════════════════════════════════════════
+function renderClientsSection(pageKey) {
+  const clients = (_clients || []).filter(c => !c.product || c.product === pageKey || c.product === 'autoscale');
+  const totalMrr = clients.filter(c => c.status === 'active').reduce((s, c) => s + (c.mrr || 0), 0);
+  let h = '<div class="section-h"><span><span class="num">04</span>Clients</span><div class="line"></div><span class="meta">' + clients.filter(c => c.status === 'active').length + ' ACTIVE \u00B7 ' + fmtK(Math.round(totalMrr)) + '\u20AA MRR</span><button class="ap-add" onclick="editClient(null,\'' + pageKey + '\')">+ Add Client</button></div>';
+  if (clients.length === 0) {
+    h += '<div class="empty-state" style="margin:0"><div class="empty-state-icon">\u{1F465}</div><div class="empty-state-title">No clients yet</div><div class="empty-state-sub">Click + Add Client to track who pays you what each month.</div></div>';
+    return h;
+  }
+  h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:13px;overflow:hidden;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<table style="width:100%;border-collapse:collapse">';
+  h += '<thead><tr style="background:rgba(0,0,0,0.18)">';
+  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:left">Client</th>';
+  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:left">Status</th>';
+  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:right">MRR</th>';
+  h += '<th style="padding:9px 14px;font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);text-align:right">Since</th>';
+  h += '</tr></thead><tbody>';
+  clients.forEach(c => {
+    const statusColor = c.status === 'active' ? 'var(--good)' : c.status === 'pause' ? 'var(--warn)' : 'var(--text-3)';
+    h += '<tr style="border-top:1px dashed var(--stroke-1);cursor:pointer" onclick="editClient(\'' + (c.id || '') + '\',\'' + pageKey + '\')">';
+    h += '<td style="padding:10px 14px;font-size:12.5px;color:var(--text-1);font-weight:600">' + escapeHtml(c.name || '') + '</td>';
+    h += '<td style="padding:10px 14px;font-size:10px;font-family:var(--mono);color:' + statusColor + ';letter-spacing:0.06em;text-transform:uppercase">' + (c.status || 'pending') + '</td>';
+    h += '<td style="padding:10px 14px;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--good);text-align:right">' + (c.mrr ? '+' + fmtK(c.mrr) + '\u20AA' : '\u2014') + '</td>';
+    h += '<td style="padding:10px 14px;font-size:10.5px;font-family:var(--mono);color:var(--text-3);text-align:right">' + (c.since || '\u2014') + '</td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+window.editClient = async function(id, pageKey) {
+  const client = id ? (_clients || []).find(c => c.id === id) : null;
+  const r = await openModal({
+    title: id ? 'Edit Client' : 'Add Client', icon:'\u{1F465}',
+    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
+    fields: [
+      {id:'name',   label:'Client Name',           value: client ? client.name : ''},
+      {id:'status', label:'Status', type:'select', options:['active','pause','onboarding','past'], value: client ? client.status : 'active'},
+      {id:'mrr',    label:'Monthly Fee (\u20AA)', type:'number', value: client ? client.mrr : ''},
+      {id:'since',  label:'Client Since (e.g. Jan 2025)', value: client ? client.since : ''},
+      {id:'notes',  label:'Notes', type:'textarea', value: client ? (client.notes || '') : ''}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (!_clients) _clients = [];
+  if (r.action === 'delete' && id) {
+    _clients = _clients.filter(c => c.id !== id);
+    sbDelete('cockpit_clients', 'id=eq.' + id);
+    return renderPage(pageKey);
+  }
+  const v = r.values;
+  const row = { name: v.name, status: v.status, mrr: +v.mrr || 0, since: v.since, notes: v.notes, product: pageKey };
+  if (id) {
+    _clients = _clients.map(c => c.id === id ? Object.assign({}, c, row, {id}) : c);
+    sbPatch('cockpit_clients', 'id=eq.' + id, row);
+  } else {
+    const tmpId = 'tmp-' + Date.now();
+    _clients.push(Object.assign({}, row, {id: tmpId}));
+    sbUpsertReturning('cockpit_clients', row).then(saved => {
+      if (saved && saved[0] && saved[0].id) {
+        const idx = _clients.findIndex(c => c.id === tmpId);
+        if (idx >= 0) _clients[idx].id = saved[0].id;
+      }
+    }).catch(e => console.warn('Client save failed (kept locally):', e.message));
+  }
+  renderPage(pageKey);
+};
+
+
 // ══════════════════════════════════════════════════
 // MAIN ROUTER
 // ══════════════════════════════════════════════════
@@ -5822,6 +6550,7 @@ function renderPage(key) {
     else if (s === 'money')       html += renderMoney(page.data.money, key, pm.y, pm.m);
     else if (s === 'sources')     html += renderSources(page.data.sources, key, pm.y, pm.m);
     else if (s === 'projects')    html += renderProjectsSection(page.data.projects, key);
+    else if (s === 'clients')     html += renderClientsSection(key);
     else if (s === 'big-calendar') html += renderBigCalendar();
     else if (s === 'cockpit-overview') html += renderCockpitOverview();
     else if (s === 'finance')     html += renderFinanceHub();
@@ -5975,7 +6704,15 @@ function tick() {
 const COINGECKO_IDS = {
   BTC:'bitcoin', ETH:'ethereum', SOL:'solana', BNB:'binancecoin',
   ADA:'cardano', DOT:'polkadot', LINK:'chainlink', AVAX:'avalanche-2',
-  MATIC:'matic-network', UNI:'uniswap', LTC:'litecoin', XRP:'ripple'
+  MATIC:'matic-network', POL:'polygon-ecosystem-token',
+  UNI:'uniswap', LTC:'litecoin', XRP:'ripple', DOGE:'dogecoin',
+  SHIB:'shiba-inu', TRX:'tron', ATOM:'cosmos', NEAR:'near',
+  APT:'aptos', SUI:'sui', ARB:'arbitrum', OP:'optimism',
+  TON:'the-open-network', PEPE:'pepe', WIF:'dogwifcoin',
+  USDT:'tether', USDC:'usd-coin', DAI:'dai',
+  RNDR:'render-token', FET:'fetch-ai', ICP:'internet-computer',
+  ALGO:'algorand', FIL:'filecoin', VET:'vechain', HBAR:'hedera-hashgraph',
+  XLM:'stellar', BCH:'bitcoin-cash', ETC:'ethereum-classic'
 };
 const LIVE_RATES = {
   usdToIls: parseFloat(safe.get('live.usdToIls') || '3.7'),
@@ -6681,5 +7418,36 @@ window.toggleAgent = toggleAgent;
   <button class="mob-tab" data-page="big-calendar" onclick="mobileTab('big-calendar',this)"><span class="mti">◫</span><span class="mtl">Calendar</span></button>
 </div>
 
+
+<datalist id="crypto-symbols-list">
+  <option value="BTC">Bitcoin</option><option value="ETH">Ethereum</option><option value="SOL">Solana</option>
+  <option value="BNB">BNB</option><option value="ADA">Cardano</option><option value="DOT">Polkadot</option>
+  <option value="LINK">Chainlink</option><option value="AVAX">Avalanche</option><option value="MATIC">Polygon (MATIC)</option>
+  <option value="POL">Polygon (POL)</option><option value="UNI">Uniswap</option><option value="LTC">Litecoin</option>
+  <option value="XRP">XRP</option><option value="DOGE">Dogecoin</option><option value="SHIB">Shiba Inu</option>
+  <option value="TRX">Tron</option><option value="ATOM">Cosmos</option><option value="NEAR">Near</option>
+  <option value="APT">Aptos</option><option value="SUI">Sui</option><option value="ARB">Arbitrum</option>
+  <option value="OP">Optimism</option><option value="TON">Toncoin</option><option value="PEPE">Pepe</option>
+  <option value="WIF">dogwifhat</option><option value="USDT">Tether</option><option value="USDC">USD Coin</option>
+  <option value="DAI">Dai</option><option value="RNDR">Render</option><option value="FET">Fetch.ai</option>
+  <option value="ICP">Internet Computer</option><option value="ALGO">Algorand</option><option value="FIL">Filecoin</option>
+  <option value="VET">VeChain</option><option value="HBAR">Hedera</option><option value="XLM">Stellar</option>
+  <option value="BCH">Bitcoin Cash</option><option value="ETC">Ethereum Classic</option>
+</datalist>
+<datalist id="stock-symbols-list">
+  <option value="AAPL">Apple</option><option value="MSFT">Microsoft</option><option value="GOOGL">Alphabet (Google)</option>
+  <option value="AMZN">Amazon</option><option value="NVDA">Nvidia</option><option value="TSLA">Tesla</option>
+  <option value="META">Meta</option><option value="BRK.B">Berkshire Hathaway</option><option value="JPM">JPMorgan</option>
+  <option value="V">Visa</option><option value="MA">Mastercard</option><option value="UNH">UnitedHealth</option>
+  <option value="WMT">Walmart</option><option value="JNJ">Johnson & Johnson</option><option value="XOM">Exxon</option>
+  <option value="LLY">Eli Lilly</option><option value="PG">Procter & Gamble</option><option value="HD">Home Depot</option>
+  <option value="COST">Costco</option><option value="ORCL">Oracle</option><option value="ADBE">Adobe</option>
+  <option value="CRM">Salesforce</option><option value="NFLX">Netflix</option><option value="DIS">Disney</option>
+  <option value="QQQ">Invesco QQQ ETF</option><option value="SPY">SPDR S&P 500 ETF</option><option value="VTI">Vanguard Total Market</option>
+  <option value="VOO">Vanguard S&P 500</option><option value="IWM">iShares Russell 2000</option>
+  <option value="AMD">AMD</option><option value="INTC">Intel</option><option value="PYPL">PayPal</option>
+  <option value="UBER">Uber</option><option value="LYFT">Lyft</option><option value="ABNB">Airbnb</option>
+  <option value="COIN">Coinbase</option><option value="HOOD">Robinhood</option><option value="PLTR">Palantir</option>
+</datalist>
 </body>
 </html>
