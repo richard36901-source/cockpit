@@ -1728,7 +1728,7 @@ textarea.modal-input { resize: vertical; min-height: 80px; line-height: 1.5; }
   background: rgba(4,6,14,0.50);
   backdrop-filter: blur(24px) saturate(180%);
   display: none; align-items: center; justify-content: center;
-  z-index: 9500; padding: 16px;
+  z-index: 99999; padding: 16px;
 }
 .trade-overlay.open { display: flex; }
 .trade-modal {
@@ -2411,8 +2411,8 @@ input, textarea, select, [contenteditable="true"], .editable {
 }
 .side-collapse-btn:hover { color: var(--cyan); border-color: rgba(56,189,248,0.40); }
 
-.app.sidebar-collapsed { grid-template-columns: 56px 1fr; }
-.app.sidebar-collapsed .side { padding: 0; }
+.app.sidebar-collapsed { grid-template-columns: 0 1fr; }
+.app.sidebar-collapsed .side { padding: 0; width: 0; overflow: hidden; visibility: hidden; }
 .app.sidebar-collapsed .side-logo { padding: 14px 0; justify-content: center; }
 .app.sidebar-collapsed .side-logo-name,
 .app.sidebar-collapsed .side-logo-sub,
@@ -2429,7 +2429,7 @@ input, textarea, select, [contenteditable="true"], .editable {
   gap: 6px;
   padding: 12px 8px;
 }
-.app.sidebar-collapsed .side-mini { display: flex; }
+.app.sidebar-collapsed .side-mini { display: none; }
 .side-mini-btn {
   width: 40px; height: 40px;
   border-radius: 10px;
@@ -2631,6 +2631,63 @@ body.cal-fs-active html { overflow: visible !important; }
 .sc-pill .sc-name { color: var(--text-2); }
 .sc-pill .sc-count { color: var(--text-1); font-weight: 700; margin-left: 2px; }
 
+
+/* Floating expand button when sidebar is collapsed */
+.app.sidebar-collapsed .side-collapse-btn {
+  position: fixed !important;
+  top: 14px;
+  left: 14px;
+  right: auto !important;
+  transform: none !important;
+  z-index: 1000;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(56,189,248,0.16);
+  border: 1px solid rgba(56,189,248,0.40);
+  border-radius: 11px;
+  color: var(--cyan);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(20px) saturate(180%);
+  visibility: visible !important;
+}
+.app.sidebar-collapsed .side-collapse-btn::before { content: '☰'; }
+.app.sidebar-collapsed .side-collapse-btn { font-size: 0; }
+.app.sidebar-collapsed .side-collapse-btn::before { font-size: 14px; }
+
+/* Big Calendar page — calendar takes priority */
+body[data-page="big-calendar"] .topbar { padding: 8px 18px !important; }
+body[data-page="big-calendar"] .topbar-title { font-size: 12px !important; }
+body[data-page="big-calendar"] .topbar-sub { display: none; }
+body[data-page="big-calendar"] .main { padding-top: 8px !important; padding-bottom: 8px !important; }
+
+/* Shrink the in-page year label */
+body[data-page="big-calendar"] .cal-year-label { font-size: 14px !important; padding: 4px 10px !important; }
+body[data-page="big-calendar"] .cal-toolbar { padding: 6px 10px !important; margin-bottom: 6px !important; }
+
+/* Calendar grid wrap fills available space */
+body[data-page="big-calendar"] .cal-grid-wrap {
+  height: calc(100vh - 110px);
+  overflow: auto;
+}
+
+/* Compress year-grid columns so 31 days + month label fits on one screen at 1300px */
+body[data-page="big-calendar"] .cal-grid {
+  grid-template-columns: 56px repeat(31, minmax(0, 1fr)) !important;
+}
+
+/* Slightly tighter cells */
+body[data-page="big-calendar"] .cal-cell {
+  min-height: 56px;
+}
+
+/* When sidebar is collapsed, calendar gets the full width */
+.app.sidebar-collapsed[data-page="big-calendar"] .cal-grid-wrap,
+body[data-page="big-calendar"] .app.sidebar-collapsed .cal-grid-wrap {
+  height: calc(100vh - 90px);
+}
+
 </style>
 </head>
 <body>
@@ -2694,20 +2751,6 @@ body.cal-fs-active html { overflow: visible !important; }
 </div>
 
 <!-- Trade modal -->
-<div class="trade-overlay" id="trade-overlay">
-  <div class="trade-modal" style="background:#0d1424;border:1px solid rgba(56,189,248,0.15);border-radius:16px;width:100%;max-width:720px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
-      <div id="tm-title" style="font-size:15px;font-weight:800">Log Trade</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <a id="tm-tv-link" href="#" target="_blank" rel="noopener" style="display:none;height:28px;padding:0 12px;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.3);color:#60a5fa;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;font-family:var(--mono);align-items:center">TradingView &#8599;</a>
-        <button onclick="closeTradeModal()" style="background:transparent;border:1px solid var(--line);color:var(--text-2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px">&#215;</button>
-      </div>
-    </div>
-    <div id="tm-body" style="overflow-y:auto;flex:1;padding:20px"></div>
-    <div id="tm-footer" style="padding:14px 20px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px"></div>
-  </div>
-</div>
-
 <!-- Settings overlay -->
 <div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
   <div class="settings-panel" onclick="event.stopPropagation()">
@@ -2972,6 +3015,8 @@ let _stickers     = [];
 let _calYear      = new Date().getFullYear();
 let _activeSticker = null;
 let _drawMode     = false;
+let _finViewYear  = new Date().getFullYear();
+let _finViewMonth = new Date().getMonth();
 let _constructionJobs = [];
 let _calMonthView = (safe.get('cockpit.cal.view') === 'month');
 let _calViewMonth = new Date().getMonth();
@@ -3396,10 +3441,8 @@ const PAGES = {
     sections:['attention','money','sources','clients','projects'],
     data:{
       attention:[
-        {kind:'warn', num:2,       label:'Invoices',    detail:'Awaiting approval'},
-        {kind:'bad',  num:'2,000', cur:'\u20AA', label:'Delayed', detail:'Chase'},
-        {kind:'cyan', num:2,       label:'Quotes',      detail:'Sent'},
-        {kind:'tech', num:4,       label:'Leads',       detail:''}
+        {kind:'warn', num:2, label:'Invoices', detail:'Awaiting approval'},
+        {kind:'cyan', num:2, label:'Quotes',   detail:'Sent'}
       ],
       money:{
         month:{income:7500, expense:1200, expected:3000, delayed:2000, scope:'May', tag:''},
@@ -3408,7 +3451,6 @@ const PAGES = {
       sources:[
         {label:'Retainers', amount:3200, cur:'\u20AA', meta:'2 active', color:'tech'},
         {label:'Projects',  amount:3800, cur:'\u20AA', meta:'3 invoices', color:'tech'},
-        {label:'One-offs',  amount:500,  cur:'\u20AA', meta:'1 client', color:'tech'},
         {label:'Affiliate', amount:0,    cur:'\u20AA', meta:'-', color:'tech'}
       ],
       projects:[]
@@ -3592,12 +3634,21 @@ function renderMoney(money, pageKey, y, m) {
       '</div>' +
       '<div class="net-row"><div class="net-num">'+fmt(net)+'<span class="cur">\u20AA</span></div><div class="net-tag"><div class="net-tag-label">Net</div><div class="net-tag-val" style="color:'+(savePct>=0?'var(--good)':'var(--bad)')+'">'+(savePct>=0?'+':'')+savePct+'%</div></div></div>' +
     '</div>' +
-    '<div class="money-card"><div class="money-head"><div class="money-period">YTD <span class="scope">· '+money.year.scope+'</span></div></div>' +
-      '<div class="money-rows three">' +
-        '<div><div class="row-label">Income</div><div class="row-val income">'+fmtK(money.year.income)+'<span class="cur">\u20AA</span></div></div>' +
-        '<div><div class="row-label">Expenses</div><div class="row-val expense">'+fmtK(money.year.expense)+'<span class="cur">\u20AA</span></div></div>' +
-        '<div><div class="row-label">Net</div><div class="row-val">'+fmtK(money.year.income-money.year.expense)+'<span class="cur">\u20AA</span></div></div>' +
-      '</div></div>' +
+    (function() {
+        // Live YTD across the whole visible year — sums all months of `y` from localStorage
+        let yIncome = 0, yExpense = 0;
+        for (let mm = 0; mm < 12; mm++) {
+          yIncome  += +getMField(pageKey, y, mm, 'income', 0)  || 0;
+          yExpense += +getMField(pageKey, y, mm, 'expense', 0) || 0;
+        }
+        const yNet = yIncome - yExpense;
+        return '<div class="money-card"><div class="money-head"><div class="money-period">YTD <span class="scope">· '+y+'</span></div></div>' +
+          '<div class="money-rows three">' +
+            '<div><div class="row-label">Income</div><div class="row-val income">'+fmtK(yIncome)+'<span class="cur">\u20AA</span></div></div>' +
+            '<div><div class="row-label">Expenses</div><div class="row-val expense">'+fmtK(yExpense)+'<span class="cur">\u20AA</span></div></div>' +
+            '<div><div class="row-label">Net</div><div class="row-val" style="color:'+(yNet>=0?'var(--good)':'var(--bad)')+'">'+fmtK(yNet)+'<span class="cur">\u20AA</span></div></div>' +
+          '</div></div>';
+      })() +
     '</div>';
 }
 
@@ -3630,14 +3681,39 @@ function renderProjectsSection(projects, pageKey) {
     const fill = Math.round(pct/10);
     let bars = '';
     for (let i=0;i<10;i++) bars += '<div class="seg'+(i<fill?' fill':'')+'"></div>';
-    html += '<div class="project" onclick="editProject(\''+(p.id||'')+'\',\''+pageKey+'\')" style="cursor:pointer">' +
-      '<div class="project-head"><div class="project-name"><span class="dot '+(p.dot||'idle')+'"></span>'+p.name+'</div><div class="project-pct">'+pct+'%</div></div>' +
-      '<div class="progress-bar">'+bars+'</div>' +
+    html += '<div class="project" style="cursor:pointer">' +
+      '<div class="project-head" onclick="editProject(\''+(p.id||'')+'\',\''+pageKey+'\')"><div class="project-name"><span class="dot '+(p.dot||'idle')+'"></span>'+p.name+'</div><div class="project-pct">'+pct+'%</div></div>' +
+      '<div class="progress-bar" onclick="editProject(\''+(p.id||'')+'\',\''+pageKey+'\')">'+bars+'</div>' +
       '<div class="project-meta"><span>'+(p.tasks||'')+'</span>'+(p.ddl?'<span class="'+(p.urgent?'urgent':'')+'">'+p.ddl+'</span>':'')+'</div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px;justify-content:flex-end" onclick="event.stopPropagation()">' +
+        '<button onclick="adjustProject(\''+(p.id||'')+'\',-10,\''+pageKey+'\')" style="width:32px;height:22px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--text-2);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">-10</button>' +
+        '<button onclick="adjustProject(\''+(p.id||'')+'\',-5,\''+pageKey+'\')"  style="width:30px;height:22px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--text-2);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">-5</button>' +
+        '<button onclick="adjustProject(\''+(p.id||'')+'\',+5,\''+pageKey+'\')"  style="width:30px;height:22px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--text-2);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">+5</button>' +
+        '<button onclick="adjustProject(\''+(p.id||'')+'\',+10,\''+pageKey+'\')" style="width:32px;height:22px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--cyan);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">+10</button>' +
+        '<button onclick="adjustProject(\''+(p.id||'')+'\',+25,\''+pageKey+'\')" style="width:32px;height:22px;border:1px solid rgba(74,222,128,0.30);background:rgba(74,222,128,0.10);color:var(--good);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono);font-weight:700">+25</button>' +
+      '</div>' +
       '</div>';
   });
   return html + '</div></div></div>';
 }
+
+
+window.adjustProject = async function(id, delta, pageKey) {
+  if (!id) return;
+  const p = _projects.find(x => x.id === id);
+  if (!p) return;
+  const newPct = Math.max(0, Math.min(100, (+p.pct || 0) + delta));
+  p.pct = newPct;
+  if (newPct === 100 && p.status !== 'done') p.status = 'done';
+  // Save to Supabase
+  try {
+    if (sb) {
+      await sb.from('cockpit_projects').update({ pct: newPct, status: p.status }).eq('id', id);
+    }
+  } catch (e) { console.warn('progress save failed', e); }
+  renderPage(pageKey);
+};
+
 
 window.editProject = async function(id, pageKey) {
   const p = id ? _projects.find(x=>x.id===id) : null;
@@ -3928,6 +4004,125 @@ let _hiddenStickers = JSON.parse(safe.get('cockpit.cal.hidden') || '[]');
 function isStickerVisible(stickerId) {
   return !stickerId || _hiddenStickers.indexOf(stickerId) < 0;
 }
+
+// ── Finance month nav ──
+
+window.saasPrevMonth = function(pageKey) {
+  if (!window._saasView) window._saasView = {};
+  if (!window._saasView[pageKey]) { const n=new Date(); window._saasView[pageKey]={year:n.getFullYear(),month:n.getMonth()}; }
+  window._saasView[pageKey].month--;
+  if (window._saasView[pageKey].month < 0) { window._saasView[pageKey].month = 11; window._saasView[pageKey].year--; }
+  renderPage(pageKey);
+};
+window.saasNextMonth = function(pageKey) {
+  if (!window._saasView) window._saasView = {};
+  if (!window._saasView[pageKey]) { const n=new Date(); window._saasView[pageKey]={year:n.getFullYear(),month:n.getMonth()}; }
+  window._saasView[pageKey].month++;
+  if (window._saasView[pageKey].month > 11) { window._saasView[pageKey].month = 0; window._saasView[pageKey].year++; }
+  renderPage(pageKey);
+};
+window.saasResetMonth = function(pageKey) {
+  const n = new Date();
+  window._saasView = window._saasView || {};
+  window._saasView[pageKey] = { year: n.getFullYear(), month: n.getMonth() };
+  renderPage(pageKey);
+};
+
+
+window.finPrevMonth = function() {
+  _finViewMonth--;
+  if (_finViewMonth < 0) { _finViewMonth = 11; _finViewYear--; }
+  renderPage('finance');
+};
+window.finNextMonth = function() {
+  _finViewMonth++;
+  if (_finViewMonth > 11) { _finViewMonth = 0; _finViewYear++; }
+  renderPage('finance');
+};
+window.finResetMonth = function() {
+  const now = new Date();
+  _finViewYear = now.getFullYear();
+  _finViewMonth = now.getMonth();
+  renderPage('finance');
+};
+
+// Aggregate income/expense for a given month from ALL pages
+function aggregateMonthForFinance(year, month) {
+  const sources = ['autoscale', 'wa-saas', 'rsvp', 'crm-saas', 'construction'];
+  const items = [];
+  let totalIncome = 0, totalExpense = 0;
+
+  sources.forEach(key => {
+    const inc = +getMField(key, year, month, 'income', 0) || 0;
+    const exp = +getMField(key, year, month, 'expense', 0) || 0;
+    if (inc > 0 || exp > 0) {
+      items.push({ key, label: (PAGES[key] && PAGES[key].title) || key, income: inc, expense: exp });
+      totalIncome += inc; totalExpense += exp;
+    }
+  });
+
+  // Trading P&L for the month
+  const tradePnl = (_trades || []).filter(t => {
+    if (!t.trade_date) return false;
+    const d = new Date(t.trade_date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  }).reduce((s, t) => s + (+t.pnl || 0), 0);
+  if (tradePnl !== 0) {
+    items.push({ key: 'trading', label: 'Trading', income: Math.max(0, tradePnl), expense: tradePnl < 0 ? Math.abs(tradePnl) : 0 });
+    if (tradePnl > 0) totalIncome += tradePnl; else totalExpense += Math.abs(tradePnl);
+  }
+
+  // Real estate cash flow (steady monthly)
+  const properties = (PAGES['real-estate'] && PAGES['real-estate'].data && PAGES['real-estate'].data.properties) || [];
+  let reIncome = 0, reExpense = 0;
+  properties.forEach(p => {
+    reIncome += (+p.rentIncome || 0);
+    reExpense += (+p.mortgage || 0) + (+p.taxes || 0) + (+p.maintenance || 0);
+  });
+  if (reIncome > 0 || reExpense > 0) {
+    items.push({ key: 'real-estate', label: 'Real Estate', income: reIncome, expense: reExpense });
+    totalIncome += reIncome; totalExpense += reExpense;
+  }
+
+  // Recurring items
+  const recIncome = (PAGES.finance && PAGES.finance.data && PAGES.finance.data.recurringIncome) || [];
+  const recExpense = (PAGES.finance && PAGES.finance.data && PAGES.finance.data.recurringExpenses) || [];
+  let totalRI = recIncome.reduce((s, r) => s + (+r.amount || 0), 0);
+  let totalRE = recExpense.reduce((s, r) => s + (+r.amount || 0), 0);
+  if (totalRI > 0) {
+    items.push({ key: 'recurring-in', label: 'Recurring income', income: totalRI, expense: 0 });
+    totalIncome += totalRI;
+  }
+  if (totalRE > 0) {
+    items.push({ key: 'recurring-out', label: 'Recurring expenses', income: 0, expense: totalRE });
+    totalExpense += totalRE;
+  }
+
+  return { items, totalIncome, totalExpense, net: totalIncome - totalExpense };
+}
+
+function computeBuyingPower(F) {
+  let liquid = 0;
+  (F.accounts || []).forEach(a => liquid += (+a.balance || 0));
+  let credit = 0;
+  (F.accounts || []).forEach(a => credit += (+a.creditLine || 0) + (+a.cardLimit || 0));
+  const holdings = computeHoldingsTotal();
+  return { liquid, credit, holdings, total: liquid + credit + holdings };
+}
+
+function computeTotalSavings(F) {
+  let savings = 0;
+  (F.accounts || []).forEach(a => savings += (+a.savings || 0));
+  const data = (PAGES.holdings && PAGES.holdings.data) || {};
+  (data.cash || []).forEach(c => savings += (+c.amount || 0) * getRateToIls(c.currency || 'ILS'));
+  return savings;
+}
+
+function computeTotalMRR() {
+  return (_clients || []).filter(c => c.status === 'active' && c.mrr > 0).reduce((s, c) => s + (+c.mrr || 0), 0);
+}
+
+
 window.toggleStickerLayer = function(stickerId) {
   const idx = _hiddenStickers.indexOf(stickerId);
   if (idx >= 0) _hiddenStickers.splice(idx, 1);
@@ -4984,11 +5179,15 @@ function renderRelocationETA() {
 // ══════════════════════════════════════════════════
 function renderFinanceHub() {
   const F = computeFinancials();
-  const E = computeRelocationETA();
-  const nwColor = F.netWorth >= 0 ? 'var(--good)' : 'var(--bad)';
-  const monthlyColor = F.monthlyNet >= 0 ? 'var(--good)' : 'var(--bad)';
+  const monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'][_finViewMonth];
+  const isCurrentMonth = (_finViewYear === new Date().getFullYear() && _finViewMonth === new Date().getMonth());
 
-  // Asset breakdown for allocation chart
+  const M = aggregateMonthForFinance(_finViewYear, _finViewMonth);
+  const BP = computeBuyingPower(F);
+  const totalSavings = computeTotalSavings(F);
+  const totalMRR = computeTotalMRR();
+  const nwColor = F.netWorth >= 0 ? 'var(--good)' : 'var(--bad)';
+
   const cashTotal = F.cashAvail;
   const holdingsTotal = computeHoldingsTotal();
   const reTotal = F.reValue;
@@ -5001,46 +5200,81 @@ function renderFinanceHub() {
     { label: 'Angel',       value: angelTotal,    color: '#a5b4fc' }
   ];
 
-  // ─── Hero net worth panel ───
+  // Hero
   let html = '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(56,189,248,0.25);border-radius:18px;padding:18px 22px;margin-bottom:12px;box-shadow:var(--hl-top-strong),var(--shadow-1),0 0 60px rgba(56,189,248,0.10);position:relative;overflow:hidden;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center">';
-
-  // Left: net worth
   html += '<div>';
   html += '<div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Net Worth</div>';
-  html += '<div style="font-size:clamp(28px,4vw,52px);font-weight:900;color:'+nwColor+';letter-spacing:-0.04em;line-height:0.95;text-shadow:0 0 32px '+(F.netWorth>=0?'rgba(74,222,128,0.30)':'rgba(248,113,113,0.30)')+'">' +
-    (F.netWorth>=0?'':'-') + fmt(Math.abs(Math.round(F.netWorth))) + '<span style="font-size:0.4em;color:var(--text-3);margin-left:5px;font-weight:600">\u20AA</span></div>';
-  html += '<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">';
+  html += '<div style="font-size:clamp(28px,4vw,52px);font-weight:900;color:'+nwColor+';letter-spacing:-0.04em;line-height:0.95">' + (F.netWorth>=0?'':'-') + fmt(Math.abs(Math.round(F.netWorth))) + '<span style="font-size:0.4em;color:var(--text-3);margin-left:5px;font-weight:600">\u20AA</span></div>';
+  html += '<div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">';
   html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Assets</div><div style="font-size:13px;font-weight:700;color:var(--cyan);font-family:var(--mono)">'+fmtK(Math.round(F.totalAssets))+'\u20AA</div></div>';
   html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Debt</div><div style="font-size:13px;font-weight:700;color:var(--bad);font-family:var(--mono)">'+fmtK(Math.round(F.totalDebt))+'\u20AA</div></div>';
-  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Cash</div><div style="font-size:13px;font-weight:700;color:var(--good);font-family:var(--mono)">'+fmtK(Math.round(F.cashAvail))+'\u20AA</div></div>';
-  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Monthly</div><div style="font-size:13px;font-weight:700;color:'+monthlyColor+';font-family:var(--mono)">'+(F.monthlyNet>=0?'+':'')+fmtK(Math.round(F.monthlyNet))+'\u20AA</div></div>';
+  html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Net (this month)</div><div style="font-size:11.5px;font-weight:700;color:'+(M.net>=0?'var(--good)':'var(--bad)')+';font-family:var(--mono)">'+(M.net>=0?'+':'')+fmtK(Math.round(M.net))+'\u20AA</div></div>';
   html += '</div></div>';
-
-  // Right: allocation donut
   html += '<div>' + renderAllocationDonut(alloc, allocSum) + '</div>';
   html += '</div>';
 
-  // ─── Progress bars: Savings & MRR ───
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
-  html += renderProgressCard('Savings', E.currentSav, 30000, '\u20AA', '#4ade80', 'Thailand fund');
-  html += renderProgressCard('MRR', E.bizIncome, 6000, '\u20AA/mo', '#38bdf8', 'Recurring income target');
+  // Three live KPI cards
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">';
+  const mrrCount = (_clients || []).filter(c => c.status === 'active' && c.mrr > 0).length;
+  html += '<div class="att good"><div class="att-num">' + fmtK(Math.round(totalSavings)) + '<span class="cur">\u20AA</span></div><div class="att-label">Savings</div><div class="att-detail">All bank savings + cash currencies</div></div>';
+  html += '<div class="att cyan"><div class="att-num">' + fmtK(Math.round(totalMRR)) + '<span class="cur">\u20AA/mo</span></div><div class="att-label">Recurring (MRR)</div><div class="att-detail">' + mrrCount + ' active client' + (mrrCount === 1 ? '' : 's') + '</div></div>';
+  html += '<div class="att tech"><div class="att-num">' + fmtK(Math.round(BP.total)) + '<span class="cur">\u20AA</span></div><div class="att-label">Buying Power</div><div class="att-detail">Cash + Credit + Liquid Holdings</div></div>';
   html += '</div>';
 
-  // ─── Per-section summary cards ───
+  // Per-section
   html += '<div class="section-h"><span><span class="num">01</span>By Section</span><div class="line"></div></div>';
   html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
   html += '<div class="att cyan" onclick="navigate(\'holdings\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(holdingsTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Holdings</div><div class="att-detail">Crypto \u00B7 Stocks \u00B7 Cash</div></div>';
   html += '<div class="att good" onclick="navigate(\'real-estate\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(reTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Real Estate</div><div class="att-detail">CF: '+(F.reCashflow>=0?'+':'')+fmtK(Math.round(F.reCashflow))+'\u20AA/mo</div></div>';
   html += '<div class="att tech" onclick="navigate(\'angel\')" style="cursor:pointer"><div class="att-num">'+fmtK(Math.round(angelTotal))+'<span class="cur">\u20AA</span></div><div class="att-label">Angel</div><div class="att-detail">'+(_investments||[]).length+' positions</div></div>';
   const tradeColor = F.tradePnl>=0 ? 'good' : 'bad';
-  html += '<div class="att '+tradeColor+'" onclick="navigate(\'trading\')" style="cursor:pointer"><div class="att-num">'+(F.tradePnl>=0?'+':'')+fmtK(Math.round(F.tradePnl))+'<span class="cur">\u20AA</span></div><div class="att-label">Trading P&L</div><div class="att-detail">This month</div></div>';
+  html += '<div class="att '+tradeColor+'" onclick="navigate(\'trading\')" style="cursor:pointer"><div class="att-num">'+(F.tradePnl>=0?'+':'')+fmtK(Math.round(F.tradePnl))+'<span class="cur">\u20AA</span></div><div class="att-label">Trading P&L</div><div class="att-detail">All time</div></div>';
   html += '</div>';
 
-  // ─── Cash flow waterfall (this month) ───
-  html += '<div class="section-h"><span><span class="num">02</span>Cash Flow This Month</span><div class="line"></div></div>';
-  html += renderCashFlowChart(F);
+  // Monthly Income vs Expenses with month nav
+  html += '<div class="section-h"><span><span class="num">02</span>Income vs Expenses \u2014 ' + monthName + ' ' + _finViewYear + '</span><div class="line"></div>' +
+    '<button class="cal-prev-btn" onclick="finPrevMonth()" style="height:28px;padding:0 11px;font-size:11px">\u2039 Prev</button>' +
+    (isCurrentMonth ? '' : '<button class="cal-prev-btn" onclick="finResetMonth()" style="height:28px;padding:0 11px;font-size:11px;margin-left:6px">Today</button>') +
+    '<button class="cal-next-btn" onclick="finNextMonth()" style="height:28px;padding:0 11px;font-size:11px;margin-left:6px">Next \u203A</button>' +
+    '</div>';
 
-  // ─── Bank Accounts ───
+  if (M.items.length === 0) {
+    html += '<div class="empty-state" style="margin:0 0 14px;padding:24px"><div class="empty-state-icon" style="font-size:30px">\u{1F4C8}</div><div class="empty-state-title">No data for ' + monthName + ' ' + _finViewYear + '</div><div class="empty-state-sub">Log income/expenses on each page (AutoScale, WhatsApp, Ishur, etc.) and they\'ll aggregate here.</div></div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+    // Income
+    html += '<div style="background:linear-gradient(135deg,rgba(74,222,128,0.06),var(--glass-1));backdrop-filter:blur(20px);border:1px solid rgba(74,222,128,0.30);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;padding-bottom:9px;border-bottom:1px dashed rgba(74,222,128,0.20)">';
+    html += '<span style="font-size:9.5px;font-weight:700;color:var(--good);letter-spacing:0.18em;font-family:var(--mono);text-transform:uppercase">\u25B2 Income</span>';
+    html += '<span style="font-size:16px;font-weight:800;color:var(--good);font-family:var(--mono);letter-spacing:-0.02em">+' + fmtK(Math.round(M.totalIncome)) + '\u20AA</span>';
+    html += '</div>';
+    M.items.filter(r => r.income > 0).forEach(r => {
+      html += '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:12px;cursor:pointer" onclick="navigate(\'' + r.key + '\')"><span style="color:var(--text-2)">' + escapeHtml(r.label) + '</span><span style="font-family:var(--mono);font-weight:600;color:var(--good)">+' + fmtK(Math.round(r.income)) + '\u20AA</span></div>';
+    });
+    if (!M.items.some(r => r.income > 0)) html += '<div style="font-size:11px;color:var(--text-3);font-style:italic;padding:6px 0">No income this month</div>';
+    html += '</div>';
+
+    // Expenses
+    html += '<div style="background:linear-gradient(135deg,rgba(248,113,113,0.06),var(--glass-1));backdrop-filter:blur(20px);border:1px solid rgba(248,113,113,0.30);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;padding-bottom:9px;border-bottom:1px dashed rgba(248,113,113,0.20)">';
+    html += '<span style="font-size:9.5px;font-weight:700;color:var(--bad);letter-spacing:0.18em;font-family:var(--mono);text-transform:uppercase">\u25BC Expenses</span>';
+    html += '<span style="font-size:16px;font-weight:800;color:var(--bad);font-family:var(--mono);letter-spacing:-0.02em">-' + fmtK(Math.round(M.totalExpense)) + '\u20AA</span>';
+    html += '</div>';
+    M.items.filter(r => r.expense > 0).forEach(r => {
+      html += '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:12px;cursor:pointer" onclick="navigate(\'' + r.key + '\')"><span style="color:var(--text-2)">' + escapeHtml(r.label) + '</span><span style="font-family:var(--mono);font-weight:600;color:var(--bad)">-' + fmtK(Math.round(r.expense)) + '\u20AA</span></div>';
+    });
+    if (!M.items.some(r => r.expense > 0)) html += '<div style="font-size:11px;color:var(--text-3);font-style:italic;padding:6px 0">No expenses this month</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Smaller net total bar
+    html += '<div style="background:var(--glass-2);border:1px solid var(--stroke-3);border-radius:11px;padding:9px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--hl-top);margin-bottom:10px">';
+    html += '<span style="font-size:10px;font-weight:700;color:var(--text-2);letter-spacing:0.10em;text-transform:uppercase">Net \u2014 ' + monthName.slice(0,3) + ' ' + _finViewYear + '</span>';
+    html += '<span style="font-size:15px;font-weight:800;color:' + (M.net>=0?'var(--good)':'var(--bad)') + ';font-family:var(--mono);letter-spacing:-0.02em">' + (M.net>=0?'+':'') + fmtK(Math.round(M.net)) + '\u20AA</span>';
+    html += '</div>';
+  }
+
+  // Bank Accounts
   html += '<div class="section-h"><span><span class="num">03</span>Bank Accounts</span><div class="line"></div><button class="ap-add" onclick="editBankAccount(null)">+ Add Bank</button></div>';
   if (!F.accounts || F.accounts.length === 0) {
     html += '<div class="empty-state" style="margin:0 0 14px"><div class="empty-state-icon" style="font-size:28px;margin-bottom:6px">\u{1F3E6}</div><div class="empty-state-title" style="font-size:13px">No bank accounts yet</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Click + Add Bank to log your first account</div></div>';
@@ -5051,8 +5285,7 @@ function renderFinanceHub() {
       html += '<div class="att-num">' + fmtK((a.balance || 0) + (a.savings || 0)) + '<span class="cur">\u20AA</span></div>';
       html += '<div class="att-label">' + escapeHtml(a.bank || 'Account') + '</div>';
       html += '<div class="att-detail" style="font-family:var(--mono);font-size:9.5px;line-height:1.6">' +
-        'Balance ' + fmtK(a.balance || 0) + '\u20AA<br>' +
-        'Savings ' + fmtK(a.savings || 0) + '\u20AA' +
+        'Balance ' + fmtK(a.balance || 0) + '\u20AA<br>Savings ' + fmtK(a.savings || 0) + '\u20AA' +
         ((a.creditLine||0) > 0 ? '<br>Credit line ' + fmtK(a.creditLine) + '\u20AA' : '') +
         ((a.cardLimit||0) > 0 ? '<br>Card limit ' + fmtK(a.cardLimit) + '\u20AA' : '') +
         '</div>';
@@ -5061,7 +5294,7 @@ function renderFinanceHub() {
     html += '</div>';
   }
 
-  // ─── Debt ───
+  // Debt
   html += '<div class="section-h"><span><span class="num">04</span>Debt</span><div class="line"></div><button class="ap-add" onclick="editDebt(null)">+ Add Debt</button></div>';
   if (!F.debts || F.debts.length === 0) {
     html += '<div class="empty-state" style="margin:0"><div class="empty-state-icon" style="font-size:28px;margin-bottom:6px">\u{1F4DD}</div><div class="empty-state-title" style="font-size:13px">No debt logged</div><div class="empty-state-sub" style="font-size:11px;margin-bottom:0">Click + Add Debt to track loans, mortgages, or balances</div></div>';
@@ -5083,92 +5316,45 @@ function renderFinanceHub() {
   return html;
 }
 
-window.editBankAccount = async function(id) {
-  const acct = id ? PAGES.finance.data.accounts.find(a => a.id === id) : null;
-  const r = await openModal({
-    title: id ? 'Edit Bank Account' : 'Add Bank Account', icon:'\u{1F3E6}',
-    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
-    fields: [
-      {id:'bank',       label:'Bank Name',                 value: acct ? acct.bank : ''},
-      {id:'balance',    label:'Checking Balance (\u20AA)', type:'number', value: acct ? acct.balance : ''},
-      {id:'savings',    label:'Savings (\u20AA)',          type:'number', value: acct ? acct.savings : ''},
-      {id:'creditLine', label:'Credit Line (\u20AA)',      type:'number', value: acct ? acct.creditLine : ''},
-      {id:'cardLimit',  label:'Card Limit (\u20AA)',       type:'number', value: acct ? acct.cardLimit : ''}
-    ]
-  });
-  if (r.action === 'cancel') return;
-  if (r.action === 'delete' && id) {
-    PAGES.finance.data.accounts = PAGES.finance.data.accounts.filter(a => a.id !== id);
-    sbDelete('cockpit_bank_accounts', 'id=eq.' + id);
-    return renderPage('finance');
+window.financeMonthShift = function(delta) {
+  if (typeof window._financeMonth === 'undefined') {
+    const n = new Date();
+    window._financeMonth = { year: n.getFullYear(), month: n.getMonth() };
   }
-  const v = r.values;
-  const row = {
-    bank_name: v.bank, balance: +v.balance || 0, savings: +v.savings || 0,
-    credit_line: +v.creditLine || 0, card_limit: +v.cardLimit || 0,
-    sort_order: (PAGES.finance.data.accounts.length || 0) + 1
-  };
-  if (id) {
-    PAGES.finance.data.accounts = PAGES.finance.data.accounts.map(a =>
-      a.id === id ? Object.assign({}, a, {bank:row.bank_name, balance:row.balance, savings:row.savings, creditLine:row.credit_line, cardLimit:row.card_limit}) : a
-    );
-    sbPatch('cockpit_bank_accounts', 'id=eq.' + id, row);
-  } else {
-    const tmpId = 'tmp-' + Date.now();
-    PAGES.finance.data.accounts.push({id:tmpId, bank:row.bank_name, balance:row.balance, savings:row.savings, creditLine:row.credit_line, cardLimit:row.card_limit});
-    sbUpsertReturning('cockpit_bank_accounts', row).then(saved => {
-      if (saved && saved[0] && saved[0].id) {
-        const idx = PAGES.finance.data.accounts.findIndex(a => a.id === tmpId);
-        if (idx >= 0) PAGES.finance.data.accounts[idx].id = saved[0].id;
-      }
-    }).catch(e => console.warn('Bank save failed (kept locally):', e.message));
-  }
+  let m = window._financeMonth.month + delta;
+  let y = window._financeMonth.year;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  window._financeMonth = { year: y, month: m };
   renderPage('finance');
 };
 
-window.editDebt = async function(id) {
-  const debt = id ? PAGES.finance.data.debt.find(d => d.id === id) : null;
-  const r = await openModal({
-    title: id ? 'Edit Debt' : 'Add Debt', icon:'\u{1F4DD}',
-    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
-    fields: [
-      {id:'name',            label:'Name',                          value: debt ? debt.name : ''},
-      {id:'balance',         label:'Current Balance (\u20AA)', type:'number', value: debt ? debt.balance : ''},
-      {id:'originalBalance', label:'Original Balance (\u20AA)', type:'number', value: debt ? debt.originalBalance : ''},
-      {id:'monthly',         label:'Monthly Payment (\u20AA)', type:'number', value: debt ? debt.monthly : ''},
-      {id:'ratePercent',     label:'Interest Rate (%)',        type:'number', step:'0.01', value: debt ? debt.ratePercent : ''},
-      {id:'monthsRemaining', label:'Months Remaining',         type:'number', value: debt ? debt.monthsRemaining : ''}
-    ]
+function aggregateMonthly(year, month) {
+  const breakdown = {};
+  const pageKeys = ['autoscale', 'wa-saas', 'rsvp', 'crm-saas', 'construction', 'angel', 'holdings'];
+  pageKeys.forEach(function(pk) {
+    const m = (_monthly || []).find(function(x) { return x.page_key === pk && x.year === year && x.month === month + 1; });
+    const inc = m ? (+m.income || 0) : 0;
+    const exp = m ? (+m.expense || 0) : 0;
+    if (inc > 0 || exp > 0) breakdown[pk] = { income: inc, expense: exp };
   });
-  if (r.action === 'cancel') return;
-  if (r.action === 'delete' && id) {
-    PAGES.finance.data.debt = PAGES.finance.data.debt.filter(d => d.id !== id);
-    sbDelete('cockpit_debt', 'id=eq.' + id);
-    return renderPage('finance');
-  }
-  const v = r.values;
-  const row = {
-    name: v.name, balance: +v.balance || 0, original_balance: +v.originalBalance || 0,
-    monthly_payment: +v.monthly || 0, rate_percent: +v.ratePercent || 0,
-    months_remaining: +v.monthsRemaining || 0
-  };
-  if (id) {
-    PAGES.finance.data.debt = PAGES.finance.data.debt.map(d =>
-      d.id === id ? Object.assign({}, d, {name:row.name, balance:row.balance, originalBalance:row.original_balance, monthly:row.monthly_payment, ratePercent:row.rate_percent, monthsRemaining:row.months_remaining}) : d
-    );
-    sbPatch('cockpit_debt', 'id=eq.' + id, row);
-  } else {
-    const tmpId = 'tmp-' + Date.now();
-    PAGES.finance.data.debt.push({id:tmpId, name:row.name, balance:row.balance, originalBalance:row.original_balance, monthly:row.monthly_payment, ratePercent:row.rate_percent, monthsRemaining:row.months_remaining});
-    sbUpsertReturning('cockpit_debt', row).then(saved => {
-      if (saved && saved[0] && saved[0].id) {
-        const idx = PAGES.finance.data.debt.findIndex(d => d.id === tmpId);
-        if (idx >= 0) PAGES.finance.data.debt[idx].id = saved[0].id;
-      }
-    }).catch(e => console.warn('Debt save failed (kept locally):', e.message));
-  }
-  renderPage('finance');
-};
+  const tradePnl = (_trades || []).filter(function(t) {
+    if (!t.trade_date) return false;
+    const d = new Date(t.trade_date + 'T12:00:00');
+    return d.getFullYear() === year && d.getMonth() === month;
+  }).reduce(function(s, t) { return s + (+t.pnl || 0); }, 0);
+  if (tradePnl > 0) breakdown['trading'] = { income: tradePnl, expense: 0 };
+  else if (tradePnl < 0) breakdown['trading'] = { income: 0, expense: Math.abs(tradePnl) };
+
+  const properties = (PAGES['real-estate'] && PAGES['real-estate'].data && PAGES['real-estate'].data.properties) || [];
+  const reInc = properties.reduce(function(s, p) { return s + (+p.monthlyRevenue || +p.monthly_revenue || 0); }, 0);
+  const reExp = properties.reduce(function(s, p) { return s + (+p.monthlyExpenses || +p.monthly_expenses || 0); }, 0);
+  if (reInc > 0 || reExp > 0) breakdown['real-estate'] = { income: reInc, expense: reExp };
+
+  let income = 0, expense = 0;
+  Object.values(breakdown).forEach(function(v) { income += v.income; expense += v.expense; });
+  return { income: income, expense: expense, net: income - expense, breakdown: breakdown };
+}
 
 
 // Helper: total holdings value in ILS
@@ -5435,6 +5621,38 @@ function renderHoldings() {
   h += '<span style="font-size:12px;font-family:var(--mono)">\u00A31 = <strong style="color:var(--cyan)">' + (LIVE_RATES.gbpToIls||4.7).toFixed(3) + '\u20AA</strong></span>';
   h += '<button onclick="refreshLiveRates()" style="margin-left:auto;height:28px;padding:0 14px;background:var(--glass-2);border:1px solid var(--stroke-2);color:var(--text-3);border-radius:8px;font-size:10.5px;cursor:pointer;font-family:var(--mono)">\u21BB Refresh</button>';
   h += '</div>';
+
+  // ─── Bank Accounts (mirror from Finance Hub) ───
+  const _F = computeFinancials();
+  h += '<div class="section-h"><span><span class="num">04</span>Bank Accounts</span><div class="line"></div><button class="ap-add" onclick="editBankAccount(null)">+ Add Bank</button></div>';
+  if (!_F.accounts || _F.accounts.length === 0) {
+    h += '<div class="empty-state" style="margin:0 0 14px"><div class="empty-state-title" style="font-size:12px">No bank accounts</div></div>';
+  } else {
+    h += '<div class="attention" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:14px">';
+    _F.accounts.forEach(function(a) {
+      h += '<div class="att cyan" onclick="editBankAccount(\'' + a.id + '\')" style="cursor:pointer">';
+      h += '<div class="att-num">' + fmtK((+a.balance || 0) + (+a.savings || 0)) + '<span class="cur">\u20AA</span></div>';
+      h += '<div class="att-label">' + escapeHtml(a.bank || 'Account') + '</div>';
+      h += '<div class="att-detail" style="font-family:var(--mono);font-size:9.5px;line-height:1.6">Balance ' + fmtK(+a.balance || 0) + '\u20AA<br>Savings ' + fmtK(+a.savings || 0) + '\u20AA</div></div>';
+    });
+    h += '</div>';
+  }
+
+  // ─── Debt (mirror from Finance Hub) ───
+  h += '<div class="section-h"><span><span class="num">05</span>Debt</span><div class="line"></div><button class="ap-add" onclick="editDebt(null)">+ Add Debt</button></div>';
+  if (!_F.debts || _F.debts.length === 0) {
+    h += '<div class="empty-state" style="margin:0"><div class="empty-state-title" style="font-size:12px">No debt</div></div>';
+  } else {
+    h += '<div class="attention" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">';
+    _F.debts.forEach(function(d) {
+      h += '<div class="att bad" onclick="editDebt(\'' + d.id + '\')" style="cursor:pointer">';
+      h += '<div class="att-num">' + fmtK(+d.balance || 0) + '<span class="cur">\u20AA</span></div>';
+      h += '<div class="att-label">' + escapeHtml(d.name || 'Debt') + '</div>';
+      h += '<div class="att-detail" style="font-family:var(--mono);font-size:9.5px">' + fmtK(+d.monthly || 0) + '\u20AA/mo</div></div>';
+    });
+    h += '</div>';
+  }
+
   return h;
 }
 
@@ -6156,30 +6374,44 @@ window.renderSettingsTab = renderSettingsTab;
 // SAAS PRODUCT PAGE (generic — used by WhatsApp SaaS, CRM SaaS, etc)
 // ══════════════════════════════════════════════════
 function renderSaasPage(data, pageKey) {
-  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  // Per-page month state (independent across SaaS pages)
+  if (!window._saasView) window._saasView = {};
+  if (!window._saasView[pageKey]) {
+    const _now = new Date();
+    window._saasView[pageKey] = { year: _now.getFullYear(), month: _now.getMonth() };
+  }
+  const v = window._saasView[pageKey];
+  const y = v.year, m = v.month;
   const income = getMField(pageKey, y, m, 'income', 0);
   const expense = getMField(pageKey, y, m, 'expense', 0);
-  const expected = getMField(pageKey, y, m, 'expected', 0);
   const stages = { planning: 'PLANNING', foundation: 'FOUNDATION', alpha: 'ALPHA', beta: 'BETA', launched: 'LAUNCHED' };
   const stageLabel = stages[data.stage] || 'PLANNING';
   const stageColor = data.stage === 'launched' ? 'var(--good)' :
                      data.stage === 'beta' ? 'var(--cyan)' :
                      data.stage === 'alpha' ? 'var(--warn)' : 'var(--text-3)';
 
-  let h = '<div class="section-h"><span><span class="num">01</span>Product</span><div class="line"></div><span class="meta" style="color:' + stageColor + '">' + stageLabel + '</span></div>';
-  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  h += '<div class="att good"><div class="att-num">+' + fmtK(income) + '<span class="cur">\u20AA</span></div><div class="att-label">MRR This Month</div></div>';
-  h += '<div class="att warn"><div class="att-num">+' + fmtK(expected) + '<span class="cur">\u20AA</span></div><div class="att-label">Expected</div></div>';
-  h += '<div class="att bad"><div class="att-num">-' + fmtK(expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Costs</div></div>';
-  h += '<div class="att tech"><div class="att-num">' + fmtK(income - expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Net</div></div>';
+  const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] + ' ' + y;
+  const isCurrentMonth = (y === new Date().getFullYear() && m === new Date().getMonth());
+
+  let h = '<div class="section-h"><span><span class="num">01</span>Money \u2014 ' + monthName + '</span><div class="line"></div>' +
+    '<button class="cal-prev-btn" onclick="saasPrevMonth(\'' + pageKey + '\')" style="height:26px;padding:0 10px;font-size:10.5px">\u2039 Prev</button>' +
+    (isCurrentMonth ? '' : '<button class="cal-prev-btn" onclick="saasResetMonth(\'' + pageKey + '\')" style="height:26px;padding:0 10px;font-size:10.5px;margin-left:5px">Today</button>') +
+    '<button class="cal-next-btn" onclick="saasNextMonth(\'' + pageKey + '\')" style="height:26px;padding:0 10px;font-size:10.5px;margin-left:5px">Next \u203A</button>' +
+    '<span class="meta" style="color:' + stageColor + ';margin-left:10px">' + stageLabel + '</span>' +
+    '</div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(3,1fr)">';
+  h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="m.' + pageKey + '.' + y + '.' + (m+1) + '.income" data-edit-num="' + income + '">+' + fmtK(income) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Income</div></div>';
+  h += '<div class="att bad"><div class="att-num"><span class="editable" data-edit-key="m.' + pageKey + '.' + y + '.' + (m+1) + '.expense" data-edit-num="' + expense + '">-' + fmtK(expense) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Costs</div></div>';
+  h += '<div class="att ' + (income - expense >= 0 ? 'tech' : 'bad') + '"><div class="att-num">' + fmtK(income - expense) + '<span class="cur">\u20AA</span></div><div class="att-label">Net</div></div>';
   h += '</div>';
 
   h += '<div class="section-h"><span><span class="num">02</span>About</span><div class="line"></div></div>';
   h += '<div class="panel"><div class="panel-body" style="padding:16px 22px">';
-  h += '<div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px">' + escapeHtml(data.name || '') + '</div>';
-  h += '<div style="font-size:12px;color:var(--text-3);line-height:1.6">' + escapeHtml(data.tagline || 'No description yet.') + '</div>';
+  h += '<div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px"><span class="editable" data-edit-key="saas.' + pageKey + '.name" data-edit-text="' + escapeHtml(data.name || '') + '">' + escapeHtml(data.name || '') + '</span></div>';
+  h += '<div style="font-size:12px;color:var(--text-3);line-height:1.6"><span class="editable" data-edit-key="saas.' + pageKey + '.tagline" data-edit-text="' + escapeHtml(data.tagline || 'No description yet.') + '">' + escapeHtml(data.tagline || 'No description yet.') + '</span></div>';
   h += '</div></div>';
 
+  // Section 03: Clients (renumbered from clients within renderClientsSection)
   h += renderClientsSection(pageKey);
 
   return h;
@@ -6275,157 +6507,300 @@ window.editConstructionJob = async function(id) {
 // ══════════════════════════════════════════════════
 // HEALTH PAGE
 // ══════════════════════════════════════════════════
+// Whoop-style Health page — comprehensive metrics
 function renderHealthPage() {
-  // Pull editable values from localStorage
-  const sleepHrs    = getEdited('health.sleep.avg', 7.5);
-  const workoutsWk  = getEdited('health.workouts.week', 4);
-  const weight      = getEdited('health.weight.kg', 78);
-  const restingHr   = getEdited('health.resting.hr', 56);
-  const streak      = getEdited('health.streak', 14);
+  const latestLog = (_healthLogs && _healthLogs.length) ? _healthLogs[0] : null;
+  const sleepHrs    = +getEdited('health.sleep.avg', latestLog ? latestLog.sleep_hours : 7.5);
+  const sleepQual   = +getEdited('health.sleep.quality', latestLog ? latestLog.sleep_quality : 80);
+  const deepPct     = +getEdited('health.sleep.deep', latestLog ? latestLog.deep_pct : 22);
+  const remPct      = +getEdited('health.sleep.rem', latestLog ? latestLog.rem_pct : 24);
+  const recovery    = +getEdited('health.recovery', 75);
+  const strain      = +getEdited('health.strain', 12.5);
+  const hrv         = +getEdited('health.hrv', 58);
+  const restingHr   = +getEdited('health.resting.hr', 56);
+  const calories    = +getEdited('health.calories', latestLog ? latestLog.calories : 2400);
+  const protein     = +getEdited('health.protein',  latestLog ? latestLog.protein : 140);
+  const carbs       = +getEdited('health.carbs',    latestLog ? latestLog.carbs : 250);
+  const fat         = +getEdited('health.fat',      latestLog ? latestLog.fat : 80);
+  const steps       = +getEdited('health.steps', 8400);
+  const activeMins  = +getEdited('health.active.mins', 45);
+  const water       = +getEdited('health.water.l', 2.4);
+  const weight      = +getEdited('health.weight.kg', 78);
+  const workoutsWk  = +getEdited('health.workouts.week', 4);
+  const streak      = +getEdited('health.streak', 14);
 
-  let h = '<div class="section-h"><span><span class="num">01</span>This Week</span><div class="line"></div></div>';
+  const recColor = recovery >= 67 ? 'var(--good)' : recovery >= 34 ? 'var(--warn)' : 'var(--bad)';
+  const strainColor = strain >= 18 ? 'var(--bad)' : strain >= 14 ? 'var(--warn)' : strain >= 10 ? 'var(--cyan)' : 'var(--text-3)';
+
+  let h = '';
+
+  h += '<div class="section-h"><span><span class="num">01</span>Today</span><div class="line"></div><span class="meta">' + new Date().toDateString().toUpperCase() + '</span></div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">';
+
+  h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:14px;padding:18px 16px;text-align:center;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.16em;font-weight:700;margin-bottom:8px">RECOVERY</div>';
+  h += '<svg viewBox="0 0 100 100" style="width:120px;height:120px;display:block;margin:0 auto"><g transform="rotate(-90 50 50)">';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="' + recColor + '" stroke-width="10" stroke-dasharray="' + (recovery / 100 * 263.9) + ' 263.9" stroke-linecap="round"/>';
+  h += '</g><text x="50" y="50" text-anchor="middle" dy="0.4em" fill="#fff" font-size="22" font-weight="900" font-family="var(--mono)">' + recovery + '%</text></svg>';
+  h += '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);margin-top:6px">' + (recovery >= 67 ? 'Primed' : recovery >= 34 ? 'Adequate' : 'Need rest') + '</div>';
+  h += '</div>';
+
+  h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:14px;padding:18px 16px;text-align:center;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.16em;font-weight:700;margin-bottom:8px">STRAIN</div>';
+  h += '<svg viewBox="0 0 100 100" style="width:120px;height:120px;display:block;margin:0 auto"><g transform="rotate(-90 50 50)">';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="' + strainColor + '" stroke-width="10" stroke-dasharray="' + (strain / 21 * 263.9) + ' 263.9" stroke-linecap="round"/>';
+  h += '</g><text x="50" y="50" text-anchor="middle" dy="0.4em" fill="#fff" font-size="22" font-weight="900" font-family="var(--mono)">' + strain + '</text></svg>';
+  h += '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);margin-top:6px">' + (strain >= 18 ? 'All-out' : strain >= 14 ? 'Strenuous' : strain >= 10 ? 'Moderate' : 'Light') + '</div>';
+  h += '</div>';
+
+  const sleepGoal = 8;
+  const sleepPct = Math.min(100, Math.round((sleepHrs / sleepGoal) * 100));
+  const sleepColor = sleepPct >= 87 ? 'var(--good)' : sleepPct >= 70 ? 'var(--cyan)' : 'var(--warn)';
+  h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:14px;padding:18px 16px;text-align:center;box-shadow:var(--hl-top),var(--shadow-1)">';
+  h += '<div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.16em;font-weight:700;margin-bottom:8px">SLEEP</div>';
+  h += '<svg viewBox="0 0 100 100" style="width:120px;height:120px;display:block;margin:0 auto"><g transform="rotate(-90 50 50)">';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>';
+  h += '<circle cx="50" cy="50" r="42" fill="none" stroke="' + sleepColor + '" stroke-width="10" stroke-dasharray="' + (sleepPct / 100 * 263.9) + ' 263.9" stroke-linecap="round"/>';
+  h += '</g><text x="50" y="50" text-anchor="middle" dy="0.4em" fill="#fff" font-size="22" font-weight="900" font-family="var(--mono)">' + sleepHrs + 'h</text></svg>';
+  h += '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);margin-top:6px">' + sleepPct + '% of goal</div>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">02</span>Sleep Breakdown</span><div class="line"></div></div>';
   h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.sleep.avg" data-edit-num="' + sleepHrs + '">' + sleepHrs + '</span><span class="cur">h</span></div><div class="att-label">Avg Sleep</div><div class="att-detail">Per night</div></div>';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.sleep.deep" data-edit-num="' + deepPct + '">' + deepPct + '</span><span class="cur">%</span></div><div class="att-label">Deep Sleep</div><div class="att-detail">Goal: 20-25%</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.sleep.rem" data-edit-num="' + remPct + '">' + remPct + '</span><span class="cur">%</span></div><div class="att-label">REM</div><div class="att-detail">Goal: 20-25%</div></div>';
+  h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="health.sleep.quality" data-edit-num="' + sleepQual + '">' + sleepQual + '</span><span class="cur">%</span></div><div class="att-label">Quality</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.streak" data-edit-num="' + streak + '">' + streak + '</span></div><div class="att-label">Streak</div><div class="att-detail">days clean diet</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">03</span>Vitals</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.hrv" data-edit-num="' + hrv + '">' + hrv + '</span><span class="cur">ms</span></div><div class="att-label">HRV</div><div class="att-detail">Higher = better recovery</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.resting.hr" data-edit-num="' + restingHr + '">' + restingHr + '</span><span class="cur">bpm</span></div><div class="att-label">Resting HR</div></div>';
+  h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="health.weight.kg" data-edit-num="' + weight + '">' + weight + '</span><span class="cur">kg</span></div><div class="att-label">Weight</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.bodyfat" data-edit-num="' + getEdited('health.bodyfat', '15') + '">' + getEdited('health.bodyfat', '15') + '</span><span class="cur">%</span></div><div class="att-label">Body Fat</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">04</span>Activity</span><div class="line"></div></div>';
+  h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
   h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="health.workouts.week" data-edit-num="' + workoutsWk + '">' + workoutsWk + '</span></div><div class="att-label">Workouts</div><div class="att-detail">This week</div></div>';
-  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.weight.kg" data-edit-num="' + weight + '">' + weight + '</span><span class="cur">kg</span></div><div class="att-label">Weight</div><div class="att-detail">Current</div></div>';
-  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.streak" data-edit-num="' + streak + '">' + streak + '</span></div><div class="att-label">Streak</div><div class="att-detail">Days clean diet</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.steps" data-edit-num="' + steps + '">' + steps + '</span></div><div class="att-label">Steps</div><div class="att-detail">Today</div></div>';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.active.mins" data-edit-num="' + activeMins + '">' + activeMins + '</span><span class="cur">min</span></div><div class="att-label">Active Min</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.water.l" data-edit-num="' + water + '">' + water + '</span><span class="cur">L</span></div><div class="att-label">Hydration</div></div>';
   h += '</div>';
 
-  h += '<div class="section-h"><span><span class="num">02</span>Vitals</span><div class="line"></div></div>';
-  h += '<div class="attention" style="grid-template-columns:repeat(3,1fr)">';
-  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.resting.hr" data-edit-num="' + restingHr + '">' + restingHr + '</span><span class="cur">bpm</span></div><div class="att-label">Resting HR</div></div>';
-  h += '<div class="att good"><div class="att-num">' + getEdited('health.bp.sys', '120') + '/' + getEdited('health.bp.dia', '78') + '</div><div class="att-label">Blood Pressure</div></div>';
-  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.bodyfat" data-edit-num="' + getEdited('health.bodyfat', '15') + '">' + getEdited('health.bodyfat', '15') + '</span><span class="cur">%</span></div><div class="att-label">Body Fat</div></div>';
-  h += '</div>';
-
-  h += '<div class="section-h"><span><span class="num">03</span>Routine</span><div class="line"></div></div>';
-  h += '<div class="panel"><div class="panel-body" style="padding:8px 22px 16px">';
-  ['Strength training (3x/week)', 'Cardio / runs (2x/week)', 'Mobility / stretch (daily)', 'Clean eating', 'Sleep 7-8h'].forEach((item, i) => {
-    h += '<div class="project" style="display:flex;align-items:center;gap:11px"><span class="dot active"></span><span style="font-size:12.5px;color:var(--text-1);flex:1">' + item + '</span><span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">' + (Math.random() > 0.3 ? 'on track' : 'this week') + '</span></div>';
-  });
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════
-// SKILLS PAGE
-// ══════════════════════════════════════════════════
-function renderSkillsPage() {
-  // Pull skill % from saved values; sensible defaults seeded from Richard's actual goals
-  const skills = [
-    { name: 'Spanish (B1 → B2)',          icon: '\u{1F1EA}\u{1F1F8}', key: 'skill.spanish',     defaultPct: 35, target: 'Conversational' },
-    { name: 'Motorbike license (A1)',     icon: '\u{1F3CD}\uFE0F',   key: 'skill.motorbike',   defaultPct: 60, target: 'Test scheduled' },
-    { name: 'Sailing license',            icon: '\u26F5',            key: 'skill.sailing',     defaultPct: 20, target: 'Course enrolled' },
-    { name: 'EMT course',                 icon: '\u{1F691}',         key: 'skill.emt',         defaultPct: 0,  target: 'Researching' },
-    { name: 'Trading discipline (Apex)',  icon: '\u{1F4C8}',         key: 'skill.trading',     defaultPct: 55, target: 'Funded account' },
-    { name: 'Make.com mastery',           icon: '\u26A1',            key: 'skill.make',        defaultPct: 85, target: 'Expert' }
-  ];
-
-  let h = '<div class="section-h"><span><span class="num">01</span>Tracked Skills</span><div class="line"></div><span class="meta">' + skills.length + ' ACTIVE</span></div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  skills.forEach(s => {
-    const pct = +getEdited(s.key, s.defaultPct);
-    const pctClamped = Math.min(100, Math.max(0, pct));
-    const color = pctClamped >= 80 ? 'var(--good)' : pctClamped >= 50 ? 'var(--cyan)' : pctClamped >= 25 ? 'var(--warn)' : 'var(--text-3)';
-    h += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1)">';
-    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
-    h += '<div style="font-size:22px">' + s.icon + '</div>';
-    h += '<div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:var(--text-1)">' + s.name + '</div>';
-    h += '<div style="font-size:10px;color:var(--text-3);margin-top:2px">' + s.target + '</div></div>';
-    h += '<div style="text-align:right"><div style="font-size:18px;font-weight:800;color:' + color + ';font-family:var(--mono);letter-spacing:-0.02em;line-height:1"><span class="editable" data-edit-key="' + s.key + '" data-edit-num="' + pct + '">' + pct + '</span><span class="cur" style="font-size:11px;color:var(--text-3)">%</span></div></div>';
-    h += '</div>';
-    h += '<div style="height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pctClamped + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.25));border-radius:3px;box-shadow:0 0 6px ' + color + '66"></div></div>';
-    h += '</div>';
-  });
-  h += '</div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════
-// BIKE BUILD PAGE
-// ══════════════════════════════════════════════════
-function renderBikePage() {
-  const totalBudget = +getEdited('bike.budget', 8000);
-  const spent       = +getEdited('bike.spent', 0);
-  const pct = totalBudget > 0 ? Math.round((spent / totalBudget) * 100) : 0;
-
-  let h = '<div class="section-h"><span><span class="num">01</span>Build Status</span><div class="line"></div></div>';
+  h += '<div class="section-h"><span><span class="num">05</span>Nutrition</span><div class="line"></div></div>';
   h += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="bike.budget" data-edit-num="' + totalBudget + '">' + fmt(totalBudget) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Budget</div></div>';
-  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="bike.spent" data-edit-num="' + spent + '">' + fmt(spent) + '</span><span class="cur">\u20AA</span></div><div class="att-label">Spent</div><div class="att-detail">' + pct + '% of budget</div></div>';
-  h += '<div class="att good"><div class="att-num">' + fmtK(totalBudget - spent) + '<span class="cur">\u20AA</span></div><div class="att-label">Remaining</div></div>';
-  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="bike.parts.count" data-edit-num="' + getEdited('bike.parts.count', 0) + '">' + getEdited('bike.parts.count', 0) + '</span></div><div class="att-label">Parts Owned</div></div>';
+  h += '<div class="att tech"><div class="att-num"><span class="editable" data-edit-key="health.calories" data-edit-num="' + calories + '">' + calories + '</span><span class="cur">kcal</span></div><div class="att-label">Calories</div></div>';
+  h += '<div class="att good"><div class="att-num"><span class="editable" data-edit-key="health.protein" data-edit-num="' + protein + '">' + protein + '</span><span class="cur">g</span></div><div class="att-label">Protein</div></div>';
+  h += '<div class="att cyan"><div class="att-num"><span class="editable" data-edit-key="health.carbs" data-edit-num="' + carbs + '">' + carbs + '</span><span class="cur">g</span></div><div class="att-label">Carbs</div></div>';
+  h += '<div class="att warn"><div class="att-num"><span class="editable" data-edit-key="health.fat" data-edit-num="' + fat + '">' + fat + '</span><span class="cur">g</span></div><div class="att-label">Fat</div></div>';
   h += '</div>';
 
-  h += '<div class="section-h"><span><span class="num">02</span>Build Stages</span><div class="line"></div></div>';
-  const stages = [
-    { name: 'Frame & geometry',         pct: 0, key: 'bike.stage.frame' },
-    { name: 'Engine / drivetrain',      pct: 0, key: 'bike.stage.engine' },
-    { name: 'Suspension',               pct: 0, key: 'bike.stage.susp' },
-    { name: 'Wheels & brakes',          pct: 0, key: 'bike.stage.wheels' },
-    { name: 'Electrical & lights',      pct: 0, key: 'bike.stage.elec' },
-    { name: 'Tank, seat, controls',     pct: 0, key: 'bike.stage.body' },
-    { name: 'Paint & finish',           pct: 0, key: 'bike.stage.paint' },
-    { name: 'Registration & first ride',pct: 0, key: 'bike.stage.reg' }
+  return h;
+}
+function renderSkillsPage() {
+  const skills = [
+    { name: 'Spanish',         key: 'skill.spanish',   icon: '\u{1F1EA}\u{1F1F8}', detail: 'Conversational by relocation' },
+    { name: 'Motorbike (A1)',  key: 'skill.motorbike', icon: '\u{1F3CD}\uFE0F',     detail: 'License + city skill' },
+    { name: 'Sailing',         key: 'skill.sailing',   icon: '\u26F5',              detail: 'Day-skipper level' },
+    { name: 'Trading',         key: 'skill.trading',   icon: '\u{1F4C8}',           detail: 'Edge + risk discipline' },
+    { name: 'Cooking',         key: 'skill.cooking',   icon: '\u{1F373}',           detail: '20 reliable recipes' }
   ];
-  h += '<div class="panel"><div class="panel-body" style="padding:6px 22px 14px">';
-  stages.forEach(s => {
-    const sp = +getEdited(s.key, s.pct);
-    const dot = sp >= 100 ? 'active' : sp > 0 ? 'risk' : 'idle';
-    h += '<div class="project"><div class="project-head"><div class="project-name"><span class="dot ' + dot + '"></span>' + s.name + '</div><div class="project-pct"><span class="editable" data-edit-key="' + s.key + '" data-edit-num="' + sp + '">' + sp + '</span>%</div></div>';
-    h += '<div class="progress-bar">';
-    for (let i = 0; i < 10; i++) h += '<div class="seg' + (i < sp/10 ? ' fill' : '') + '"></div>';
-    h += '</div></div>';
+
+  let h = '';
+
+  // Hero
+  const avg = Math.round(skills.reduce((s,k) => s + (+getEdited(k.key, 0) || 0), 0) / skills.length);
+  h += '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px);border:1px solid rgba(56,189,248,0.25);border-radius:18px;padding:18px 22px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">';
+  h += '<div><div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:5px">Skills Average</div><div style="font-size:clamp(28px,4vw,44px);font-weight:900;color:var(--cyan);letter-spacing:-0.04em;line-height:0.95">' + avg + '<span style="font-size:0.45em;color:var(--text-3);font-weight:600;margin-left:4px">%</span></div></div>';
+  h += '<div style="text-align:right"><div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.16em">TRACKED</div><div style="font-size:14px;font-weight:700;color:var(--text-1);font-family:var(--mono)">' + skills.length + ' skills</div></div>';
+  h += '</div>';
+
+  h += '<div class="section-h"><span><span class="num">01</span>Progress</span><div class="line"></div><span class="meta">TAP \u00B1 TO ADJUST</span></div>';
+  h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:13px;padding:12px 18px;box-shadow:var(--hl-top),var(--shadow-1)">';
+
+  skills.forEach(s => {
+    const pct = +getEdited(s.key, 0) || 0;
+    const color = pct >= 80 ? 'var(--good)' : pct >= 50 ? 'var(--cyan)' : pct >= 25 ? 'var(--warn)' : 'var(--text-3)';
+    h += '<div style="display:grid;grid-template-columns:36px 160px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--stroke-1)">';
+    h += '<div style="font-size:22px">' + s.icon + '</div>';
+    h += '<div><div style="font-size:13px;color:var(--text-1);font-weight:600">' + s.name + '</div><div style="font-size:10.5px;color:var(--text-3);margin-top:2px">' + s.detail + '</div></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:3px"><div style="height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.25));border-radius:3px;box-shadow:0 0 6px ' + color + '66"></div></div></div>';
+    h += '<div style="display:flex;align-items:center;gap:6px">';
+    h += '<div style="font-size:16px;font-weight:800;color:' + color + ';font-family:var(--mono);letter-spacing:-0.02em;min-width:42px;text-align:right"><span class="editable" data-edit-key="' + s.key + '" data-edit-num="' + pct + '">' + pct + '</span><span style="font-size:11px;color:var(--text-3)">%</span></div>';
+    h += '<button onclick="adjustSkill(\'' + s.key + '\',-5)" style="width:26px;height:24px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--text-2);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">-5</button>';
+    h += '<button onclick="adjustSkill(\'' + s.key + '\',+5)" style="width:26px;height:24px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--text-2);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono)">+5</button>';
+    h += '<button onclick="adjustSkill(\'' + s.key + '\',+10)" style="width:28px;height:24px;border:1px solid var(--stroke-2);background:var(--glass-1);color:var(--cyan);border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--mono);font-weight:700">+10</button>';
+    h += '</div>';
+    h += '</div>';
   });
-  h += '</div></div>';
+  h += '</div>';
+
   return h;
 }
 
-// ══════════════════════════════════════════════════
-// RELOCATION PAGE (Thailand prep checklist)
-// ══════════════════════════════════════════════════
+
 function renderRelocationPage() {
   const E = computeRelocationETA();
-  let h = renderRelocationETA();
+  const F = computeFinancials();
+  const totalSavings = computeTotalSavings(F);
+  const totalMRR = computeTotalMRR();
 
-  h += '<div class="section-h"><span><span class="num">01</span>Pre-move Checklist</span><div class="line"></div></div>';
-  const sections = {
-    'Documents & Visa': [
-      { txt: 'DTV visa application (5 yr, multi-entry)', key: 'reloc.visa.dtv' },
-      { txt: 'Passport valid 18+ months from move date', key: 'reloc.passport' },
-      { txt: 'International driving permit',             key: 'reloc.idp' },
-      { txt: 'Birth certificate apostille',              key: 'reloc.birth' },
-      { txt: 'Tax residency consultation',               key: 'reloc.tax' }
-    ],
-    'Money': [
-      { txt: '30,000 ILS savings buffer',                key: 'reloc.savings' },
-      { txt: '6,000 ILS MRR confirmed',                  key: 'reloc.mrr' },
-      { txt: 'Wise/Revolut multi-currency setup',        key: 'reloc.wise' },
-      { txt: 'Bangkok Bank account research',            key: 'reloc.bbl' },
-      { txt: 'IBKR account stays in IL or transfers',    key: 'reloc.ibkr' }
-    ],
-    'Logistics': [
-      { txt: 'Koh Samui scouting trip',                  key: 'reloc.scout' },
-      { txt: 'Long-stay accommodation booked',           key: 'reloc.stay' },
-      { txt: 'Health insurance (Cigna/SafetyWing)',      key: 'reloc.health' },
-      { txt: 'Cancel IL phone / setup eSIM',             key: 'reloc.phone' },
-      { txt: 'Storage / shipping plan',                  key: 'reloc.shipping' }
-    ]
-  };
-  Object.entries(sections).forEach(([title, items]) => {
-    h += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:12px 18px;margin-bottom:10px;box-shadow:var(--hl-top),var(--shadow-1)">';
-    h += '<div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase;font-family:var(--mono);margin-bottom:8px">' + title + '</div>';
-    items.forEach(it => {
-      const done = getEdited(it.key, '0') === '1';
-      h += '<div style="display:flex;align-items:center;gap:11px;padding:6px 0;border-bottom:1px dashed var(--stroke-1);cursor:pointer" onclick="toggleRelocItem(\'' + it.key + '\')">';
-      h += '<span style="width:18px;height:18px;border-radius:5px;border:1.5px solid ' + (done ? 'var(--good)' : 'var(--stroke-3)') + ';background:' + (done ? 'var(--good)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:900">' + (done ? '\u2713' : '') + '</span>';
-      h += '<span style="font-size:12.5px;color:' + (done ? 'var(--text-3)' : 'var(--text-1)') + ';' + (done ? 'text-decoration:line-through' : '') + '">' + it.txt + '</span>';
+  // User-defined goals (default seed)
+  let goals = JSON.parse(safe.get('cockpit.relocation.goals') || 'null');
+  if (!goals) {
+    goals = [
+      { id: 'g1', name: 'Savings target',  type: 'savings', target: 30000, currency: '\u20AA' },
+      { id: 'g2', name: 'MRR target',      type: 'mrr',     target: 6000,  currency: '\u20AA/mo' },
+      { id: 'g3', name: 'DTV visa',        type: 'flag',    target: 0,     currency: '' },
+      { id: 'g4', name: 'Departure date',  type: 'date',    target: '2026-09-01', currency: '' }
+    ];
+    safe.set('cockpit.relocation.goals', JSON.stringify(goals));
+  }
+
+  let h = '';
+
+  // Hero
+  h += '<div style="background:linear-gradient(135deg,rgba(56,189,248,0.10),rgba(192,132,252,0.06));backdrop-filter:blur(28px);border:1px solid rgba(56,189,248,0.25);border-radius:18px;padding:18px 22px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">';
+  h += '<div><div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.20em;text-transform:uppercase;font-weight:700;margin-bottom:5px">Relocation ETA</div><div style="font-size:clamp(28px,4vw,44px);font-weight:900;color:var(--cyan);letter-spacing:-0.04em;line-height:0.95">' + Math.max(0, E.monthsToTarget || 0) + '<span style="font-size:0.45em;color:var(--text-3);font-weight:600;margin-left:4px">months</span></div></div>';
+  h += '<div style="text-align:right"><div style="font-size:9px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.16em">CURRENT PACE</div><div style="font-size:14px;font-weight:700;color:var(--good);font-family:var(--mono)">+' + fmtK(Math.round(E.savingsPace || 0)) + '\u20AA/mo</div></div>';
+  h += '</div>';
+
+  // Goals
+  h += '<div class="section-h"><span><span class="num">01</span>Goals</span><div class="line"></div><button class="ap-add" onclick="addRelocGoal()">+ Add Goal</button></div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:14px">';
+  goals.forEach(g => {
+    let progress = 0, displayText = '', subtext = '', isDone = false;
+    if (g.type === 'savings') {
+      progress = Math.min(100, (totalSavings / g.target) * 100);
+      displayText = fmtK(Math.round(totalSavings)) + ' / ' + fmtK(g.target) + g.currency;
+      subtext = Math.round(progress) + '% complete';
+      isDone = totalSavings >= g.target;
+    } else if (g.type === 'mrr') {
+      progress = Math.min(100, (totalMRR / g.target) * 100);
+      displayText = fmtK(Math.round(totalMRR)) + ' / ' + fmtK(g.target) + g.currency;
+      subtext = Math.round(progress) + '% complete';
+      isDone = totalMRR >= g.target;
+    } else if (g.type === 'date') {
+      const targetDate = new Date(g.target + 'T12:00:00');
+      const now = new Date();
+      const days = Math.round((targetDate - now) / 86400000);
+      progress = days <= 0 ? 100 : 0;
+      displayText = g.target;
+      subtext = days <= 0 ? 'Past' : days + ' days away';
+      isDone = days <= 0;
+    } else if (g.type === 'flag') {
+      const done = getEdited('reloc.goal.' + g.id, '0') === '1';
+      progress = done ? 100 : 0;
+      displayText = done ? '\u2713 Done' : 'Pending';
+      subtext = 'Tap to toggle';
+      isDone = done;
+    }
+    const color = isDone ? 'var(--good)' : progress >= 50 ? 'var(--cyan)' : 'var(--warn)';
+    h += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid ' + (isDone ? 'rgba(74,222,128,0.40)' : 'var(--stroke-2)') + ';border-radius:13px;padding:14px 17px;box-shadow:var(--hl-top),var(--shadow-1);cursor:pointer" onclick="' + (g.type === 'flag' ? 'toggleRelocGoal(\'' + g.id + '\')' : 'editRelocGoal(\'' + g.id + '\')') + '">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span style="font-size:11px;font-weight:700;color:var(--text-2);letter-spacing:0.06em;text-transform:uppercase">' + escapeHtml(g.name) + '</span>' + (isDone ? '<span style="font-size:9px;color:var(--good);font-family:var(--mono);font-weight:700">DONE</span>' : '') + '</div>';
+    h += '<div style="font-size:18px;font-weight:800;color:' + color + ';font-family:var(--mono);letter-spacing:-0.02em">' + displayText + '</div>';
+    h += '<div style="font-size:10px;color:var(--text-3);margin-top:4px;font-family:var(--mono)">' + subtext + '</div>';
+    if (g.type === 'savings' || g.type === 'mrr') {
+      h += '<div style="height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;margin-top:9px"><div style="height:100%;width:' + progress + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.25));border-radius:3px;box-shadow:0 0 6px ' + color + '66"></div></div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+
+  // Pre-move checklist (preserved from original)
+  h += '<div class="section-h"><span><span class="num">02</span>Pre-move Checklist</span><div class="line"></div></div>';
+  const checklist = [
+    { cat: 'Documents', items: ['Passport renewed', 'DTV visa application', 'Apostille on diplomas'] },
+    { cat: 'Money',     items: ['Wise/Revolut multi-currency', 'Israeli bank to Thai bank wire path', 'Tax residency clarified'] },
+    { cat: 'Logistics', items: ['Storage for keepables', 'Sell/donate furniture', 'Apartment lease end aligned'] }
+  ];
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">';
+  checklist.forEach(group => {
+    h += '<div style="background:var(--glass-1);backdrop-filter:blur(20px);border:1px solid var(--stroke-2);border-radius:13px;padding:12px 16px"><div style="font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:0.16em;font-family:var(--mono);text-transform:uppercase;margin-bottom:9px">' + group.cat + '</div>';
+    group.items.forEach(item => {
+      const k = 'reloc.cl.' + item.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');
+      const done = getEdited(k, '0') === '1';
+      h += '<div style="display:flex;align-items:center;gap:9px;padding:5px 0;cursor:pointer" onclick="toggleRelocItem(\'' + k + '\')">';
+      h += '<span style="width:14px;height:14px;border:1px solid ' + (done ? 'var(--good)' : 'var(--stroke-2)') + ';border-radius:4px;display:inline-flex;align-items:center;justify-content:center;background:' + (done ? 'var(--good)' : 'transparent') + ';font-size:9px;color:#0a0d18;font-weight:800">' + (done ? '\u2713' : '') + '</span>';
+      h += '<span style="font-size:11.5px;color:' + (done ? 'var(--text-3)' : 'var(--text-2)') + ';' + (done ? 'text-decoration:line-through;' : '') + '">' + item + '</span>';
       h += '</div>';
     });
     h += '</div>';
   });
+  h += '</div>';
+
   return h;
 }
+
+
+window.adjustSkill = function(key, delta) {
+  const cur = +getEdited(key, 0);
+  const next = Math.max(0, Math.min(100, cur + delta));
+  setEdited(key, next);
+  renderPage('skills');
+};
+
+window.addRelocGoal = async function() {
+  const r = await openModal({
+    title: 'Add Goal', icon: '\u{1F3AF}',
+    saveLabel: 'Add',
+    fields: [
+      {id:'name',  label:'Goal name', value:''},
+      {id:'type',  label:'Type', type:'select', options:[
+        {value:'flag',label:'Yes/No flag'},
+        {value:'date',label:'Target date'},
+        {value:'savings',label:'Savings target'},
+        {value:'mrr',label:'MRR target'}
+      ], value:'flag'},
+      {id:'target', label:'Target value (date as YYYY-MM-DD or amount)', value:''}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  const goals = JSON.parse(safe.get('cockpit.relocation.goals') || '[]');
+  goals.push({
+    id: 'g' + Date.now(),
+    name: r.values.name,
+    type: r.values.type,
+    target: r.values.type === 'date' ? r.values.target : (+r.values.target || 0),
+    currency: r.values.type === 'mrr' ? '\u20AA/mo' : (r.values.type === 'savings' ? '\u20AA' : '')
+  });
+  safe.set('cockpit.relocation.goals', JSON.stringify(goals));
+  renderPage('relocation');
+};
+
+window.editRelocGoal = async function(id) {
+  const goals = JSON.parse(safe.get('cockpit.relocation.goals') || '[]');
+  const g = goals.find(x => x.id === id);
+  if (!g) return;
+  const r = await openModal({
+    title: 'Edit Goal', icon: '\u{1F3AF}',
+    saveLabel: 'Update', deleteLabel: 'Delete',
+    fields: [
+      {id:'name',   label:'Goal name', value: g.name},
+      {id:'target', label:'Target', value: g.target}
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (r.action === 'delete') {
+    safe.set('cockpit.relocation.goals', JSON.stringify(goals.filter(x => x.id !== id)));
+  } else {
+    g.name = r.values.name;
+    g.target = (g.type === 'date' || typeof g.target === 'string') ? r.values.target : (+r.values.target || 0);
+    safe.set('cockpit.relocation.goals', JSON.stringify(goals));
+  }
+  renderPage('relocation');
+};
+
+window.toggleRelocGoal = function(id) {
+  const cur = getEdited('reloc.goal.' + id, '0');
+  setEdited('reloc.goal.' + id, cur === '1' ? '0' : '1');
+  renderPage('relocation');
+};
 
 window.toggleRelocItem = function(key) {
   const cur = getEdited(key, '0');
@@ -6533,6 +6908,7 @@ function navigate(page) {
 }
 
 function renderPage(key) {
+  document.body.setAttribute('data-page', key);
   safe.set('cockpit.page', key);
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === key));
   const page = PAGES[key] || placeholderPage(key);
@@ -6575,83 +6951,135 @@ function renderPage(key) {
   wireEditables();
 }
 
+// New Life Overview — life snapshot with health/skills/relocation/calendar countdown/projects
 function renderLifeOverview() {
   const E = computeRelocationETA();
   const F = computeFinancials();
-  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const totalSavings = (F.accounts || []).reduce((s, a) => s + (+a.savings || 0), 0);
+  const totalMrr = (_clients || []).filter(c => c.status === 'active').reduce((s, c) => s + (+c.mrr || 0), 0);
 
-  // Aggregate income across ALL business pages — not just AutoScale
-  const bizPages = [
-    { key: 'autoscale',    label: 'AutoScale' },
-    { key: 'wa-saas',      label: 'WhatsApp SaaS' },
-    { key: 'rsvp',         label: 'Ishur' },
-    { key: 'crm-saas',     label: 'CRM SaaS' },
-    { key: 'construction', label: 'Construction' }
-  ];
-  let totalIncome = 0;
-  const byBiz = bizPages.map(b => {
-    const inc = getMField(b.key, y, m, 'income', 0);
-    totalIncome += inc;
-    return { key: b.key, label: b.label, income: inc };
-  }).filter(b => b.income > 0).sort((a,b) => b.income - a.income);
+  let html = '';
 
-  // Aggregate today's calendar events
-  const todayStr = y + '-' + pad2(m+1) + '-' + pad2(now.getDate());
-  const todayEvents = [];
-  (Object.entries(_calData||{})).forEach(([d, e]) => {
-    if (d === todayStr || (e.end_date && e.end_date >= todayStr && d <= todayStr)) {
-      todayEvents.push(e);
-    }
-  });
+  // Hero — Relocation ETA (kept from previous, pulls from Finance Hub data now)
+  html += renderRelocationETA();
 
-  // Trades today
-  const tradesToday = (_trades||[]).filter(t => t.trade_date === todayStr);
-  const todayPnl = tradesToday.reduce((s,t) => s + (t.pnl||0), 0);
-
-  // Hero
-  let html = renderRelocationETA();
-
-  // Today snapshot
-  html += '<div class="section-h"><span><span class="num">01</span>Today</span><div class="line"></div><span class="meta">' + ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()] + ' ' + now.getDate() + ' ' + ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][m] + '</span></div>';
+  // ─── Section 01: Life Snapshot ───
+  html += '<div class="section-h"><span><span class="num">01</span>Life Snapshot</span><div class="line"></div></div>';
   html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  html += '<div class="att good"><div class="att-num">+' + fmtK(Math.round(F.totalBizIncome)) + '<span class="cur">\u20AA</span></div><div class="att-label">Income MTD</div><div class="att-detail">' + byBiz.length + ' source' + (byBiz.length === 1 ? '' : 's') + '</div></div>';
-  html += '<div class="att ' + (todayPnl >= 0 ? 'good' : 'bad') + '"><div class="att-num">' + (todayPnl >= 0 ? '+' : '') + fmtK(Math.round(todayPnl)) + '<span class="cur">\u20AA</span></div><div class="att-label">Trades Today</div><div class="att-detail">' + tradesToday.length + ' trade' + (tradesToday.length === 1 ? '' : 's') + '</div></div>';
-  html += '<div class="att cyan" onclick="navigate(\'big-calendar\')" style="cursor:pointer"><div class="att-num">' + todayEvents.length + '</div><div class="att-label">Calendar</div><div class="att-detail">' + (todayEvents.length === 0 ? 'Nothing scheduled' : 'Events today') + '</div></div>';
-  html += '<div class="att tech"><div class="att-num">' + (F.monthlyNet >= 0 ? '+' : '') + fmtK(Math.round(F.monthlyNet)) + '<span class="cur">\u20AA</span></div><div class="att-label">Net This Month</div><div class="att-detail">After expenses</div></div>';
+
+  // Health summary
+  const sleepAvg = +getEdited('health.sleep.avg', 7.5);
+  const workouts = +getEdited('health.workouts.week', 4);
+  html += '<div class="att tech" onclick="navigate(\'health\')" style="cursor:pointer">';
+  html += '<div class="att-num">' + sleepAvg + '<span class="cur">h</span></div>';
+  html += '<div class="att-label">Health</div>';
+  html += '<div class="att-detail">' + workouts + ' workouts · ' + sleepAvg + 'h sleep</div></div>';
+
+  // Skills summary — count active
+  const skillsTotal = (_skills || []).length || 6;
+  const avgPct = (_skills && _skills.length) ?
+    Math.round((_skills.reduce((s, sk) => s + (+sk.pct || 0), 0)) / _skills.length) : 50;
+  html += '<div class="att tech" onclick="navigate(\'skills\')" style="cursor:pointer">';
+  html += '<div class="att-num">' + avgPct + '<span class="cur">%</span></div>';
+  html += '<div class="att-label">Skills</div>';
+  html += '<div class="att-detail">' + skillsTotal + ' tracked, avg progress</div></div>';
+
+  // Relocation ETA tile
+  const eta = E.monthsToTarget !== null ? Math.max(0, Math.ceil(E.monthsToTarget)) : '—';
+  const etaSub = (typeof eta === 'number' && eta > 0) ? eta + ' months to target' : 'Set savings + MRR';
+  html += '<div class="att warn" onclick="navigate(\'relocation\')" style="cursor:pointer">';
+  html += '<div class="att-num">' + eta + (typeof eta === 'number' ? '<span class="cur">mo</span>' : '') + '</div>';
+  html += '<div class="att-label">Relocation ETA</div>';
+  html += '<div class="att-detail">' + etaSub + '</div></div>';
+
+  // Next calendar event countdown
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+  const upcoming = [];
+  Object.entries(_calData || {}).forEach(function(pair) {
+    const dateStr = pair[0]; const v = pair[1];
+    if (dateStr < todayStr) return;
+    const entries = Array.isArray(v) ? v : [v];
+    entries.forEach(function(e) { if (e.label || e.sticker_emoji) upcoming.push({ date: dateStr, entry: e }); });
+  });
+  upcoming.sort(function(a, b) { return a.date.localeCompare(b.date); });
+  const nextEvent = upcoming[0];
+  let countdownNum = '—', countdownLabel = 'Calendar', countdownDetail = 'Nothing scheduled';
+  if (nextEvent) {
+    const days = Math.max(0, Math.round((new Date(nextEvent.date + 'T12:00:00') - today) / (1000 * 60 * 60 * 24)));
+    countdownNum = days;
+    countdownLabel = (nextEvent.entry.sticker_emoji || '') + ' ' + (nextEvent.entry.label || 'Event');
+    countdownDetail = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'in ' + days + ' days';
+  }
+  html += '<div class="att cyan" onclick="navigate(\'big-calendar\')" style="cursor:pointer">';
+  html += '<div class="att-num">' + countdownNum + (typeof countdownNum === 'number' ? '<span class="cur">d</span>' : '') + '</div>';
+  html += '<div class="att-label">' + countdownLabel + '</div>';
+  html += '<div class="att-detail">' + countdownDetail + '</div></div>';
+
   html += '</div>';
 
-  // Income breakdown by SaaS
-  if (byBiz.length > 0) {
-    html += '<div class="section-h"><span><span class="num">02</span>Income by Source</span><div class="line"></div><span class="meta">TOTAL ' + fmtK(Math.round(totalIncome)) + '\u20AA</span></div>';
-    html += '<div style="background:var(--glass-1);backdrop-filter:blur(24px);border:1px solid var(--stroke-2);border-radius:13px;padding:14px 18px;box-shadow:var(--hl-top),var(--shadow-1)">';
-    const maxInc = Math.max(...byBiz.map(b => b.income));
-    byBiz.forEach(b => {
-      const pct = totalIncome > 0 ? Math.round((b.income / totalIncome) * 100) : 0;
-      const w = Math.round((b.income / maxInc) * 100);
-      html += '<div style="display:grid;grid-template-columns:120px 1fr 70px 50px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--stroke-1);cursor:pointer" onclick="navigate(\'' + b.key + '\')">' +
-        '<div style="font-size:11.5px;color:var(--text-2);font-weight:600">' + escapeHtml(b.label) + '</div>' +
-        '<div style="height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + w + '%;background:linear-gradient(90deg,var(--good),var(--cap));border-radius:3px;box-shadow:0 0 6px rgba(74,222,128,0.30)"></div></div>' +
-        '<div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--good);text-align:right">+' + fmtK(Math.round(b.income)) + '\u20AA</div>' +
-        '<div style="font-size:10px;font-family:var(--mono);color:var(--text-3);text-align:right">' + pct + '%</div>' +
-      '</div>';
+  // ─── Section 02: Projects (editable) ───
+  html += '<div class="section-h"><span><span class="num">02</span>Active Projects</span><div class="line"></div><button class="ap-add" onclick="editLifeProject(null)">+ Add Project</button></div>';
+  const lifeProjects = (_projects || []).filter(function(p) { return !p.page_key || p.page_key === 'life-overview'; });
+  if (lifeProjects.length === 0) {
+    html += '<div class="empty-state" style="margin:0"><div class="empty-state-icon">\u{1F4CB}</div><div class="empty-state-title">No projects logged</div><div class="empty-state-sub">Click + Add Project to track progress on side builds, learning, or anything else.</div></div>';
+  } else {
+    html += '<div class="prop-grid">';
+    lifeProjects.forEach(function(p) {
+      const pct = +p.pct || 0;
+      const dot = pct >= 100 ? 'active' : pct > 0 ? 'risk' : 'idle';
+      html += '<div class="prop-card" onclick="editLifeProject(\'' + p.id + '\')" style="cursor:pointer">';
+      html += '<div class="prop-name"><span class="dot ' + dot + '"></span>' + escapeHtml(p.name || '') + '</div>';
+      html += '<div class="prop-row"><span style="color:var(--text-3)">Progress</span><span style="color:var(--cyan)">' + pct + '%</span></div>';
+      html += '<div class="progress-bar" style="margin:6px 0 8px">';
+      for (let i = 0; i < 10; i++) html += '<div class="seg' + (i < pct / 10 ? ' fill' : '') + '"></div>';
+      html += '</div>';
+      if (p.deadline) html += '<div class="prop-row"><span style="color:var(--text-3)">Deadline</span><span>' + escapeHtml(p.deadline) + '</span></div>';
+      if (p.tasks) html += '<div style="font-size:10.5px;color:var(--text-3);margin-top:6px;line-height:1.5">' + escapeHtml(p.tasks) + '</div>';
+      html += '</div>';
     });
     html += '</div>';
   }
 
-  // Quick access tiles
-  html += '<div class="section-h"><span><span class="num">03</span>Quick Access</span><div class="line"></div></div>';
-  html += '<div class="attention" style="grid-template-columns:repeat(4,1fr)">';
-  html += '<div class="att cyan" onclick="navigate(\'finance\')" style="cursor:pointer"><div class="att-num">' + fmtK(Math.round(F.netWorth)) + '<span class="cur">\u20AA</span></div><div class="att-label">Net Worth</div><div class="att-detail">Finance Hub</div></div>';
-  html += '<div class="att good" onclick="navigate(\'health\')" style="cursor:pointer"><div class="att-num">\u2764</div><div class="att-label">Health</div><div class="att-detail">Sleep \u00B7 Workouts</div></div>';
-  html += '<div class="att tech" onclick="navigate(\'skills\')" style="cursor:pointer"><div class="att-num">\u2691</div><div class="att-label">Skills</div><div class="att-detail">Languages \u00B7 Licenses</div></div>';
-  html += '<div class="att warn" onclick="navigate(\'relocation\')" style="cursor:pointer"><div class="att-num">\u2708</div><div class="att-label">Relocation</div><div class="att-detail">Thailand prep</div></div>';
-  html += '</div>';
-
   return html;
 }
 
-
-
+window.editLifeProject = async function(id) {
+  const proj = id ? (_projects || []).find(function(p) { return p.id === id; }) : null;
+  const r = await openModal({
+    title: id ? 'Edit Project' : 'Add Project', icon: '\u{1F4CB}',
+    saveLabel: id ? 'Update' : 'Add', deleteLabel: id ? 'Delete' : null,
+    fields: [
+      { id: 'name',     label: 'Project Name',                  value: proj ? proj.name : '' },
+      { id: 'pct',      label: 'Progress %', type: 'number',    value: proj ? proj.pct : 0 },
+      { id: 'deadline', label: 'Deadline (e.g. Q3 2026)',       value: proj ? proj.deadline : '' },
+      { id: 'tasks',    label: 'Notes / next steps', type: 'textarea', value: proj ? proj.tasks : '' }
+    ]
+  });
+  if (r.action === 'cancel') return;
+  if (!_projects) _projects = [];
+  if (r.action === 'delete' && id) {
+    _projects = _projects.filter(function(p) { return p.id !== id; });
+    sbDelete('cockpit_projects', 'id=eq.' + id);
+    return renderPage('life-overview');
+  }
+  const v = r.values;
+  const row = { name: v.name, pct: +v.pct || 0, deadline: v.deadline, tasks: v.tasks, page_key: 'life-overview' };
+  if (id) {
+    _projects = _projects.map(function(p) { return p.id === id ? Object.assign({}, p, row, { id: id }) : p; });
+    sbPatch('cockpit_projects', 'id=eq.' + id, row);
+  } else {
+    const tmpId = 'tmp-' + Date.now();
+    _projects.push(Object.assign({}, row, { id: tmpId }));
+    sbUpsertReturning('cockpit_projects', row).then(function(saved) {
+      if (saved && saved[0] && saved[0].id) {
+        const idx = _projects.findIndex(function(p) { return p.id === tmpId; });
+        if (idx >= 0) _projects[idx].id = saved[0].id;
+      }
+    }).catch(function(e) { console.warn('Project save failed:', e.message); });
+  }
+  renderPage('life-overview');
+};
 function wireEditables() {
   mainEl.querySelectorAll('.editable').forEach(el => {
     el.addEventListener('click', e => {
@@ -7065,6 +7493,9 @@ let _tmChecked = [];
 
 window.openTradeModal = function(id, date) {
   try {
+    console.log('openTradeModal called', {id: id, date: date});
+    if (!_trades) _trades = [];
+    if (!_tradeRules) _tradeRules = [];
     _tmCurrentId = id || null;
     _tmCurrentDate = date || new Date().toISOString().slice(0,10);
     const t = id ? (_trades || []).find(x => x.id === id) : null;
