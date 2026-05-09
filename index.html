@@ -4122,6 +4122,16 @@ function computeTotalMRR() {
   return (_clients || []).filter(c => c.status === 'active' && c.mrr > 0).reduce((s, c) => s + (+c.mrr || 0), 0);
 }
 
+function computeLiquidity(F) {
+  // Liquidity = cash you can spend right now: bank balance + bank savings + currency cash
+  // Does NOT include: debt, crypto, stocks, investments, real estate
+  let liq = 0;
+  (F.accounts || []).forEach(a => liq += (+a.balance || 0) + (+a.savings || 0));
+  const data = (PAGES.holdings && PAGES.holdings.data) || {};
+  (data.cash || []).forEach(c => liq += (+c.amount || 0) * getRateToIls(c.currency || 'ILS'));
+  return liq;
+}
+
 
 window.toggleStickerLayer = function(stickerId) {
   const idx = _hiddenStickers.indexOf(stickerId);
@@ -5208,6 +5218,7 @@ function renderFinanceHub() {
   html += '<div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">';
   html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Assets</div><div style="font-size:13px;font-weight:700;color:var(--cyan);font-family:var(--mono)">'+fmtK(Math.round(F.totalAssets))+'\u20AA</div></div>';
   html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Debt</div><div style="font-size:13px;font-weight:700;color:var(--bad);font-family:var(--mono)">'+fmtK(Math.round(F.totalDebt))+'\u20AA</div></div>';
+  html += '<div title="Bank balance + savings + currency cash. No crypto, stocks, or investments."><div style="font-size:8.5px;color:#fbbf24;font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase;font-weight:700">Liquidity</div><div style="font-size:13px;font-weight:800;color:#fbbf24;font-family:var(--mono)">'+fmtK(Math.round(computeLiquidity(F)))+'\u20AA</div></div>';
   html += '<div><div style="font-size:8.5px;color:var(--text-3);font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase">Net (this month)</div><div style="font-size:11.5px;font-weight:700;color:'+(M.net>=0?'var(--good)':'var(--bad)')+';font-family:var(--mono)">'+(M.net>=0?'+':'')+fmtK(Math.round(M.net))+'\u20AA</div></div>';
   html += '</div></div>';
   html += '<div>' + renderAllocationDonut(alloc, allocSum) + '</div>';
